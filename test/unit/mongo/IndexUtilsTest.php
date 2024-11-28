@@ -4,6 +4,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class IndexUtilsTest extends MongoTripodTestBase
 {
+    // HERE
     public function testCBDCollectionIndexesAreCreated()
     {
         $config = $this->createMockConfig();
@@ -509,6 +510,23 @@ class IndexUtilsTest extends MongoTripodTestBase
             'mongo' => ['type' => 'mongo', 'connection' => 'mongodb://localhost'],
         ];
         $config['defaultContext'] = 'http://talisaspire.com/';
+
+        // $config['stores'] = [
+        //     'tripod_php_testing' => [
+        //         'type' => 'mongo',
+        //         'data_source' => 'mongo',
+        //         'pods' => [
+        //             'CBD_testing' => [
+        //                 'indexes' => [
+        //                     'rdf_type' => [
+        //                         'rdf:type.u' => 1,
+        //                     ],
+        //                 ],
+        //             ],
+        //         ],
+        //     ],
+        // ];
+
         $config['stores'] = [
             'tripod_php_testing' => [
                 'type' => 'mongo',
@@ -517,7 +535,12 @@ class IndexUtilsTest extends MongoTripodTestBase
                     'CBD_testing' => [
                         'indexes' => [
                             'rdf_type' => [
-                                'rdf:type.u' => 1,
+                                [
+                                    'rdf:type.u' => 1,
+                                ],
+                                [
+                                    'unique' => true,
+                                ]
                             ],
                         ],
                     ],

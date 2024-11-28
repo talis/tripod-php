@@ -16,6 +16,7 @@ class IndexUtils
      */
     public function ensureIndexes($reindex=false,$storeName=null,$background=true)
     {
+        error_log('ensureIndexes: '.$storeName);
         $config = $this->getConfig();
         $dbs = ($storeName==null) ? $config->getDbs() : array($storeName);
         $reindexedCollections = [];
@@ -39,30 +40,43 @@ class IndexUtils
                 }
                 foreach ($indexes as $indexName=>$fields)
                 {
+                    error_log('Index: '.$indexName.' - fields: '.json_encode($fields));
                     $indexName = substr($indexName,0,127); // ensure max 128 chars
-                    if (is_numeric($indexName))
+
+                    $indexOptions = [
+                        "background"=>$background
+                    ];
+
+                    if (!is_numeric($indexName))
                     {
-                        // no name
-                        $config->getCollectionForCBD($storeName, $collectionName)
-                            ->createIndex(
-                                $fields,
-                                array(
-                                    "background"=>$background
-                                )
-                            );
+                        $indexOptions['name'] = $indexName;
                     }
-                    else
-                    {
-                        $config->getCollectionForCBD($storeName, $collectionName)
-                            ->createIndex(
-                                $fields,
-                                array(
-                                    'name'=>$indexName,
-                                    "background"=>$background
-                                )
-                            );
+
+                    // New
+                    //fields: [{"rdf:type.u":1},{"unique":true}]
+                    // Old
+                    //fields: {"_id":1,"_lockedForTrans":1}
+
+                    $todoKeys = array_keys($fields);
+                    if (is_numeric($todoKeys[0])) {
+                        error_log('New nested format index '.json_encode($todoKeys[0]));
+                        $indexFields = $fields[0];
+                        error_log('field[1] '.json_encode($indexFields));
+                        // TODO pass second array into options
+                        $indexOptions = array_merge($indexOptions, $fields[1]);
+                    } else {
+                        error_log('Old format index '.json_encode($todoKeys[0]));
+                        $indexFields = $fields;
                     }
-                }
+
+                    error_log('create index - fields: '.json_encode($fields).' - options: '.json_encode($indexOptions));
+
+                    $config->getCollectionForCBD($storeName, $collectionName)
+                        ->createIndex(
+                        $indexFields,
+                        $indexOptions
+                    );
+        }
             }
 
             // Index views
@@ -90,6 +104,7 @@ class IndexUtils
                     }
                     foreach($indexes as $index)
                     {
+                        error_log('view index? '.json_encode($index));
                         $collection->createIndex(
                             $index,
                             array(
@@ -125,6 +140,7 @@ class IndexUtils
                     }
                     foreach($indexes as $index)
                     {
+                        error_log('table row index? '.json_encode($index));
                         $collection->createIndex(
                             $index,
                             array(
@@ -157,6 +173,7 @@ class IndexUtils
                     }
                     foreach($indexes as $index)
                     {
+                        error_log('search doc index? '.json_encode($index));
                         $collection->createIndex(
                             $index,
                             array(

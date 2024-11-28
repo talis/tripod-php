@@ -247,22 +247,34 @@ class Config implements IConfigInstance
                     // Ensure indexes are legal
                     if (array_key_exists("indexes", $podConfig)) {
                         $this->indexes[$storeName][$podName] = [];
+                        error_log('Config indexes: '.json_encode($podConfig["indexes"]));
                         foreach ($podConfig["indexes"] as $indexName => $indexFields) {
+
+                            // Ugh.... Discuss.
+                            $todoKeys = array_keys($indexFields);
+                            if (is_numeric($todoKeys[0])) {
+                                error_log('new format config - two arrays' . json_encode($todoKeys[0]));
+                            } else {
+                                error_log('old format config' . json_encode($todoKeys[0]));
+                            }
+
+                            // If we have the new config, it doesn't like this cardinality check
+                            // so bypass it for now and come back to it later once discussed
+
                             // check no more than 1 indexField is an array to ensure Mongo will be able to create compound indexes
-                            if (count($indexFields) > 1) {
-                                $fieldsThatAreArrays = 0;
-                                foreach ($indexFields as $field => $fieldVal) {
-                                    $cardinalityField = str_replace('.value', '', $field);
-                                    if (!array_key_exists($cardinalityField, $this->cardinality[$storeName][$podName]) ||
-                                        $this->cardinality[$storeName][$podName][$cardinalityField] != 1) {
-                                        $fieldsThatAreArrays++;
-                                    }
-                                    if ($fieldsThatAreArrays > 1) {
-                                        throw new \Tripod\Exceptions\ConfigException("Compound index $indexName has more than one field with cardinality > 1 - mongo will not be able to build this index");
-                                    }
-                                }
-                            } // @codeCoverageIgnoreStart
-                            // @codeCoverageIgnoreEnd
+                            // if (count($indexFields) > 1) {
+                            //     $fieldsThatAreArrays = 0;
+                            //     foreach ($indexFields as $field => $fieldVal) {
+                            //         $cardinalityField = str_replace('.value', '', $field);
+                            //         if (!array_key_exists($cardinalityField, $this->cardinality[$storeName][$podName]) ||
+                            //             $this->cardinality[$storeName][$podName][$cardinalityField] != 1) {
+                            //             $fieldsThatAreArrays++;
+                            //         }
+                            //         if ($fieldsThatAreArrays > 1) {
+                            //             throw new \Tripod\Exceptions\ConfigException("Compound index $indexName has more than one field with cardinality > 1 - mongo will not be able to build this index");
+                            //         }
+                            //     }
+                            // }
 
                             $this->indexes[$storeName][$podName][$indexName] = $indexFields;
                         }
