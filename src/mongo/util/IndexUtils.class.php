@@ -55,15 +55,14 @@ class IndexUtils
 
                     $indexKeys = array_keys($fields);
                     if (is_numeric($indexKeys[0])) {
-                        // New nested format index (?)
-                        error_log('New nested format index '.json_encode($indexKeys[0]));
+                        // New nested format index
+                        error_log('New nested format index');
                         $indexFields = $fields[0];
                         error_log('field[1] '.json_encode($indexFields));
-                        // TODO pass second array into options
                         $indexOptions = array_merge($indexOptions, $fields[1]);
                     } else {
                         // Old format index
-                        error_log('Old format index '.json_encode($indexKeys[0]));
+                        error_log('Old format index');
                         $indexFields = $fields;
                     }
 
