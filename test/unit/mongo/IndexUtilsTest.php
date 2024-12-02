@@ -21,7 +21,6 @@ class IndexUtilsTest extends MongoTripodTestBase
         $indexUtils->ensureIndexes(false, 'tripod_php_testing', true);
     }
 
-    // todo
     public function testCBDCollectionIndexesAreCreatedWithIndexOptions()
     {
         $config = $this->createMockConfig();
@@ -113,7 +112,6 @@ class IndexUtilsTest extends MongoTripodTestBase
 
         $indexUtils->ensureIndexes(true, 'tripod_php_testing', true);
     }
-
 
     public function testViewIndexesAreCreated()
     {
