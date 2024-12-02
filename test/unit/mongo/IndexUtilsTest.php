@@ -511,22 +511,6 @@ class IndexUtilsTest extends MongoTripodTestBase
         ];
         $config['defaultContext'] = 'http://talisaspire.com/';
 
-        // $config['stores'] = [
-        //     'tripod_php_testing' => [
-        //         'type' => 'mongo',
-        //         'data_source' => 'mongo',
-        //         'pods' => [
-        //             'CBD_testing' => [
-        //                 'indexes' => [
-        //                     'rdf_type' => [
-        //                         'rdf:type.u' => 1,
-        //                     ],
-        //                 ],
-        //             ],
-        //         ],
-        //     ],
-        // ];
-
         $config['stores'] = [
             'tripod_php_testing' => [
                 'type' => 'mongo',
@@ -535,18 +519,34 @@ class IndexUtilsTest extends MongoTripodTestBase
                     'CBD_testing' => [
                         'indexes' => [
                             'rdf_type' => [
-                                [
-                                    'rdf:type.u' => 1,
-                                ],
-                                [
-                                    'unique' => true,
-                                ]
+                                'rdf:type.u' => 1,
                             ],
                         ],
                     ],
                 ],
             ],
         ];
+
+        // $config['stores'] = [
+        //     'tripod_php_testing' => [
+        //         'type' => 'mongo',
+        //         'data_source' => 'mongo',
+        //         'pods' => [
+        //             'CBD_testing' => [
+        //                 'indexes' => [
+        //                     'rdf_type' => [
+        //                         [
+        //                             'rdf:type.u' => 1,
+        //                         ],
+        //                         [
+        //                             'unique' => true,
+        //                         ]
+        //                     ],
+        //                 ],
+        //             ],
+        //         ],
+        //     ],
+        // ];
 
         $config['transaction_log'] = [
             'database' => 'transactions',
