@@ -45,7 +45,7 @@ class IndexUtils
                     $indexName = substr($indexName,0,127); // ensure max 128 chars
 
                     $indexOptions = [
-                        "background"=>$background
+                        'background'=>$background
                     ];
 
                     if (!is_numeric($indexName))
@@ -53,20 +53,17 @@ class IndexUtils
                         $indexOptions['name'] = $indexName;
                     }
 
-                    // New
-                    //fields: [{"rdf:type.u":1},{"unique":true}]
-                    // Old
-                    //fields: {"_id":1,"_lockedForTrans":1}
-
-                    $todoKeys = array_keys($fields);
-                    if (is_numeric($todoKeys[0])) {
-                        error_log('New nested format index '.json_encode($todoKeys[0]));
+                    $indexKeys = array_keys($fields);
+                    if (is_numeric($indexKeys[0])) {
+                        // New nested format index (?)
+                        error_log('New nested format index '.json_encode($indexKeys[0]));
                         $indexFields = $fields[0];
                         error_log('field[1] '.json_encode($indexFields));
                         // TODO pass second array into options
                         $indexOptions = array_merge($indexOptions, $fields[1]);
                     } else {
-                        error_log('Old format index '.json_encode($todoKeys[0]));
+                        // Old format index
+                        error_log('Old format index '.json_encode($indexKeys[0]));
                         $indexFields = $fields;
                     }
 
