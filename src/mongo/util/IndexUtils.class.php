@@ -38,9 +38,10 @@ class IndexUtils
                         $reindexedCollections[] = $collection->getNamespace();
                     }
                 }
+                error_log('ensureIndexes: All Indexes: '. json_encode($indexes));
                 foreach ($indexes as $indexName=>$fields)
                 {
-                    error_log('Index: '.$indexName.' - fields: '.json_encode($fields));
+                    error_log('ensureIndexes: Index: '.$indexName.' - fields: '.json_encode($fields));
                     $indexName = substr($indexName,0,127); // ensure max 128 chars
 
                     $indexOptions = [
