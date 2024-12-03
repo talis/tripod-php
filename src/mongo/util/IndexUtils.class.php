@@ -63,9 +63,6 @@ class IndexUtils
                         $indexFields = $fields;
                     }
 
-                    // TODO is there a logger to use...
-                    // error_log('create index - fields: '.json_encode($fields).' - options: '.json_encode($indexOptions));
-
                     $config->getCollectionForCBD($storeName, $collectionName)
                         ->createIndex(
                         $indexFields,
