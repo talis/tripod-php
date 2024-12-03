@@ -601,8 +601,6 @@ class IndexUtilsTest extends MongoTripodTestBase
             'data_source' => 'tlog',
         ];
 
-        error_log('IndexUtilsTest->setConfigForCBDIndexes - indexes: ' . json_encode($config['stores']['tripod_php_testing']['pods']['CBD_testing']['indexes']));
-
         $mockConfig->loadConfig($config);
     }
 

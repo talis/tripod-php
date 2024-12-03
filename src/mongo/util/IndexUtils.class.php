@@ -16,7 +16,6 @@ class IndexUtils
      */
     public function ensureIndexes($reindex=false,$storeName=null,$background=true)
     {
-        error_log('ensureIndexes: '.$storeName);
         $config = $this->getConfig();
         $dbs = ($storeName==null) ? $config->getDbs() : array($storeName);
         $reindexedCollections = [];
@@ -30,6 +29,7 @@ class IndexUtils
                 {
                     continue;
                 }
+
                 if ($reindex)
                 {
                     $collection = $config->getCollectionForCBD($storeName, $collectionName);
@@ -38,10 +38,9 @@ class IndexUtils
                         $reindexedCollections[] = $collection->getNamespace();
                     }
                 }
-                error_log('ensureIndexes: All Indexes: '. json_encode($indexes));
+
                 foreach ($indexes as $indexName=>$fields)
                 {
-                    error_log('ensureIndexes: Index: '.$indexName.' - fields: '.json_encode($fields));
                     $indexName = substr($indexName,0,127); // ensure max 128 chars
 
                     $indexOptions = [
@@ -50,22 +49,21 @@ class IndexUtils
 
                     if (!is_numeric($indexName))
                     {
+                        // Named index vs. unnamed index
                         $indexOptions['name'] = $indexName;
                     }
 
                     $indexKeys = array_keys($fields);
                     if (is_numeric($indexKeys[0])) {
-                        // New nested format index
-                        error_log('New nested format index');
+                        // New format config - two arrays, where second is index options (e.g. unique=>true, sparse=>true)
                         $indexFields = $fields[0];
-                        error_log('field[1] '.json_encode($indexFields));
                         $indexOptions = array_merge($indexOptions, $fields[1]);
                     } else {
-                        // Old format index
-                        error_log('Old format index');
+                        // Standard format config - single array
                         $indexFields = $fields;
                     }
 
+                    // TODO is there a logger to use...
                     error_log('create index - fields: '.json_encode($fields).' - options: '.json_encode($indexOptions));
 
                     $config->getCollectionForCBD($storeName, $collectionName)
@@ -101,7 +99,6 @@ class IndexUtils
                     }
                     foreach($indexes as $index)
                     {
-                        error_log('view index? '.json_encode($index));
                         $collection->createIndex(
                             $index,
                             array(
@@ -137,7 +134,6 @@ class IndexUtils
                     }
                     foreach($indexes as $index)
                     {
-                        error_log('table row index? '.json_encode($index));
                         $collection->createIndex(
                             $index,
                             array(
@@ -170,7 +166,6 @@ class IndexUtils
                     }
                     foreach($indexes as $index)
                     {
-                        error_log('search doc index? '.json_encode($index));
                         $collection->createIndex(
                             $index,
                             array(
