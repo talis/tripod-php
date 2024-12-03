@@ -263,20 +263,22 @@ class Config implements IConfigInstance
                                 $cardinalityIndexFields = $indexFields;
                             }
 
+                            // AJB
+
                             // check no more than 1 indexField is an array to ensure Mongo will be able to create compound indexes
-                            if (count($cardinalityIndexFields) > 1) {
-                                $fieldsThatAreArrays = 0;
-                                foreach ($cardinalityIndexFields as $field => $fieldVal) {
-                                    $cardinalityField = str_replace('.value', '', $field);
-                                    if (!array_key_exists($cardinalityField, $this->cardinality[$storeName][$podName]) ||
-                                        $this->cardinality[$storeName][$podName][$cardinalityField] != 1) {
-                                        $fieldsThatAreArrays++;
-                                    }
-                                    if ($fieldsThatAreArrays > 1) {
-                                        throw new \Tripod\Exceptions\ConfigException("Compound index $indexName has more than one field with cardinality > 1 - mongo will not be able to build this index");
-                                    }
-                                }
-                            }
+                            // if (count($cardinalityIndexFields) > 1) {
+                            //     $fieldsThatAreArrays = 0;
+                            //     foreach ($cardinalityIndexFields as $field => $fieldVal) {
+                            //         $cardinalityField = str_replace('.value', '', $field);
+                            //         if (!array_key_exists($cardinalityField, $this->cardinality[$storeName][$podName]) ||
+                            //             $this->cardinality[$storeName][$podName][$cardinalityField] != 1) {
+                            //             $fieldsThatAreArrays++;
+                            //         }
+                            //         if ($fieldsThatAreArrays > 1) {
+                            //             throw new \Tripod\Exceptions\ConfigException("Compound index $indexName has more than one field with cardinality > 1 - mongo will not be able to build this index");
+                            //         }
+                            //     }
+                            // }
                         }
                     }
                 }
