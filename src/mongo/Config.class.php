@@ -247,11 +247,24 @@ class Config implements IConfigInstance
                     // Ensure indexes are legal
                     if (array_key_exists("indexes", $podConfig)) {
                         $this->indexes[$storeName][$podName] = [];
+
                         foreach ($podConfig["indexes"] as $indexName => $indexFields) {
+
+                            $this->indexes[$storeName][$podName][$indexName] = $indexFields;
+
+                            $indexKeys = array_keys($indexFields);
+                            if (is_numeric($indexKeys[0])) {
+                                // New format config - two arrays, where second is index options (e.g. unique=>true, sparse=>true)
+                                $cardinalityIndexFields = $indexFields[0];
+                            } else {
+                                // Standard format config - single array
+                                $cardinalityIndexFields = $indexFields;
+                            }
+
                             // check no more than 1 indexField is an array to ensure Mongo will be able to create compound indexes
-                            if (count($indexFields) > 1) {
+                            if (count($cardinalityIndexFields) > 1) {
                                 $fieldsThatAreArrays = 0;
-                                foreach ($indexFields as $field => $fieldVal) {
+                                foreach ($cardinalityIndexFields as $field => $fieldVal) {
                                     $cardinalityField = str_replace('.value', '', $field);
                                     if (!array_key_exists($cardinalityField, $this->cardinality[$storeName][$podName]) ||
                                         $this->cardinality[$storeName][$podName][$cardinalityField] != 1) {
@@ -261,10 +274,7 @@ class Config implements IConfigInstance
                                         throw new \Tripod\Exceptions\ConfigException("Compound index $indexName has more than one field with cardinality > 1 - mongo will not be able to build this index");
                                     }
                                 }
-                            } // @codeCoverageIgnoreStart
-                            // @codeCoverageIgnoreEnd
-
-                            $this->indexes[$storeName][$podName][$indexName] = $indexFields;
+                            }
                         }
                     }
                 }

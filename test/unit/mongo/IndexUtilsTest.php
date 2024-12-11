@@ -21,6 +21,26 @@ class IndexUtilsTest extends MongoTripodTestBase
         $indexUtils->ensureIndexes(false, 'tripod_php_testing', true);
     }
 
+    public function testCBDCollectionIndexesAreCreatedWithIndexOptions()
+    {
+        $config = $this->createMockConfig();
+        $collection = $this->createMockCollection();
+        $indexUtils = $this->createMockIndexUtils($config);
+
+        $indexOptions = ['unique' => true];
+
+        $this->setConfigForCBDIndexes($config, $indexOptions);
+        $this->dropIndexesShouldNeverBeCalled($collection);
+        $this->oneCustomAndThreeInternalTripodCBDIndexesShouldBeCreated($collection, true, $indexOptions);
+        $this->getCollectionForCBDShouldBeCalled_n_Times(4, $config, $collection);
+        $this->getCollectionForViewShouldNeverBeCalled($config);
+        $this->getCollectionForTableShouldNeverBeCalled($config);
+        $this->getCollectionForSearchDocumentShouldNeverBeCalled($config);
+
+        $indexUtils->ensureIndexes(false, 'tripod_php_testing', true);
+    }
+
+
     public function testCBDCollectionIndexesAreCreatedInForeground()
     {
         $config = $this->createMockConfig();
@@ -38,6 +58,25 @@ class IndexUtilsTest extends MongoTripodTestBase
         $indexUtils->ensureIndexes(false, 'tripod_php_testing', false);
     }
 
+    public function testCBDCollectionIndexesAreCreatedInForegroundWithIndexOptions()
+    {
+        $config = $this->createMockConfig();
+        $collection = $this->createMockCollection();
+        $indexUtils = $this->createMockIndexUtils($config);
+
+        $indexOptions = ['unique' => true];
+
+        $this->setConfigForCBDIndexes($config, $indexOptions);
+        $this->dropIndexesShouldNeverBeCalled($collection);
+        $this->oneCustomAndThreeInternalTripodCBDIndexesShouldBeCreated($collection, false, $indexOptions);
+        $this->getCollectionForCBDShouldBeCalled_n_Times(4, $config, $collection);
+        $this->getCollectionForViewShouldNeverBeCalled($config);
+        $this->getCollectionForTableShouldNeverBeCalled($config);
+        $this->getCollectionForSearchDocumentShouldNeverBeCalled($config);
+
+        $indexUtils->ensureIndexes(false, 'tripod_php_testing', false);
+    }
+
     public function testCBDCollectionIndexesAreReindexed()
     {
         $config = $this->createMockConfig();
@@ -47,6 +86,25 @@ class IndexUtilsTest extends MongoTripodTestBase
         $this->setConfigForCBDIndexes($config);
         $this->dropIndexesShouldBeCalled($collection);
         $this->oneCustomAndThreeInternalTripodCBDIndexesShouldBeCreated($collection, true);
+        $this->getCollectionForCBDShouldBeCalled_n_Times(5, $config, $collection);
+        $this->getCollectionForViewShouldNeverBeCalled($config);
+        $this->getCollectionForTableShouldNeverBeCalled($config);
+        $this->getCollectionForSearchDocumentShouldNeverBeCalled($config);
+
+        $indexUtils->ensureIndexes(true, 'tripod_php_testing', true);
+    }
+
+    public function testCBDCollectionIndexesAreReindexedWithIndexOptions()
+    {
+        $config = $this->createMockConfig();
+        $collection = $this->createMockCollection();
+        $indexUtils = $this->createMockIndexUtils($config);
+
+        $indexOptions = ['unique' => true];
+
+        $this->setConfigForCBDIndexes($config, $indexOptions);
+        $this->dropIndexesShouldBeCalled($collection);
+        $this->oneCustomAndThreeInternalTripodCBDIndexesShouldBeCreated($collection, true, $indexOptions);
         $this->getCollectionForCBDShouldBeCalled_n_Times(5, $config, $collection);
         $this->getCollectionForViewShouldNeverBeCalled($config);
         $this->getCollectionForTableShouldNeverBeCalled($config);
@@ -407,7 +465,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      * @param bool $background create indexes in the background
      * @return void
      */
-    protected function oneCustomAndThreeInternalTripodCBDIndexesShouldBeCreated($mockCollection, $background = true)
+    protected function oneCustomAndThreeInternalTripodCBDIndexesShouldBeCreated($mockCollection, $background = true, array $indexOptions = [])
     {
         // create index is called 4 times, each time with a different set of
         // params that we know.
@@ -416,7 +474,7 @@ class IndexUtilsTest extends MongoTripodTestBase
         $mockCollection->expects($this->exactly(4))
             ->method('createIndex')
             ->withConsecutive(
-                [['rdf:type.u' => 1], ['name' => 'rdf_type', 'background' => $background]],
+                [['rdf:type.u' => 1], array_merge(['name' => 'rdf_type', 'background' => $background], $indexOptions)],
                 [[_ID_KEY => 1, _LOCKED_FOR_TRANS => 1], ['name' => '_lockedForTransIdx', 'background' => $background]],
                 [[_ID_KEY => 1, _UPDATED_TS => 1], ['name' => '_updatedTsIdx', 'background' => $background]],
                 [[_ID_KEY => 1, _CREATED_TS => 1], ['name' => '_createdTsIdx', 'background' => $background]]
@@ -496,7 +554,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      * @param MockObject&\TripodTestConfig $mockConfig mock Config object
      * @return void
      */
-    protected function setConfigForCBDIndexes($mockConfig)
+    protected function setConfigForCBDIndexes($mockConfig, array $indexOptions = [])
     {
         // minimal config to verify that
         $config = [];
@@ -509,21 +567,33 @@ class IndexUtilsTest extends MongoTripodTestBase
             'mongo' => ['type' => 'mongo', 'connection' => 'mongodb://localhost'],
         ];
         $config['defaultContext'] = 'http://talisaspire.com/';
+
         $config['stores'] = [
             'tripod_php_testing' => [
                 'type' => 'mongo',
                 'data_source' => 'mongo',
                 'pods' => [
-                    'CBD_testing' => [
-                        'indexes' => [
-                            'rdf_type' => [
-                                'rdf:type.u' => 1,
-                            ],
-                        ],
-                    ],
+                    'CBD_testing' => []
                 ],
             ],
         ];
+
+        if (empty($indexOptions)) {
+            $config['stores']['tripod_php_testing']['pods']['CBD_testing']['indexes'] = [
+                'rdf_type' => [
+                    'rdf:type.u' => 1,
+                ],
+            ];
+        } else {
+            $config['stores']['tripod_php_testing']['pods']['CBD_testing']['indexes'] = [
+                'rdf_type' => [
+                    [
+                        'rdf:type.u' => 1,
+                    ],
+                    $indexOptions
+                ],
+            ];
+        }
 
         $config['transaction_log'] = [
             'database' => 'transactions',

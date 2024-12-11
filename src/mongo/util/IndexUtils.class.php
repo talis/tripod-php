@@ -29,6 +29,7 @@ class IndexUtils
                 {
                     continue;
                 }
+
                 if ($reindex)
                 {
                     $collection = $config->getCollectionForCBD($storeName, $collectionName);
@@ -37,32 +38,37 @@ class IndexUtils
                         $reindexedCollections[] = $collection->getNamespace();
                     }
                 }
+
                 foreach ($indexes as $indexName=>$fields)
                 {
                     $indexName = substr($indexName,0,127); // ensure max 128 chars
-                    if (is_numeric($indexName))
+
+                    $indexOptions = [
+                        'background'=>$background
+                    ];
+
+                    if (!is_numeric($indexName))
                     {
-                        // no name
-                        $config->getCollectionForCBD($storeName, $collectionName)
-                            ->createIndex(
-                                $fields,
-                                array(
-                                    "background"=>$background
-                                )
-                            );
+                        // Named index vs. unnamed index
+                        $indexOptions['name'] = $indexName;
                     }
-                    else
-                    {
-                        $config->getCollectionForCBD($storeName, $collectionName)
-                            ->createIndex(
-                                $fields,
-                                array(
-                                    'name'=>$indexName,
-                                    "background"=>$background
-                                )
-                            );
+
+                    $indexKeys = array_keys($fields);
+                    if (is_numeric($indexKeys[0])) {
+                        // New format config - two arrays, where second is index options (e.g. unique=>true, sparse=>true)
+                        $indexFields = $fields[0];
+                        $indexOptions = array_merge($indexOptions, $fields[1]);
+                    } else {
+                        // Standard format config - single array
+                        $indexFields = $fields;
                     }
-                }
+
+                    $config->getCollectionForCBD($storeName, $collectionName)
+                        ->createIndex(
+                        $indexFields,
+                        $indexOptions
+                    );
+        }
             }
 
             // Index views
