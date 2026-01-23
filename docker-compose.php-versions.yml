@@ -1,0 +1,19 @@
+# An override file to allow using separate vendor directories for each PHP version.
+# Usage:
+# docker compose -f docker-compose.yml -f docker-compose.php-versions.yml run --rm -it php84
+
+services:
+  php73:
+    volumes:
+      - ./php/php73/vendor:/var/tripod-php/vendor
+      - ./php/php73/composer.lock:/var/tripod-php/composer.lock
+
+  php74:
+    volumes:
+      - ./php/php74/vendor:/var/tripod-php/vendor
+      - ./php/php74/composer.lock:/var/tripod-php/composer.lock
+
+  php84:
+    volumes:
+      - ./php/php84/vendor:/var/tripod-php/vendor
+      - ./php/php84/composer.lock:/var/tripod-php/composer.lock

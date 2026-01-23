@@ -22,6 +22,13 @@ services:
     image: talis/tripod-php:php74-latest
     <<: *base-config
 
+  php84:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile-php84
+    image: talis/tripod-php:php84-latest
+    <<: *base-config
+
   mongodb:
     image: mongo:3.6.23
 

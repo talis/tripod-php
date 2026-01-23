@@ -8,11 +8,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   zip \
   && rm -rf /var/lib/apt/lists/*
 
-RUN curl -sLo /tmp/mongosh.deb https://downloads.mongodb.com/compass/mongodb-mongosh_2.2.15_amd64.deb \
+RUN curl -sLo /tmp/mongosh.deb https://downloads.mongodb.com/compass/mongodb-mongosh_2.6.0_amd64.deb \
   && dpkg -i /tmp/mongosh.deb \
   && rm /tmp/mongosh.deb
 
-COPY --from=mlocati/php-extension-installer:2.3.2 /usr/bin/install-php-extensions /usr/local/bin/
-COPY --from=composer:2.7.7 /usr/bin/composer /usr/local/bin/
+COPY --from=mlocati/php-extension-installer:2.9.28 /usr/bin/install-php-extensions /usr/local/bin/
+COPY --from=composer:2.9.4 /usr/bin/composer /usr/local/bin/
 
-RUN install-php-extensions pcntl mongodb-1.6.1
+RUN IPE_ICU_EN_ONLY=1 install-php-extensions pcntl mongodb-1.6.1
