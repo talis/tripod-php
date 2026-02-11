@@ -38,6 +38,9 @@
         "classmap": ["test/"]
     },
     "scripts": {
-        "test": "phpunit"
+        "test": [
+            "Composer\\Config::disableProcessTimeout",
+            "phpunit"
+        ]
     }
 }
