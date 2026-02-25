@@ -2,10 +2,15 @@
 
 namespace Tripod;
 
+use Tripod\Exceptions\ConfigException;
+use Tripod\ITripodConfig;
+use Tripod\Mongo\IConfigInstance;
+use Tripod\TripodConfigFactory;
+
 class Config implements ITripodConfig
 {
     /**
-     * @var Config
+     * @var IConfigInstance|null
      */
     private static $instance;
 
@@ -23,15 +28,16 @@ class Config implements ITripodConfig
 
     /**
      * Since this is a singleton class, use this method to create a new config instance.
-     * @uses Config::setConfig() Configuration must be set prior to calling this method. To generate a completely new object, set a new config
+     *
+     * @uses               Config::setConfig() Configuration must be set prior to calling this method. To generate a completely new object, set a new config
      * @codeCoverageIgnore
-     * @throws \Tripod\Exceptions\ConfigException
-     * @return \Tripod\Mongo\IConfigInstance
+     * @throws             ConfigException
+     * @return             IConfigInstance
      */
-    public static function getInstance()
+    public static function getInstance(): IConfigInstance
     {
         if (!isset(self::$config)) {
-            throw new \Tripod\Exceptions\ConfigException("Call Config::setConfig() first");
+            throw new ConfigException("Call Config::setConfig() first");
         }
         if (!isset(self::$instance)) {
             self::$instance = TripodConfigFactory::create(self::$config);
@@ -44,7 +50,7 @@ class Config implements ITripodConfig
      *
      * @return void
      */
-    public static function setConfig(array $config)
+    public static function setConfig(array $config): void
     {
         self::$config = $config;
         self::$instance = null; // this will force a reload next time getInstance() is called
@@ -55,16 +61,17 @@ class Config implements ITripodConfig
      *
      * @return array
      */
-    public static function getConfig()
+    public static function getConfig(): array
     {
         return self::$config;
     }
 
     /**
      * This method was added to allow us to test the getInstance() method
+     *
      * @codeCoverageIgnore
      */
-    public static function destroy()
+    public static function destroy(): void
     {
         self::$instance = null;
         self::$config = null;
