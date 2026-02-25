@@ -2,11 +2,6 @@
 
 namespace Tripod\Mongo\Composites;
 
-require_once TRIPOD_DIR . 'mongo/MongoTripodConstants.php';
-require_once TRIPOD_DIR . 'mongo/delegates/SearchDocuments.class.php';
-require_once TRIPOD_DIR . 'mongo/providers/MongoSearchProvider.class.php';
-require_once TRIPOD_DIR . 'exceptions/SearchException.class.php';
-
 use Tripod\Mongo\ImpactedSubject;
 use Tripod\Mongo\Labeller;
 use Tripod\Mongo\Jobs\ApplyOperation;
