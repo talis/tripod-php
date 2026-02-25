@@ -2072,7 +2072,7 @@ class Config implements IConfigInstance
 
     /**
      * @static
-     * @return \Psr\Log\LoggerInterface;
+     * @return \Psr\Log\LoggerInterface
      */
     public static function getLogger()
     {

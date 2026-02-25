@@ -345,7 +345,7 @@ abstract class DriverBase
 
     /**
      * @static
-     * @return \Psr\Log\LoggerInterface;
+     * @return \Psr\Log\LoggerInterface
      */
     public static function getLogger()
     {
