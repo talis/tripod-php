@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 require_once TRIPOD_DIR . 'mongo/MongoTripodConstants.php';
@@ -26,11 +28,6 @@ class MongoSearchProvider implements ISearchProvider
     protected $config;
 
     /**
-     * @var Driver
-     */
-    private $tripod;
-
-    /**
      * @var Labeller
      */
     private $labeller;
@@ -39,7 +36,6 @@ class MongoSearchProvider implements ISearchProvider
 
     public function __construct(Driver $tripod)
     {
-        $this->tripod = $tripod;
         $this->storeName = $tripod->getStoreName();
         $this->labeller = new Labeller();
         $this->config = \Tripod\Config::getInstance();
@@ -50,11 +46,10 @@ class MongoSearchProvider implements ISearchProvider
      *
      * @param array $document the document to index
      *
-     * @return mixed
      *
      * @throws SearchException if there was an error indexing the document
      */
-    public function indexDocument($document)
+    public function indexDocument($document): void
     {
         if (isset($document['_id']['type'])) {
             $collection = $this->config->getCollectionForSearchDocument($this->storeName, $document['_id']['type']);
@@ -80,11 +75,10 @@ class MongoSearchProvider implements ISearchProvider
      * @param string            $context
      * @param array|string|null $specId
      *
-     * @return mixed
      *
      * @throws SearchException if there was an error removing the document
      */
-    public function deleteDocument($resource, $context, $specId = [])
+    public function deleteDocument($resource, $context, $specId = []): void
     {
         $query = [_ID_KEY . '.' . _ID_RESOURCE => $this->labeller->uri_to_alias($resource), _ID_KEY . '.' . _ID_CONTEXT => $context];
 
@@ -96,18 +90,21 @@ class MongoSearchProvider implements ISearchProvider
                     if (!in_array($specId, $specTypes)) {
                         return;
                     }
+
                     $query[_ID_KEY][_ID_TYPE] = $specId;
                     $searchTypes[] = $specId;
                 } elseif (is_array($specId)) {
                     // Only filter on search document spec types
                     $specId = array_intersect($specTypes, $specId);
-                    if (empty($specId)) {
+                    if ($specId === []) {
                         return;
                     }
+
                     $query[_ID_KEY . '.' . _ID_TYPE] = ['$in' => array_values($specId)];
                     $searchTypes = $specId;
                 }
             }
+
             foreach ($this->config->getCollectionsForSearch($this->storeName, $searchTypes) as $collection) {
                 $collection->deleteMany($query);
             }
@@ -124,7 +121,7 @@ class MongoSearchProvider implements ISearchProvider
      *
      * @return array the ids of search documents that had matching entries in their impact index
      */
-    public function findImpactedDocuments(array $resourcesAndPredicates, $context)
+    public function findImpactedDocuments(array $resourcesAndPredicates, $context): array
     {
         $contextAlias = $this->labeller->uri_to_alias($context);
 
@@ -144,7 +141,7 @@ class MongoSearchProvider implements ISearchProvider
             $id = [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias];
             // If we don't have a working config or there are no predicates listed, remove all
             // rows associated with the resource in all search types
-            if (empty($specPredicates) || empty($resourcePredicates)) {
+            if ($specPredicates === [] || empty($resourcePredicates)) {
                 // build $filter for queries to impact index
                 $resourceFilters[] = $id;
             } else {
@@ -154,6 +151,7 @@ class MongoSearchProvider implements ISearchProvider
                         if (!isset($searchDocFilters[$searchDocType])) {
                             $searchDocFilters[$searchDocType] = [];
                         }
+
                         // build $filter for queries to impact index
                         $searchDocFilters[$searchDocType][] = $id;
                     }
@@ -162,7 +160,7 @@ class MongoSearchProvider implements ISearchProvider
         }
 
         $searchTypes = [];
-        if (empty($searchDocFilters) && !empty($resourceFilters)) {
+        if ($searchDocFilters === [] && $resourceFilters !== []) {
             $query = [_IMPACT_INDEX => ['$in' => $resourceFilters]];
         } else {
             $query = [];
@@ -172,7 +170,7 @@ class MongoSearchProvider implements ISearchProvider
                 $searchTypes[] = $searchDocType;
             }
 
-            if (!empty($resourceFilters)) {
+            if ($resourceFilters !== []) {
                 $query[] = [_IMPACT_INDEX => ['$in' => $resourceFilters]];
             }
 
@@ -182,7 +180,8 @@ class MongoSearchProvider implements ISearchProvider
                 $query = ['$or' => $query];
             }
         }
-        if (empty($query)) {
+
+        if ($query === []) {
             return [];
         }
 
@@ -209,17 +208,20 @@ class MongoSearchProvider implements ISearchProvider
      *
      * @throws SearchException
      */
-    public function search($q, $type, $indices = [], $fields = [], $limit = 10, $offset = 0)
+    public function search($q, $type, $indices = [], $fields = [], $limit = 10, $offset = 0): array
     {
         if (empty($q)) {
             throw new SearchException('You must specify a query');
         }
+
         if (empty($type)) {
             throw new SearchException('You must specify the search document type to restrict the query to');
         }
+
         if (empty($indices)) {
             throw new SearchException('You must specify at least one index from the search document specification to query against');
         }
+
         if (empty($fields)) {
             throw new SearchException('You must specify at least one field from the search document specification to return');
         }
@@ -236,25 +238,25 @@ class MongoSearchProvider implements ISearchProvider
         $terms = array_values(array_diff($original_terms, $this->stopWords));
 
         // todo: this means if all the words entered were stop words, then use the orginal terms rather than do nothing!
-        if (empty($terms)) {
+        if ($terms === []) {
             $terms = $original_terms;
         }
 
         $regexes = [];
         foreach ($terms as $t) {
-            $regexes[] = new Regex("{$t}", '');
+            $regexes[] = new Regex($t, '');
         }
 
         $query = [];
         $query['_id.type'] = $type;
 
-        if (count($indices) == 1) {
+        if (count($indices) === 1) {
             $searchIndex = $indices[0];
             $query[$searchIndex] = ['$all' => $regexes];
         } else {
             $query['$or'] = [];
             foreach ($indices as $searchIndex) {
-                $query['$or'][] = ["{$searchIndex}" => ['$all' => $regexes]];
+                $query['$or'][] = [$searchIndex => ['$all' => $regexes]];
             }
         }
 
@@ -262,8 +264,10 @@ class MongoSearchProvider implements ISearchProvider
         foreach ($fields as $field) {
             $fieldsToReturn[$field] = 1;
         }
+
         $searchTimer = new Timer();
         $searchTimer->start();
+
         $cursor = $this->config->getCollectionForSearchDocument($this->storeName, $type)
             ->find($query, [
                 'projection' => $fieldsToReturn,
@@ -291,12 +295,9 @@ class MongoSearchProvider implements ISearchProvider
                 if (count($fields) > 1) {
                     $r = [];
                     foreach ($fields as $field) {
-                        if (isset($result[$field])) {
-                            $r[$field] = $result[$field];
-                        } else {
-                            $r[$field] = '';
-                        }
+                        $r[$field] = $result[$field] ?? '';
                     }
+
                     $searchResults['results'][] = $r;
                 } else {
                     $searchResults['results'][] = $result[$fields[0]];
@@ -305,16 +306,14 @@ class MongoSearchProvider implements ISearchProvider
         } else {
             $searchResults['head']['count'] = 0;
         }
+
         $searchTimer->stop();
         $searchResults['head']['duration'] = $searchTimer->result() . ' ms';
 
         return $searchResults;
     }
 
-    /**
-     * @return string
-     */
-    public function getSearchCollectionName()
+    public function getSearchCollectionName(): string
     {
         return SEARCH_INDEX_COLLECTION;
     }
@@ -335,18 +334,21 @@ class MongoSearchProvider implements ISearchProvider
     {
         $searchSpec = $this->getSearchDocumentSpecification($typeId);
         if ($searchSpec == null) {
-            throw new SearchException("Could not find a search specification for {$typeId}");
+            throw new SearchException('Could not find a search specification for ' . $typeId);
         }
+
         $query = ['_id.type' => $typeId];
         if ($timestamp) {
             if (!$timestamp instanceof UTCDateTime) {
                 $timestamp = new UTCDateTime($timestamp);
             }
+
             $query['$or'] = [
                 [\_CREATED_TS => ['$lt' => $timestamp]],
                 [\_CREATED_TS => ['$exists' => false]],
             ];
         }
+
         $deleteResponse = $this->getCollectionForSearchSpec($typeId)
             ->deleteMany($query);
 
@@ -357,7 +359,7 @@ class MongoSearchProvider implements ISearchProvider
      * Count the number of documents in the spec that match $filters.
      *
      * @param string $searchSpec Search spec ID
-     * @param array  $filters    Query filters to get count on
+     * @param array<string, mixed> $filters Query filters to get count on
      *
      * @return int
      */
@@ -403,7 +405,7 @@ class MongoSearchProvider implements ISearchProvider
         } catch (BulkWriteException $e) {
             if ($this->isDuplicateKeyError($e)) {
                 $existingDocument = $collection->findOne(['_id' => $document['_id']]);
-                $this->tripod->getLogger()->warning('Duplicate key error when upserting generated table row, retrying.', [
+                $this->config->getLogger()->warning('Duplicate key error when upserting generated table row, retrying.', [
                     'error' => $e,
                     'document' => $document,
                     'existingDocument' => $existingDocument,

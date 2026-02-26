@@ -8,7 +8,7 @@ require_once __DIR__ . '/common.inc.php';
 
 require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
-if ($argc != 2) {
+if ($argc !== 2) {
     echo "usage: ./BSONToQuads.php tripodConfig.json < bsondata\n";
     echo "  When exporting bson data from Mongo use:  \n";
     echo "     mongoexport -d <dbname> -c <collectionName> > bsondata.txt \n";

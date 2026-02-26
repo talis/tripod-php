@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 // @noinspection PhpIncludeInspection
@@ -33,7 +35,7 @@ class Driver extends DriverBase implements IDriver
     /**
      * @var SearchIndexer
      */
-    private $search_indexer;
+    private $searchIndexer;
 
     /**
      * @var array
@@ -48,7 +50,7 @@ class Driver extends DriverBase implements IDriver
     /**
      * @var Updates
      */
-    private $dataUpdater;
+    private $updates;
 
     /**
      * Constructor for Driver.
@@ -91,6 +93,7 @@ class Driver extends DriverBase implements IDriver
         if (!array_key_exists(OP_VIEWS, $async)) {
             $async[OP_VIEWS] = false;
         }
+
         if (!array_key_exists(OP_TABLES, $async)) {
             $async[OP_TABLES] = true;
         }
@@ -157,6 +160,7 @@ class Driver extends DriverBase implements IDriver
                 _ID_CONTEXT => $this->getContextAlias($context),
             ];
         }
+
         $query = ['_id' => ['$in' => $ids]];
 
         return $this->fetchGraph($query, MONGO_MULTIDESCRIBE);
@@ -223,7 +227,7 @@ class Driver extends DriverBase implements IDriver
      * @param string|null $resource
      * @param string|null $context
      */
-    public function generateTableRows($tableType, $resource = null, $context = null)
+    public function generateTableRows($tableType, $resource = null, $context = null): void
     {
         $this->getTripodTables()->generateTableRows($tableType, $resource, $context);
     }
@@ -330,7 +334,7 @@ class Driver extends DriverBase implements IDriver
             return $results;
         }
 
-        throw new Exception("Unknown Search Provider: {$provider}");
+        throw new Exception('Unknown Search Provider: ' . $provider);
     }
 
     /**
@@ -368,6 +372,7 @@ class Driver extends DriverBase implements IDriver
                 }
             }
         }
+
         if (empty($results)) {
             if ($groupBy) {
                 $ops = [
@@ -403,7 +408,7 @@ class Driver extends DriverBase implements IDriver
         $t->stop();
         $op = ($groupBy) ? MONGO_GROUP : MONGO_COUNT;
         $this->timingLog($op, ['duration' => $t->result(), 'query' => $query]);
-        $this->getStat()->timer("{$op}.{$this->podName}", $t->result());
+        $this->getStat()->timer(sprintf('%s.%s', $op, $this->podName), $t->result());
 
         return $results;
     }
@@ -417,9 +422,9 @@ class Driver extends DriverBase implements IDriver
      * @param int         $offset
      * @param string|null $context
      *
-     * @return array
+     * @return array<string, array<int|string, int|mixed[]|null>>
      */
-    public function select(array $query, array $fields, ?array $sortBy = null, $limit = null, $offset = 0, $context = null)
+    public function select(array $query, array $fields, ?array $sortBy = null, $limit = null, $offset = 0, $context = null): array
     {
         $t = new Timer();
         $t->start();
@@ -456,14 +461,16 @@ class Driver extends DriverBase implements IDriver
             $findOptions['skip'] = (int) $offset;
             $findOptions['limit'] = (int) $limit;
         }
+
         if (isset($sortBy)) {
             $findOptions['sort'] = $sortBy;
         }
+
         $results = $this->collection->find($query, $findOptions);
 
         $t->stop();
         $this->timingLog(MONGO_SELECT, ['duration' => $t->result(), 'query' => $query]);
-        $this->getStat()->timer(MONGO_SELECT . ".{$this->podName}", $t->result());
+        $this->getStat()->timer(MONGO_SELECT . ('.' . $this->podName), $t->result());
 
         $rows = [];
         $count = $this->collection->count($query);
@@ -491,6 +498,7 @@ class Driver extends DriverBase implements IDriver
                     }
                 }
             }
+
             $rows[] = $row;
         }
 
@@ -539,10 +547,8 @@ class Driver extends DriverBase implements IDriver
      *
      * @param string      $resource
      * @param string|null $context
-     *
-     * @return string
      */
-    public function getETag($resource, $context = null)
+    public function getETag($resource, $context = null): string
     {
         $this->getStat()->increment(MONGO_GET_ETAG);
         $resource = $this->labeller->uri_to_alias($resource);
@@ -556,20 +562,17 @@ class Driver extends DriverBase implements IDriver
 
         /** @var UTCDateTime|null $lastUpdatedDate */
         $lastUpdatedDate = $doc[_UPDATED_TS] ?? null;
-
         if ($lastUpdatedDate === null) {
-            $eTag = '';
-        } else {
-            // PHP 5.3 used MongoDate::__toString() to generate the etag.
-            // This is incompatible with UTCDate::__toString() so we convert it into a microtime representation.
-            // This ensures that if it is required to dual run 2 PHP versions, there are no etag compatibility issues.
-            // Note that MongoDate doesn't go to 8 decimal place precision but still returns it so we go to 6 and pad
-            // with an extra 2
-            $seconds = $lastUpdatedDate->__toString() / 1000;
-            $eTag = str_pad(number_format($seconds - floor($seconds), 6), 10, '0', STR_PAD_RIGHT) . ' ' . floor($seconds);
+            return '';
         }
+        // PHP 5.3 used MongoDate::__toString() to generate the etag.
+        // This is incompatible with UTCDate::__toString() so we convert it into a microtime representation.
+        // This ensures that if it is required to dual run 2 PHP versions, there are no etag compatibility issues.
+        // Note that MongoDate doesn't go to 8 decimal place precision but still returns it so we go to 6 and pad
+        // with an extra 2
+        $seconds = $lastUpdatedDate->__toString() / 1000;
 
-        return $eTag;
+        return str_pad(number_format($seconds - floor($seconds), 6), 10, '0', STR_PAD_RIGHT) . ' ' . floor($seconds);
     }
 
     /**
@@ -613,14 +616,14 @@ class Driver extends DriverBase implements IDriver
      */
     public function getSearchIndexer()
     {
-        if ($this->search_indexer == null) {
-            $this->search_indexer = new SearchIndexer($this, $this->readPreference);
+        if ($this->searchIndexer == null) {
+            $this->searchIndexer = new SearchIndexer($this, $this->readPreference);
         }
 
-        return $this->search_indexer;
+        return $this->searchIndexer;
     }
 
-    public function setTransactionLog(TransactionLog $transactionLog)
+    public function setTransactionLog(TransactionLog $transactionLog): void
     {
         $this->getDataUpdater()->setTransactionLog($transactionLog);
     }
@@ -646,7 +649,7 @@ class Driver extends DriverBase implements IDriver
      *
      * @throws Exception when an unrecognised event type is given
      */
-    public function registerHook($eventType, IEventHook $hook)
+    public function registerHook($eventType, IEventHook $hook): void
     {
         switch ($eventType) {
             case IEventHook::EVENT_SAVE_CHANGES:
@@ -655,7 +658,7 @@ class Driver extends DriverBase implements IDriver
                 break;
 
             default:
-                throw new Exception("Unrecognised type {$eventType} whilst registering event hook");
+                throw new Exception(sprintf('Unrecognised type %s whilst registering event hook', $eventType));
         }
     }
 
@@ -668,7 +671,7 @@ class Driver extends DriverBase implements IDriver
      *
      * @throws Exception when an unsupported operation is requested
      */
-    public function getComposite($operation)
+    public function getComposite(string $operation)
     {
         switch ($operation) {
             case OP_VIEWS:
@@ -681,16 +684,14 @@ class Driver extends DriverBase implements IDriver
                 return $this->getSearchIndexer();
 
             default:
-                throw new Exception("Undefined operation '{$operation}' requested");
+                throw new Exception(sprintf("Undefined operation '%s' requested", $operation));
         }
     }
 
     /**
      * For mocking.
-     *
-     * @return Labeller
      */
-    protected function getLabeller()
+    protected function getLabeller(): \Tripod\Mongo\Labeller
     {
         return new Labeller();
     }
@@ -702,7 +703,7 @@ class Driver extends DriverBase implements IDriver
      */
     protected function getDataUpdater()
     {
-        if (!isset($this->dataUpdater)) {
+        if (!property_exists($this, 'updates') || $this->updates === null) {
             $readPreference = $this->collection->__debugInfo()['readPreference']->getMode();
 
             $opts = [
@@ -714,9 +715,9 @@ class Driver extends DriverBase implements IDriver
                 'statsConfig' => $this->statsConfig,
             ];
 
-            $this->dataUpdater = new Updates($this, $opts);
+            $this->updates = new Updates($this, $opts);
         }
 
-        return $this->dataUpdater;
+        return $this->updates;
     }
 }

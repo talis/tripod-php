@@ -12,7 +12,7 @@ $options = getopt(
     ]
 );
 
-function showUsage()
+function showUsage(): void
 {
     $help = <<<'END'
         validateConfig.php
@@ -28,11 +28,12 @@ function showUsage()
     echo $help;
 }
 
-if (empty($options) || isset($options['h']) || isset($options['help']) || (!isset($options['c']) && !isset($options['config']))) {
+if ($options === [] || $options === false || isset($options['h']) || isset($options['help']) || (!isset($options['c']) && !isset($options['config']))) {
     showUsage();
 
     exit;
 }
+
 $configLocation = $options['c'] ?? $options['config'];
 
 require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';

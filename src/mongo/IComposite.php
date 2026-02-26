@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo\Composites;
 
 use Tripod\Mongo\ImpactedSubject;

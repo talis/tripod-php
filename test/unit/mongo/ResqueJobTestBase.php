@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Tripod\Mongo\Jobs\JobBase;
 
 class ResqueJobTestBase extends MongoTripodTestBase
@@ -12,10 +14,10 @@ class ResqueJobTestBase extends MongoTripodTestBase
             ->getMock();
         $mockJob->expects($this->atLeastOnce())
             ->method('getInstance')
-            ->will($this->returnValue($job));
-        $mockJob->expects($this->any())
+            ->willReturn($job);
+        $mockJob
             ->method('getArguments')
-            ->will($this->returnValue($job->args));
+            ->willReturn($job->args);
         $mockJob->perform();
     }
 }

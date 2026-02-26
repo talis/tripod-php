@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use MongoDB\Collection;
 use MongoDB\Driver\Manager;
 use Tripod\Config;
@@ -23,11 +25,12 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
         foreach (Config::getInstance()->getCollectionsForSearch($this->tripod->getStoreName()) as $collection) {
             $collection->drop();
         }
+
         $this->loadResourceDataViaTripod();
         $this->loadBaseSearchDataViaTripod();
     }
 
-    public function testSearchDocumentsRegenerateWhenDefinedPredicateChanged()
+    public function testSearchDocumentsRegenerateWhenDefinedPredicateChanged(): void
     {
         // First make a change that affects a search document
         $tripod = $this->getMockBuilder(Driver::class)
@@ -68,11 +71,11 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
 
         $tripodUpdate->expects($this->atLeastOnce())
             ->method('storeChanges')
-            ->will($this->returnValue(['subjectsAndPredicatesOfChange' => $subjectsAndPredicatesOfChange, 'transaction_id' => 't1234']));
+            ->willReturn(['subjectsAndPredicatesOfChange' => $subjectsAndPredicatesOfChange, 'transaction_id' => 't1234']);
 
         $tripod->expects($this->atLeastOnce())
             ->method('getDataUpdater')
-            ->will($this->returnValue($tripodUpdate));
+            ->willReturn($tripodUpdate);
 
         $searchIndexer = $this->getMockBuilder(SearchIndexer::class)
             ->onlyMethods(['getSearchProvider', 'getImpactedSubjects'])
@@ -89,7 +92,7 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
             ->with(
                 $this->matchesRegularExpression('/http:\/\/talisaspire\.com\/resources\/doc(1|2|3)$/'),
                 'http://talisaspire.com/',
-                $this->equalTo(['i_search_resource'])
+                ['i_search_resource']
             );
 
         $searchProvider->expects($this->exactly(3))
@@ -97,7 +100,7 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
 
         $searchIndexer->expects($this->atLeastOnce())
             ->method('getSearchProvider')
-            ->will($this->returnValue($searchProvider));
+            ->willReturn($searchProvider);
 
         $impactedSubjects = [
             $this->getMockBuilder(ImpactedSubject::class)
@@ -147,18 +150,18 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
                 ->getMock(),
         ];
 
-        $impactedSubjects[0]->expects($this->once())->method('getTripod')->will($this->returnValue($tripod));
-        $impactedSubjects[1]->expects($this->once())->method('getTripod')->will($this->returnValue($tripod));
-        $impactedSubjects[2]->expects($this->once())->method('getTripod')->will($this->returnValue($tripod));
+        $impactedSubjects[0]->expects($this->once())->method('getTripod')->willReturn($tripod);
+        $impactedSubjects[1]->expects($this->once())->method('getTripod')->willReturn($tripod);
+        $impactedSubjects[2]->expects($this->once())->method('getTripod')->willReturn($tripod);
 
         $searchIndexer->expects($this->once())
             ->method('getImpactedSubjects')
             ->with($subjectsAndPredicatesOfChange, 'http://talisaspire.com/')
-            ->will($this->returnValue($impactedSubjects));
+            ->willReturn($impactedSubjects);
 
         $tripod->expects($this->atLeastOnce())
             ->method('getSearchIndexer')
-            ->will($this->returnValue($searchIndexer));
+            ->willReturn($searchIndexer);
 
         $g1 = $tripod->describeResource('http://talisaspire.com/authors/1');
         $g2 = $tripod->describeResource('http://talisaspire.com/authors/1');
@@ -196,7 +199,7 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
         $searchProvider->expects($this->exactly(1))
             ->method('deleteDocument')
             ->with(
-                $this->equalTo('http://talisaspire.com/lists/1234'),
+                'http://talisaspire.com/lists/1234',
                 'http://talisaspire.com/',
                 $this->isEmpty()
             );
@@ -206,7 +209,7 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
 
         $searchIndexer->expects($this->atLeastOnce())
             ->method('getSearchProvider')
-            ->will($this->returnValue($searchProvider));
+            ->willReturn($searchProvider);
 
         $impactedSubject = $this->getMockBuilder(ImpactedSubject::class)
             ->setConstructorArgs(
@@ -223,13 +226,13 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
             ->onlyMethods(['getTripod'])
             ->getMock();
 
-        $impactedSubject->expects($this->once())->method('getTripod')->will($this->returnValue($tripod));
+        $impactedSubject->expects($this->once())->method('getTripod')->willReturn($tripod);
 
-        $searchIndexer->expects($this->once())->method('getImpactedSubjects')->will($this->returnValue([$impactedSubject]));
+        $searchIndexer->expects($this->once())->method('getImpactedSubjects')->willReturn([$impactedSubject]);
 
         $tripod->expects($this->atLeastOnce())
             ->method('getSearchIndexer')
-            ->will($this->returnValue($searchIndexer));
+            ->willReturn($searchIndexer);
 
         $list = new ExtendedGraph();
         $list->add_resource_triple('http://talisaspire.com/lists/1234', RDF_TYPE, 'http://purl.org/vocab/resourcelist/schema#List');
@@ -287,12 +290,12 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
             ->onlyMethods(['getTripod'])
             ->getMock();
 
-        $impactedSubject->expects($this->once())->method('getTripod')->will($this->returnValue($tripod));
+        $impactedSubject->expects($this->once())->method('getTripod')->willReturn($tripod);
 
         $searchProvider->expects($this->exactly(1))
             ->method('deleteDocument')
             ->with(
-                $this->equalTo('http://talisaspire.com/lists/1234'),
+                'http://talisaspire.com/lists/1234',
                 'http://talisaspire.com/',
                 ['i_search_list']
             );
@@ -302,13 +305,13 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
 
         $searchIndexer->expects($this->atLeastOnce())
             ->method('getSearchProvider')
-            ->will($this->returnValue($searchProvider));
+            ->willReturn($searchProvider);
 
-        $searchIndexer->expects($this->once())->method('getImpactedSubjects')->will($this->returnValue([$impactedSubject]));
+        $searchIndexer->expects($this->once())->method('getImpactedSubjects')->willReturn([$impactedSubject]);
 
         $tripod->expects($this->atLeastOnce())
             ->method('getSearchIndexer')
-            ->will($this->returnValue($searchIndexer));
+            ->willReturn($searchIndexer);
 
         $oldList = $tripod->describeResource('http://talisaspire.com/lists/1234');
         $list = $tripod->describeResource('http://talisaspire.com/lists/1234');
@@ -325,7 +328,7 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
         );
     }
 
-    public function testSearchDocumentsNotRegeneratedIfChangeIsNotInSearchSpec()
+    public function testSearchDocumentsNotRegeneratedIfChangeIsNotInSearchSpec(): void
     {
         // Now make a change that shouldn't affect any search docs
         $tripod = $this->getMockBuilder(Driver::class)
@@ -360,11 +363,11 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
             ->getMock();
         $tripodUpdate->expects($this->atLeastOnce())
             ->method('storeChanges')
-            ->will($this->returnValue(['deletedSubjects' => [], 'subjectsAndPredicatesOfChange' => [], 'transaction_id' => 't1234']));
+            ->willReturn(['deletedSubjects' => [], 'subjectsAndPredicatesOfChange' => [], 'transaction_id' => 't1234']);
 
         $tripod->expects($this->atLeastOnce())
             ->method('getDataUpdater')
-            ->will($this->returnValue($tripodUpdate));
+            ->willReturn($tripodUpdate);
 
         $searchIndexer = $this->getMockBuilder(SearchIndexer::class)
             ->onlyMethods(['getSearchProvider', 'update'])
@@ -382,20 +385,21 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
         $searchProvider->expects($this->never())
             ->method('indexDocument');
 
-        $searchIndexer->expects($this->any())
+        $searchIndexer
             ->method('getSearchProvider')
-            ->will($this->returnValue($searchProvider));
+            ->willReturn($searchProvider);
 
         $searchIndexer->expects($this->never())
             ->method('update');
 
         $tripod->expects($this->atLeastOnce())
             ->method('getSearchIndexer')
-            ->will($this->returnValue($searchIndexer));
+            ->willReturn($searchIndexer);
 
         $g1 = $tripod->describeResource('http://talisaspire.com/authors/1');
         $g2 = $tripod->describeResource('http://talisaspire.com/authors/1');
         $g2->add_literal_triple('http://talisaspire.com/authors/1', $g2->qname_to_uri('foaf:dob'), '1564-04-26');
+
         $tripod->saveChanges($g1, $g2);
     }
 
@@ -403,7 +407,7 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
      * Save several new resources in a single operation. Only one of the resources has a type that is applicable based on specifications,
      * therefore only one ImpactedSubject should be created.
      */
-    public function testSavingMultipleNewEntitiesResultsInOneImpactedSubject()
+    public function testSavingMultipleNewEntitiesResultsInOneImpactedSubject(): void
     {
         $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getDataUpdater'])
@@ -440,7 +444,7 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
 
         $tripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($tripodUpdates));
+            ->willReturn($tripodUpdates);
 
         // first lets add a book, which should trigger a search doc, view and table gen for a single item
         $g = new MongoGraph();
@@ -466,6 +470,7 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
         $g->add_literal_triple($newSubjectUri3, $g->qname_to_uri('dct:title'), 'This is yet another new resource');
         $g->add_literal_triple($newSubjectUri3, $g->qname_to_uri('dct:subject'), 'art');
         $g->add_literal_triple($newSubjectUri3, $g->qname_to_uri('dct:subject'), 'design');
+
         $subjectsAndPredicatesOfChange = [
             $newSubjectUri1 => ['rdf:type', 'dct:creator', 'dct:title', 'dct:subject'],
             $newSubjectUri2 => ['rdf:type', 'dct:creator', 'dct:title', 'dct:subject'],
@@ -492,7 +497,7 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
         $this->assertEquals($expectedImpactedSubjects, $impactedSubjects);
     }
 
-    public function testBatchSearchDocumentsGeneration()
+    public function testBatchSearchDocumentsGeneration(): void
     {
         $count = 234;
         $docs = [];

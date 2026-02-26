@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Tripod\Config;
 use Tripod\Mongo\DateUtil;
 use Tripod\Mongo\Driver;
@@ -54,7 +56,7 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
         $this->tripod = $tripod;
     }
 
-    public function testTransactionRollbackDuringLockAllDocuments()
+    public function testTransactionRollbackDuringLockAllDocuments(): void
     {
         // Save some basic data into the db before we create a transaction to modify it
         $subjectOne = 'http://example.com/resources/1';
@@ -107,14 +109,14 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
 
         $mockTripodUpdate->expects($this->exactly(1))
             ->method('generateTransactionId')
-            ->will($this->returnValue($mockTransactionId));
+            ->willReturn($mockTransactionId);
         $mockTripodUpdate->expects($this->exactly(2 * 20)) // 20 retries for 2 subjects
             ->method('lockSingleDocument')
-            ->will($this->returnCallback([$this, 'lockSingleDocumentCauseFailureCallback']));
+            ->willReturnCallback([$this, 'lockSingleDocumentCauseFailureCallback']);
 
         $mockTripod->expects($this->atLeastOnce())
             ->method('getDataUpdater')
-            ->will($this->returnValue($mockTripodUpdate));
+            ->willReturn($mockTripodUpdate);
 
         $mockTripod->setTransactionLog($this->tripodTransactionLog);
 
@@ -147,7 +149,7 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
         $this->assertEquals('failed', $transaction['status']);
     }
 
-    public function testTransactionRollbackDuringLockAllDocumentsWithEmptyOriginalCBDS()
+    public function testTransactionRollbackDuringLockAllDocumentsWithEmptyOriginalCBDS(): void
     {
         $subjectOne = 'http://example.com/resources/1';
         $subjectTwo = 'http://example.com/resources/2';
@@ -174,14 +176,14 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
 
         $mockTripodUpdate->expects($this->exactly(1))
             ->method('generateTransactionId')
-            ->will($this->returnValue($mockTransactionId));
+            ->willReturn($mockTransactionId);
         $mockTripodUpdate->expects($this->exactly(2 * 20)) // 20 retries for 2 subjects
             ->method('lockSingleDocument')
-            ->will($this->returnCallback([$this, 'lockSingleDocumentCauseFailureCallback']));
+            ->willReturnCallback([$this, 'lockSingleDocumentCauseFailureCallback']);
 
         $mockTripod->expects($this->atLeastOnce())
             ->method('getDataUpdater')
-            ->will($this->returnValue($mockTripodUpdate));
+            ->willReturn($mockTripodUpdate);
 
         $mockTripod->setTransactionLog($this->tripodTransactionLog);
 
@@ -207,7 +209,7 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
         $this->assertEquals('failed', $transaction['status']);
     }
 
-    public function testTransactionRollbackDuringCreateTransaction()
+    public function testTransactionRollbackDuringCreateTransaction(): void
     {
         // Save some basic data into the db before we create a transaction to modify it
         $subjectOne = 'http://example.com/resources/1';
@@ -259,13 +261,13 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
             ->getMock();
         $mockTransactionLog->expects($this->once())
             ->method('createNewTransaction')
-            ->will($this->throwException($mockExpectedException));
+            ->willThrowException($mockExpectedException);
         $mockTransactionLog->expects($this->once())
             ->method('cancelTransaction')
-            ->with($this->equalTo($mockTransactionId), $this->equalTo($mockExpectedException));
+            ->with($mockTransactionId, $mockExpectedException);
         $mockTransactionLog->expects($this->once())
             ->method('failTransaction')
-            ->with($this->equalTo($mockTransactionId));
+            ->with($mockTransactionId);
 
         $mockTripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getDataUpdater'])
@@ -278,16 +280,16 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
 
         $mockTripodUpdate->expects($this->once())
             ->method('generateTransactionId')
-            ->will($this->returnValue($mockTransactionId));
+            ->willReturn($mockTransactionId);
         $mockTripodUpdate->expects($this->exactly(2))
             ->method('lockSingleDocument')
-            ->will($this->returnCallback([$this, 'lockSingleDocumentCallback']));
+            ->willReturnCallback([$this, 'lockSingleDocumentCallback']);
         $mockTripodUpdate->expects($this->exactly(3))
             ->method('getTransactionLog')
-            ->will($this->returnValue($mockTransactionLog));
+            ->willReturn($mockTransactionLog);
         $mockTripod->expects($this->atLeastOnce())
             ->method('getDataUpdater')
-            ->will($this->returnValue($mockTripodUpdate));
+            ->willReturn($mockTripodUpdate);
 
         try {
             $mockTripod->saveChanges($oG, $nG, 'http://talisaspire.com/');
@@ -314,7 +316,7 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
         $this->assertDocumentDoesNotHaveProperty(['r' => $subjectTwo, 'c' => 'http://talisaspire.com/'], _LOCKED_FOR_TRANS_TS, $this->tripod);
     }
 
-    public function testTransactionRollbackDuringApplyChanges()
+    public function testTransactionRollbackDuringApplyChanges(): void
     {
         // Save some basic data into the db before we create a transaction to modify it
         $subjectOne = 'http://example.com/resources/1';
@@ -366,14 +368,14 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
             ->getMock();
         $mockTripodUpdate->expects($this->exactly(1))
             ->method('generateTransactionId')
-            ->will($this->returnValue($mockTransactionId));
+            ->willReturn($mockTransactionId);
         $mockTripodUpdate->expects($this->exactly(2))
             ->method('lockSingleDocument')
-            ->will($this->returnCallback([$this, 'lockSingleDocumentCallback']));
-        $mockTripodUpdate->expects($this->once())->method('applyChangeSet')->will($this->throwException(new Exception('Exception throw by mock test during applychangeset')));
+            ->willReturnCallback([$this, 'lockSingleDocumentCallback']);
+        $mockTripodUpdate->expects($this->once())->method('applyChangeSet')->willThrowException(new Exception('Exception throw by mock test during applychangeset'));
         $mockTripod->expects($this->atLeastOnce())
             ->method('getDataUpdater')
-            ->will($this->returnValue($mockTripodUpdate));
+            ->willReturn($mockTripodUpdate);
 
         $mockTripod->setTransactionLog($this->tripodTransactionLog);
 
@@ -479,6 +481,7 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
                 if (!$result->isAcknowledged()) {
                     throw new Exception('Failed to create new document with error message');
                 }
+
                 $document = $this->getTripodCollection($this->tripod)->findOne(['_id' => [_ID_RESOURCE => $this->labeller->uri_to_alias($s), _ID_CONTEXT => $contextAlias]]);
             } catch (Exception $e) {
                 return false;

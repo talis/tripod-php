@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo\Composites;
 
 require_once TRIPOD_DIR . 'mongo/MongoTripodConstants.php';
@@ -105,7 +107,7 @@ class Tables extends CompositeBase
      *
      * @param ImpactedSubject
      */
-    public function update(ImpactedSubject $subject)
+    public function update(ImpactedSubject $subject): void
     {
         $resource = $subject->getResourceId();
         $resourceUri = $resource[_ID_RESOURCE];
@@ -128,10 +130,8 @@ class Tables extends CompositeBase
      * Returns an array of table rows that are impacted by the changes.
      *
      * @param string $contextAlias
-     *
-     * @return array
      */
-    public function findImpactedComposites(array $resourcesAndPredicates, $contextAlias)
+    public function findImpactedComposites(array $resourcesAndPredicates, $contextAlias): array
     {
         $contextAlias = $this->getContextAlias($contextAlias); // belt and braces
 
@@ -152,7 +152,7 @@ class Tables extends CompositeBase
             $id = [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias];
             // If we don't have a working config or there are no predicates listed, remove all
             // rows associated with the resource in all tables
-            if (empty($tablePredicates) || empty($resourcePredicates)) {
+            if ($tablePredicates === [] || empty($resourcePredicates)) {
                 // build $filter for queries to impact index
                 $resourceFilters[] = $id;
             } else {
@@ -162,6 +162,7 @@ class Tables extends CompositeBase
                         if (!isset($tableFilters[$tableType])) {
                             $tableFilters[$tableType] = [];
                         }
+
                         // build $filter for queries to impact index
                         $tableFilters[$tableType][] = $id;
                     }
@@ -169,7 +170,7 @@ class Tables extends CompositeBase
             }
         }
 
-        if (empty($tableFilters) && !empty($resourceFilters)) {
+        if ($tableFilters === [] && $resourceFilters !== []) {
             $query = ['value.' . _IMPACT_INDEX => ['$in' => $resourceFilters]];
         } else {
             $query = [];
@@ -178,7 +179,7 @@ class Tables extends CompositeBase
                 $query[] = ['value.' . _IMPACT_INDEX => ['$in' => $filters], '_id.' . _ID_TYPE => $tableType];
             }
 
-            if (!empty($resourceFilters)) {
+            if ($resourceFilters !== []) {
                 $query[] = ['value.' . _IMPACT_INDEX => ['$in' => $resourceFilters]];
             }
 
@@ -189,7 +190,7 @@ class Tables extends CompositeBase
             }
         }
 
-        if (empty($query)) {
+        if ($query === []) {
             return [];
         }
 
@@ -222,10 +223,8 @@ class Tables extends CompositeBase
 
     /**
      * Returns the operation this composite can satisfy.
-     *
-     * @return string
      */
-    public function getOperationType()
+    public function getOperationType(): string
     {
         return OP_TABLES;
     }
@@ -233,21 +232,21 @@ class Tables extends CompositeBase
     /**
      * Query the tables collection and return the results.
      *
-     * @param string $tableSpecId
      * @param int    $offset
      * @param int    $limit
-     * @param array  $options     Table query options
+     * @param array<string, mixed> $options Table query options
      *
-     * @return array
+     * @return array<string, \MongoDB\Driver\CursorInterface|mixed[]>
+     * @param array<string, mixed> $filter
      */
     public function getTableRows(
-        $tableSpecId,
+        string $tableSpecId,
         array $filter = [],
         array $sortBy = [],
         $offset = 0,
         $limit = 10,
         array $options = []
-    ) {
+    ): array {
         $t = new Timer();
         $t->start();
 
@@ -273,17 +272,12 @@ class Tables extends CompositeBase
             $findOptions['skip'] = (int) $offset;
             $findOptions['limit'] = (int) $limit;
         }
-        if (isset($sortBy)) {
-            $findOptions['sort'] = $sortBy;
-        }
+
+        $findOptions['sort'] = $sortBy;
 
         $results = $collection->find($filter, $findOptions);
 
-        if ($options['includeCount']) {
-            $count = $collection->count($filter);
-        } else {
-            $count = -1;
-        }
+        $count = $options['includeCount'] ? $collection->count($filter) : -1;
 
         $results->setTypeMap(['root' => $options['documentType'], 'document' => 'array', 'array' => 'array']);
 
@@ -292,7 +286,7 @@ class Tables extends CompositeBase
             MONGO_TABLE_ROWS,
             ['duration' => $t->result(), 'query' => $filter, 'collection' => TABLE_ROWS_COLLECTION]
         );
-        $this->getStat()->timer(MONGO_TABLE_ROWS . ".{$tableSpecId}", $t->result());
+        $this->getStat()->timer(MONGO_TABLE_ROWS . ('.' . $tableSpecId), $t->result());
 
         return [
             'head' => [
@@ -307,12 +301,11 @@ class Tables extends CompositeBase
     /**
      * Returns the distinct values for a table column, optionally filtered by query.
      *
-     * @param string $tableSpecId
-     * @param string $fieldName
      *
-     * @return array
+     * @return array<string, mixed[]>
+     * @param array<string, mixed> $filter
      */
-    public function distinct($tableSpecId, $fieldName, array $filter = [])
+    public function distinct(string $tableSpecId, string $fieldName, array $filter = []): array
     {
         $t = new Timer();
         $t->start();
@@ -325,7 +318,7 @@ class Tables extends CompositeBase
         $t->stop();
         $query = ['distinct' => $fieldName, 'filter' => $filter];
         $this->timingLog(MONGO_TABLE_ROWS_DISTINCT, ['duration' => $t->result(), 'query' => $query, 'collection' => TABLE_ROWS_COLLECTION]);
-        $this->getStat()->timer(MONGO_TABLE_ROWS_DISTINCT . ".{$tableSpecId}", $t->result());
+        $this->getStat()->timer(MONGO_TABLE_ROWS_DISTINCT . ('.' . $tableSpecId), $t->result());
 
         return [
             'head' => [
@@ -343,13 +336,14 @@ class Tables extends CompositeBase
      *
      * @return int The number of table rows deleted
      */
-    public function deleteTableRowsByTableId($tableId, $timestamp = null)
+    public function deleteTableRowsByTableId(string $tableId, $timestamp = null)
     {
         $t = new Timer();
         $t->start();
+
         $tableSpec = $this->getConfigInstance()->getTableSpecification($this->storeName, $tableId);
         if ($tableSpec == null) {
-            $this->debugLog("Could not find a table specification for {$tableId}");
+            $this->debugLog('Could not find a table specification for ' . $tableId);
 
             return;
         }
@@ -359,11 +353,13 @@ class Tables extends CompositeBase
             if (!$timestamp instanceof UTCDateTime) {
                 $timestamp = DateUtil::getMongoDate($timestamp);
             }
+
             $query['$or'] = [
                 [\_CREATED_TS => ['$lt' => $timestamp]],
                 [\_CREATED_TS => ['$exists' => false]],
             ];
         }
+
         $deleteResult = $this->getCollectionForTableSpec($tableId)
             ->deleteMany($query);
 
@@ -380,10 +376,8 @@ class Tables extends CompositeBase
      * @param string|null $subject
      * @param string|null $context
      * @param array       $specTypes
-     *
-     * @return mixed
      */
-    public function generateTableRowsForType($rdfType, $subject = null, $context = null, $specTypes = [])
+    public function generateTableRowsForType($rdfType, $subject = null, $context = null, $specTypes = []): void
     {
         $rdfType = $this->labeller->qname_to_alias($rdfType);
         $rdfTypeAlias = $this->labeller->uri_to_alias($rdfType);
@@ -407,38 +401,39 @@ class Tables extends CompositeBase
                 if (!is_array($types)) {
                     $types = [$types];
                 }
+
                 if (in_array($rdfType, $types) || in_array($rdfTypeAlias, $types)) {
                     $foundSpec = true;
-                    $this->debugLog("Processing {$tableSpec[_ID_KEY]}");
+                    $this->debugLog('Processing ' . $tableSpec[_ID_KEY]);
                     $this->generateTableRows($key, $subject, $context);
                 }
             }
         }
+
         if (!$foundSpec) {
-            $this->debugLog("Could not find any table specifications for {$subject} with resource type '{$rdfType}'");
+            $this->debugLog(sprintf("Could not find any table specifications for %s with resource type '%s'", $subject, $rdfType));
 
             return;
         }
     }
 
     /**
-     * @param string      $tableType
      * @param string|null $resource
      * @param string|null $context
      * @param string|null $queueName Queue for background bulk generation
-     *
      * @return array
      */
-    public function generateTableRows($tableType, $resource = null, $context = null, $queueName = null)
+    public function generateTableRows(string $tableType, $resource = null, $context = null, $queueName = null): ?array
     {
         $t = new Timer();
         $t->start();
+
         $this->temporaryFields = [];
         $tableSpec = $this->getConfigInstance()->getTableSpecification($this->storeName, $tableType);
         $collection = $this->getConfigInstance()->getCollectionForTable($this->storeName, $tableType);
 
         if (empty($tableSpec)) {
-            $this->debugLog("Could not find a table specification for {$tableType}");
+            $this->debugLog('Could not find a table specification for ' . $tableType);
 
             return null;
         }
@@ -459,6 +454,7 @@ class Tables extends CompositeBase
             $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($tableSpec['type'])];
             $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($tableSpec['type'])];
         }
+
         $filter = ['$or' => $types];
         if (isset($resource)) {
             $filter['_id'] = [
@@ -475,7 +471,7 @@ class Tables extends CompositeBase
 
         $jobOptions = [];
         $subjects = [];
-        if ($queueName && !$resource && ($this->stat || !empty($this->statsConfig))) {
+        if ($queueName && !$resource && ($this->stat || $this->statsConfig !== [])) {
             $jobOptions['statsConfig'] = $this->getStatsConfig();
             $jobGroup = $this->getJobGroup($this->storeName);
             $jobOptions[ApplyOperation::TRACKING_KEY] = $jobGroup->getId()->__toString();
@@ -513,6 +509,7 @@ class Tables extends CompositeBase
                 if (isset($tableSpec['joins'])) {
                     $this->doJoins($doc, $tableSpec['joins'], $value, $from, $contextAlias);
                 }
+
                 if (isset($tableSpec['counts'])) {
                     $this->doCounts($doc, $tableSpec['counts'], $value);
                 }
@@ -528,7 +525,7 @@ class Tables extends CompositeBase
             }
         }
 
-        if (!empty($subjects)) {
+        if ($subjects !== []) {
             $this->queueApplyJob($subjects, $queueName, $jobOptions);
         }
 
@@ -538,7 +535,7 @@ class Tables extends CompositeBase
             'duration' => $t->result(),
             'filter' => $filter,
             'from' => $from]);
-        $this->getStat()->timer(MONGO_CREATE_TABLE . ".{$tableType}", $t->result());
+        $this->getStat()->timer(MONGO_CREATE_TABLE . ('.' . $tableType), $t->result());
 
         $stat = ['count' => $count];
         if (isset($jobOptions[ApplyOperation::TRACKING_KEY])) {
@@ -552,7 +549,7 @@ class Tables extends CompositeBase
      * Count the number of documents in the spec that match $filters.
      *
      * @param string $tableSpec Table spec ID
-     * @param array  $filters   Query filters to get count on
+     * @param array<string, mixed> $filters Query filters to get count on
      *
      * @return int
      */
@@ -580,15 +577,14 @@ class Tables extends CompositeBase
         $specTypes = $this->config->getTableSpecifications($this->storeName);
         if (empty($specType)) {
             $specNames = array_keys($specTypes);
-        } else {
-            if (is_string($specType)) {
-                $query[_ID_KEY][_ID_TYPE] = $specType;
-                $specNames = [$specType];
-            } elseif (is_array($specType)) {
-                $query[_ID_KEY . '.' . _ID_TYPE] = ['$in' => $specType];
-                $specNames = $specType;
-            }
+        } elseif (is_string($specType)) {
+            $query[_ID_KEY][_ID_TYPE] = $specType;
+            $specNames = [$specType];
+        } elseif (is_array($specType)) {
+            $query[_ID_KEY . '.' . _ID_TYPE] = ['$in' => $specType];
+            $specNames = $specType;
         }
+
         foreach ($specNames as $specName) {
             // Ignore any other types of specs that might have been passed in here
             if (isset($specTypes[$specName])) {
@@ -648,7 +644,7 @@ class Tables extends CompositeBase
      * If an exception in thrown because a field is too large to index, the field is
      * truncated and the save is retried.
      *
-     * @param array $generatedRow the rows to save
+     * @param array<string, \MongoDB\BSON\UTCDateTime>|array<string, mixed[]> $generatedRow the rows to save
      *
      * @throws \Exception
      */
@@ -677,7 +673,7 @@ class Tables extends CompositeBase
      * the total size of an index entry, which can include structural overhead
      * depending on the BSON type, must be less than 1024 bytes.
      *
-     * @param array $generatedRow - Pass by reference so that the contents is truncated
+     * @param array<string, mixed> $generatedRow - Pass by reference so that the contents is truncated
      */
     protected function truncateFields(Collection $collection, array &$generatedRow)
     {
@@ -724,19 +720,18 @@ class Tables extends CompositeBase
     }
 
     /**
-     * @param array $spec The table spec
-     * @param array $dest The table row document to save
+     * @param array<string, mixed> $spec The table spec
+     * @param mixed[] $dest The table row document to save
      */
     protected function doComputedFields(array $spec, array &$dest)
     {
         if (isset($spec['computed_fields'])) {
             foreach ($spec['computed_fields'] as $f) {
                 if (isset($f['fieldName'], $f['value']) && is_array($f['value'])) {
-                    if (isset($f['temporary']) && $f['temporary'] === true) {
-                        if (!in_array($f['fieldName'], $this->temporaryFields)) {
-                            $this->temporaryFields[] = $f['fieldName'];
-                        }
+                    if (isset($f['temporary']) && $f['temporary'] === true && !in_array($f['fieldName'], $this->temporaryFields)) {
+                        $this->temporaryFields[] = $f['fieldName'];
                     }
+
                     $computedFunctions = array_values(array_intersect(self::$computedFieldFunctions, array_keys($f['value'])));
                     $dest[$f['fieldName']] = $this->getComputedValue($computedFunctions[0], $f['value'], $dest);
                 }
@@ -746,12 +741,12 @@ class Tables extends CompositeBase
 
     /**
      * @param string $function A defined computed value function
-     * @param array  $spec     The computed field spec
-     * @param array  $dest     The table row document to save
+     * @param array<string, mixed> $spec The computed field spec
+     * @param array<string, mixed> $dest The table row document to save
      *
      * @return mixed The computed value
      */
-    protected function getComputedValue($function, array $spec, array &$dest)
+    protected function getComputedValue(string $function, array $spec, array &$dest)
     {
         $value = null;
 
@@ -779,12 +774,14 @@ class Tables extends CompositeBase
      * @return float|int|null
      *
      * @throws \InvalidArgumentException
+     * @param array<int, mixed> $equation
      */
     protected function computeArithmeticValue(array $equation, array &$dest)
     {
         if (count($equation) < 3) {
             throw new \InvalidArgumentException('Equations must consist of an array with 3 values');
         }
+
         if (!in_array($equation[1], self::$arithmeticOperators)) {
             throw new \InvalidArgumentException('Invalid arithmetic operator');
         }
@@ -794,6 +791,7 @@ class Tables extends CompositeBase
         if (is_array($left)) {
             $left = $this->computeArithmeticValue($left, $dest);
         }
+
         if (is_array($right)) {
             $right = $this->computeArithmeticValue($right, $dest);
         }
@@ -832,7 +830,7 @@ class Tables extends CompositeBase
     }
 
     /**
-     * @param array $replaceSpec The replace value spec
+     * @param array<string, mixed> $replaceSpec The replace value spec
      * @param array $dest        The table row document to save
      *
      * @return mixed
@@ -845,9 +843,11 @@ class Tables extends CompositeBase
         if (isset($replaceSpec['search'])) {
             $search = $this->rewriteVariableValue($replaceSpec['search'], $dest);
         }
+
         if (isset($replaceSpec['replace'])) {
             $replace = $this->rewriteVariableValue($replaceSpec['replace'], $dest);
         }
+
         if (isset($replaceSpec['subject'])) {
             $subject = $this->rewriteVariableValue($replaceSpec['subject'], $dest);
         }
@@ -856,7 +856,7 @@ class Tables extends CompositeBase
     }
 
     /**
-     * @param array $conditionalSpec The conditional spec
+     * @param array<string, mixed> $conditionalSpec The conditional spec
      * @param array $dest            The table row document to save
      *
      * @return mixed The computed value
@@ -871,9 +871,11 @@ class Tables extends CompositeBase
             if (isset($conditionalSpec['if'][0])) {
                 $left = $this->rewriteVariableValue($conditionalSpec['if'][0], $dest);
             }
+
             if (isset($conditionalSpec['if'][1])) {
                 $operator = $conditionalSpec['if'][1];
             }
+
             if (isset($conditionalSpec['if'][2])) {
                 $right = $this->rewriteVariableValue($conditionalSpec['if'][2], $dest);
             }
@@ -886,7 +888,7 @@ class Tables extends CompositeBase
                 if (is_array($conditionalSpec[$path])) {
                     $nestedComputedFunctions = array_intersect(self::$computedFieldFunctions, array_keys($conditionalSpec[$path]));
                     // This is 'just a regular old array'
-                    if (empty($nestedComputedFunctions)) {
+                    if ($nestedComputedFunctions === []) {
                         return $this->rewriteVariableValue($conditionalSpec[$path], $dest);
                     }
 
@@ -902,7 +904,7 @@ class Tables extends CompositeBase
 
     /**
      * @param mixed       $value   The value to replace, if it contains a variable
-     * @param array       $dest    The table row document to save
+     * @param array<string, mixed> $dest The table row document to save
      * @param string|null $setType Force the return to be set to specified type
      *
      * @return mixed
@@ -921,12 +923,14 @@ class Tables extends CompositeBase
 
             return $this->castValueType($value, $setType);
         }
+
         if (is_array($value)) {
             if ($this->isFunction($value)) {
                 $function = array_keys($value);
 
                 return $this->getComputedValue($function[0], $value, $dest);
             }
+
             $aryValue = [];
             foreach ($value as $v) {
                 $aryValue[] = $this->rewriteVariableValue($v, $dest);
@@ -940,10 +944,8 @@ class Tables extends CompositeBase
 
     /**
      * @param mixed $value
-     *
-     * @return bool
      */
-    protected function isFunction($value)
+    protected function isFunction($value): bool
     {
         return is_array($value) && count(array_keys($value)) === 1 && count(array_intersect(array_keys($value), self::$computedFieldFunctions)) === 1;
     }
@@ -975,11 +977,7 @@ class Tables extends CompositeBase
 
             case 'numeric':
                 if ((!is_int($value)) && !is_float($value)) {
-                    if ($value == (string) (int) $value) {
-                        $value = (int) $value;
-                    } else {
-                        $value = (float) $value;
-                    }
+                    $value = $value == (string) (int) $value ? (int) $value : (float) $value;
                 }
 
                 break;
@@ -1002,9 +1000,11 @@ class Tables extends CompositeBase
         if ((!empty($operator)) && !in_array($operator, self::$conditionalOperators)) {
             throw new \InvalidArgumentException('Invalid conditional operator');
         }
+
         if (!$operator) {
-            return $left ? true : false;
+            return (bool) $left;
         }
+
         $result = false;
 
         switch ($operator) {
@@ -1040,19 +1040,16 @@ class Tables extends CompositeBase
 
             case 'contains':
             case 'not contains':
-                if (is_array($left)) {
-                    $bool = in_array($right, $left);
-                } else {
-                    $bool = (strpos((string) $left, (string) $right) !== false);
-                }
-                $result = ($bool && $operator != 'not contains');
+                $bool = is_array($left) ? in_array($right, $left) : strpos((string) $left, (string) $right) !== false;
+
+                $result = ($bool && $operator !== 'not contains');
 
                 break;
 
             case '~=':
             case '!~':
                 $match = preg_match($right, $left);
-                $result = ($match > 0 && $operator != '!~');
+                $result = ($match > 0 && $operator !== '!~');
 
                 break;
         }
@@ -1063,19 +1060,17 @@ class Tables extends CompositeBase
     /**
      * Add fields to a table row.
      *
-     * @param array $source
-     * @param array $spec
-     * @param array $dest
+     * @param array<string, mixed> $source
+     * @param array<string, mixed> $spec
      */
-    protected function addFields($source, $spec, &$dest)
+    protected function addFields(array $source, array $spec, array &$dest)
     {
         if (isset($spec['fields'])) {
             foreach ($spec['fields'] as $f) {
-                if (isset($f['temporary']) && $f['temporary'] === true) {
-                    if (!in_array($f['fieldName'], $this->temporaryFields)) {
-                        $this->temporaryFields[] = $f['fieldName'];
-                    }
+                if (isset($f['temporary']) && $f['temporary'] === true && !in_array($f['fieldName'], $this->temporaryFields)) {
+                    $this->temporaryFields[] = $f['fieldName'];
                 }
+
                 if (isset($f['predicates'])) {
                     foreach ($f['predicates'] as $p) {
                         if (is_string($p) && isset($source[$p])) {
@@ -1095,11 +1090,10 @@ class Tables extends CompositeBase
                                             $this->generateValues($source, $f, $v, $dest);
                                         }
                                     }
-                                // Otherwise apply a modifier
-                                } else {
-                                    if (isset($dest[$f['fieldName']])) {
-                                        $dest[$f['fieldName']] = $this->applyModifier($function, $dest[$f['fieldName']], $functionOptions);
-                                    }
+
+                                    // Otherwise apply a modifier
+                                } elseif (isset($dest[$f['fieldName']])) {
+                                    $dest[$f['fieldName']] = $this->applyModifier($function, $dest[$f['fieldName']], $functionOptions);
                                 }
                             }
                         }
@@ -1107,20 +1101,20 @@ class Tables extends CompositeBase
                 }
 
                 // Allow URI linking to the ID
-                if (isset($f['value'])) {
-                    if ($f['value'] == '_link_' || $f['value'] == 'link') {
-                        if ($f['value'] == '_link_') {
-                            $this->warningLog("Table spec value '_link_' is deprecated", $f);
+                if (isset($f['value']) && ($f['value'] == '_link_' || $f['value'] == 'link')) {
+                    if ($f['value'] == '_link_') {
+                        $this->warningLog("Table spec value '_link_' is deprecated", $f);
+                    }
+
+                    // If value exists, set as array
+                    if (isset($dest[$f['fieldName']])) {
+                        if (!is_array($dest[$f['fieldName']])) {
+                            $dest[$f['fieldName']] = [$dest[$f['fieldName']]];
                         }
-                        // If value exists, set as array
-                        if (isset($dest[$f['fieldName']])) {
-                            if (!is_array($dest[$f['fieldName']])) {
-                                $dest[$f['fieldName']] = [$dest[$f['fieldName']]];
-                            }
-                            $dest[$f['fieldName']][] = $this->labeller->qname_to_alias($source['_id']['r']);
-                        } else {
-                            $dest[$f['fieldName']] = $this->labeller->qname_to_alias($source['_id']['r']);
-                        }
+
+                        $dest[$f['fieldName']][] = $this->labeller->qname_to_alias($source['_id']['r']);
+                    } else {
+                        $dest[$f['fieldName']] = $this->labeller->qname_to_alias($source['_id']['r']);
                     }
                 }
             }
@@ -1130,12 +1124,11 @@ class Tables extends CompositeBase
     /**
      * Generate values for a given predicate.
      *
-     * @param array  $source
-     * @param array  $f
+     * @param array<string, mixed> $source
+     * @param array<string, mixed> $f
      * @param string $predicate
-     * @param array  $dest
      */
-    protected function generateValues($source, $f, $predicate, &$dest)
+    protected function generateValues(array $source, array $f, $predicate, array &$dest)
     {
         $values = [];
         if (isset($source[$predicate][VALUE_URI]) && !empty($source[$predicate][VALUE_URI])) {
@@ -1151,6 +1144,7 @@ class Tables extends CompositeBase
                 } elseif (isset($v[VALUE_URI]) && !empty($v[VALUE_URI])) {
                     $values[] = $v[VALUE_URI];
                 }
+
                 // _id's shouldn't appear in value arrays, so no need for third condition here
             }
         }
@@ -1177,10 +1171,8 @@ class Tables extends CompositeBase
      * Recursively get functions that can modify a predicate.
      *
      * @param array $array
-     *
-     * @return array
      */
-    protected function getPredicateFunctions($array)
+    protected function getPredicateFunctions($array): array
     {
         $predicateFunctions = [];
         if (is_array($array)) {
@@ -1196,13 +1188,12 @@ class Tables extends CompositeBase
     }
 
     /**
-     * @param array  $source
      * @param array  $joins
      * @param array  $dest
      * @param string $from
      * @param string $contextAlias
      */
-    protected function doJoins($source, $joins, &$dest, $from, $contextAlias)
+    protected function doJoins(array $source, $joins, &$dest, $from, $contextAlias)
     {
         $this->expandSequence($joins, $source);
         foreach ($joins as $predicate => $ruleset) {
@@ -1251,10 +1242,8 @@ class Tables extends CompositeBase
                     }
                 }
 
-                if (count($recursiveJoins) > 0) {
-                    foreach ($recursiveJoins as $r) {
-                        $this->doJoins($r['data'], $r['ruleset'], $dest, $from, $contextAlias);
-                    }
+                foreach ($recursiveJoins as $r) {
+                    $this->doJoins($r['data'], $r['ruleset'], $dest, $from, $contextAlias);
                 }
             }
         }
@@ -1265,43 +1254,38 @@ class Tables extends CompositeBase
      *
      * @param mixed $source
      * @param mixed $countSpec
-     * @param mixed $dest
+     * @param int[] $dest
      */
-    protected function doCounts($source, $countSpec, &$dest)
+    protected function doCounts(array $source, $countSpec, array &$dest)
     {
         // process count aggregate function
         foreach ($countSpec as $c) {
             $fieldName = $c['fieldName'];
-            if (isset($c['temporary']) && $c['temporary'] === true) {
-                if (!in_array($fieldName, $this->temporaryFields)) {
-                    $this->temporaryFields[] = $fieldName;
-                }
+            if (isset($c['temporary']) && $c['temporary'] === true && !in_array($fieldName, $this->temporaryFields)) {
+                $this->temporaryFields[] = $fieldName;
             }
+
             $applyRegex = isset($c['regex']) ?: null;
             $count = 0;
             // just count predicates at current location
             if (isset($source[$c['property']])) {
                 if (isset($source[$c['property']][VALUE_URI]) || isset($source[$c['property']][VALUE_LITERAL])) {
-                    if ($applyRegex != null) {
-                        $count = $this->applyRegexToValue($c['regex'], $source[$c['property']]);
-                    } else {
-                        $count = 1;
+                    $count = $applyRegex != null ? $this->applyRegexToValue($c['regex'], $source[$c['property']]) : 1;
+                } elseif ($applyRegex != null) {
+                    foreach ($source[$c['property']] as $value) {
+                        if ($this->applyRegexToValue($c['regex'], $value)) {
+                            $count++;
+                        }
                     }
                 } else {
-                    if ($applyRegex != null) {
-                        foreach ($source[$c['property']] as $value) {
-                            if ($this->applyRegexToValue($c['regex'], $value)) {
-                                $count++;
-                            }
-                        }
-                    } else {
-                        $count = count($source[$c['property']]);
-                    }
+                    $count = count($source[$c['property']]);
                 }
             }
+
             if (!isset($dest[$fieldName])) {
                 $dest[$fieldName] = 0;
             }
+
             $dest[$fieldName] += $count;
         }
     }
@@ -1311,10 +1295,8 @@ class Tables extends CompositeBase
      * includes rdf:type (or is empty, meaning addition or deletion vs. update).
      *
      * @param string $rdfType
-     *
-     * @return bool
      */
-    protected function checkIfTypeShouldTriggerOperation($rdfType, array $validTypes, array $subjectPredicates)
+    protected function checkIfTypeShouldTriggerOperation($rdfType, array $validTypes, array $subjectPredicates): bool
     {
         // We don't know if this is an alias or a fqURI, nor what is in the valid types, necessarily
         $types = [$rdfType];
@@ -1330,16 +1312,18 @@ class Tables extends CompositeBase
         }
 
         $intersectingTypes = array_unique(array_intersect($types, $validTypes));
-        if (!empty($intersectingTypes)) {
+        if ($intersectingTypes !== []) {
             // Table rows only need to be invalidated if their rdf:type property has changed
             // This means we're either adding or deleting a graph
-            if (empty($subjectPredicates)) {
+            if ($subjectPredicates === []) {
                 return true;
             }
+
             // Check for alias in changed predicates
             if (in_array('rdf:type', $subjectPredicates)) {
                 return true;
             }
+
             // Check for fully qualified URI in changed predicates
             if (in_array(RDF_TYPE, $subjectPredicates)) {
                 return true;
@@ -1370,50 +1354,40 @@ class Tables extends CompositeBase
      *
      * @param string $modifier
      * @param string $value
-     * @param array  $options
+     * @param array<string, mixed> $options
      *
      * @return mixed
      *
      * @throws \Exception
      */
-    private function applyModifier($modifier, $value, $options = [])
+    private function applyModifier($modifier, $value, array $options = [])
     {
-        try {
-            switch ($modifier) {
-                case 'predicates':
-                    // Used to generate a list of values - does nothing here
-                    break;
+        switch ($modifier) {
+            case 'predicates':
+                // Used to generate a list of values - does nothing here
+                break;
 
-                case 'lowercase':
-                    if (is_array($value)) {
-                        $value = array_map('strtolower', $value);
-                    } else {
-                        $value = strtolower($value);
-                    }
+            case 'lowercase':
+                $value = is_array($value) ? array_map('strtolower', $value) : strtolower($value);
 
-                    break;
+                break;
 
-                case 'join':
-                    if (is_array($value)) {
-                        $value = implode($options['glue'], $value);
-                    }
+            case 'join':
+                if (is_array($value)) {
+                    $value = implode($options['glue'], $value);
+                }
 
-                    break;
+                break;
 
-                case 'date':
-                    if (is_string($value)) {
-                        $value = DateUtil::getMongoDate(strtotime($value) * 1000);
-                    }
+            case 'date':
+                if (is_string($value)) {
+                    $value = DateUtil::getMongoDate(strtotime($value) * 1000);
+                }
 
-                    break;
+                break;
 
-                default:
-                    throw new \Exception('Could not apply modifier:' . $modifier);
-
-                    break;
-            }
-        } catch (\Exception $e) {
-            throw $e;
+            default:
+                throw new \Exception('Could not apply modifier:' . $modifier);
         }
 
         return $value;
@@ -1423,13 +1397,13 @@ class Tables extends CompositeBase
      * Apply a regex to the RDF property value defined in $value.
      *
      * @param mixed $regex
-     * @param mixed $value
+     * @param array<string, mixed> $value
      *
      * @return int
      *
      * @throws \Tripod\Exceptions\Exception
      */
-    private function applyRegexToValue($regex, $value)
+    private function applyRegexToValue($regex, array $value)
     {
         if (isset($value[VALUE_URI]) || isset($value[VALUE_LITERAL])) {
             $v = $value[VALUE_URI] ?: $value[VALUE_LITERAL];
