@@ -43,6 +43,7 @@
         "classmap": ["test/"]
     },
     "scripts": {
+        "lint": "php-cs-fixer check",
         "test": [
             "Composer\\Config::disableProcessTimeout",
             "phpunit"

@@ -59,6 +59,14 @@ commands:
           path: test-results/junit.xml
 
 jobs:
+  lint:
+    docker:
+      - image: talis/tripod-php:php74-latest
+    steps:
+      - checkout
+      - run: composer install
+      - run: composer lint
+
   test:
     parameters:
       php_version: { type: string }
@@ -138,6 +146,7 @@ jobs:
 workflows:
   build_and_test:
     jobs:
+      - lint
       - test:
           name: test-php73
           php_version: php73
