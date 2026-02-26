@@ -265,7 +265,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             )->getMock();
 
         $tripod = $this->getMockBuilder(Driver::class)
-            ->onlyMethods(['getComposite'])
+            ->onlyMethods(['getTripodViews'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
 
@@ -312,8 +312,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ->will($this->returnValue($tripod));
 
         $tripod->expects($this->exactly(2))
-            ->method('getComposite')
-            ->with(OP_VIEWS)
+            ->method('getTripodViews')
             ->will($this->returnValue($views));
 
         $views->expects($this->once())
@@ -567,7 +566,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             )->getMock();
 
         $tripod = $this->getMockBuilder(Driver::class)
-            ->onlyMethods(['getComposite'])
+            ->onlyMethods(['getTripodTables'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
 
@@ -614,8 +613,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ->will($this->returnValue($tripod));
 
         $tripod->expects($this->exactly(2))
-            ->method('getComposite')
-            ->with(OP_TABLES)
+            ->method('getTripodTables')
             ->will($this->returnValue($tables));
 
         $tables->expects($this->once())
