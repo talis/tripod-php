@@ -56,7 +56,7 @@ class StatsD implements ITripodStat
      * Record an arbitrary value.
      *
      * @param string $operation
-     * @param mixed  $value
+     * @param string $value
      */
     public function gauge($operation, $value)
     {
@@ -175,8 +175,8 @@ class StatsD implements ITripodStat
     /**
      * Sends the stat(s) using UDP protocol.
      *
+     * @param array $data
      * @param int   $sampleRate
-     * @param mixed $data
      */
     protected function send($data, $sampleRate = 1)
     {
@@ -258,7 +258,7 @@ class StatsD implements ITripodStat
     /**
      * StatsD paths cannot start with, end with, or have more than one consecutive '.'.
      *
-     * @param mixed $value
+     * @param string $value
      *
      * @return bool
      */

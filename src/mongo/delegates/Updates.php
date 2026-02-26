@@ -8,6 +8,7 @@ use MongoDB\Collection;
 use MongoDB\Database;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\Operation\FindOneAndUpdate;
+use MongoDB\UpdateResult;
 use Tripod\ChangeSet;
 use Tripod\Exceptions\CardinalityException;
 use Tripod\Exceptions\Exception;
@@ -45,19 +46,19 @@ class Updates extends DriverBase
     protected $discoverImpactedSubjects;
 
     /**
-     * $var TransactionLog.
+     * @var TransactionLog
      */
     private $transactionLog;
 
     /**
-     * @var array the original read preference gets stored here
-     *            when changing for a write
+     * @var string the original read preference gets stored here
+     *             when changing for a write
      */
     private $originalCollectionReadPreference = '';
 
     /**
-     * @var array the original read preference gets stored here
-     *            when changing for a write
+     * @var string the original read preference gets stored here
+     *             when changing for a write
      */
     private $originalDbReadPreference = '';
 
@@ -361,8 +362,8 @@ class Updates extends DriverBase
      * replays all transactions from the transaction log, use the function params to control the from and to date if you
      * only want to replay transactions created during specific window.
      *
-     * @param null $fromDate
-     * @param null $toDate
+     * @param string|null $fromDate only transactions after this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
+     * @param string|null $toDate   only transactions before this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
      *
      * @return bool
      */
@@ -441,10 +442,7 @@ class Updates extends DriverBase
         /** @var ReadPreference $dbReadPref */
         $dbReadPref = $this->db->__debugInfo()['readPreference'];
         if ($this->originalDbReadPreference !== $dbReadPref->getMode()) {
-            $pref = (
-                $this->originalDbReadPreference
-                ?? $this->readPreference
-            );
+            $pref = $this->originalDbReadPreference ?? $this->readPreference;
             $dbTagsets = $dbReadPref->getTagsets();
 
             $this->db = $this->db->withOptions([
@@ -456,10 +454,7 @@ class Updates extends DriverBase
         /** @var ReadPreference $collReadPref */
         $collReadPref = $this->getCollection()->__debugInfo()['readPreference'];
         if ($this->originalCollectionReadPreference !== $collReadPref->getMode()) {
-            $pref = (
-                $this->originalCollectionReadPreference
-                ?? $this->readPreference
-            );
+            $pref = $this->originalCollectionReadPreference ?? $this->readPreference;
             $collTagsets = $collReadPref->getTagsets();
             $this->collection = $this->collection->withOptions([
                 'readPreference' => new ReadPreference($pref, $collTagsets),

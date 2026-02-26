@@ -240,7 +240,7 @@ class Config implements IConfigInstance
     /**
      * Check modifier functions against fields.
      *
-     * @param mixed       $parent
+     * @param array|bool  $parent
      * @param string|null $parentKey
      *
      * @throws ConfigException
@@ -453,7 +453,7 @@ class Config implements IConfigInstance
     /**
      * Returns a replica set name for the database, if one has been defined.
      *
-     * @param mixed $datasource
+     * @param string $datasource
      *
      * @return string|null
      */
@@ -478,7 +478,7 @@ class Config implements IConfigInstance
     /**
      * Returns a boolean reflecting whether or not a replica set has been defined for the supplied database name.
      *
-     * @param mixed $datasource
+     * @param string $datasource
      *
      * @return bool
      */
@@ -1005,7 +1005,7 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param mixed $readPreference
+     * @param string $readPreference
      *
      * @return Database
      *
@@ -1505,7 +1505,7 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param mixed $value
+     * @param array|string $value
      *
      * @throws ConfigException
      */
@@ -1758,7 +1758,7 @@ class Config implements IConfigInstance
     /**
      * Parses a specDocument's "filter" parameter for any predicates.
      *
-     * @param mixed $filter
+     * @param array $filter
      *
      * @return array
      */

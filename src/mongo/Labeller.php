@@ -29,7 +29,7 @@ class Labeller extends \Tripod\Labeller
     /**
      * If labeller can generate a qname for this uri, it will return it. Otherwise just returns the original uri.
      *
-     * @param mixed $uri
+     * @param string $uri
      *
      * @return string
      */
@@ -46,7 +46,7 @@ class Labeller extends \Tripod\Labeller
     /**
      * If labeller can generate a uri for this qname, it will return it. Otherwise just returns the original qname.
      *
-     * @param mixed $qname
+     * @param string $qname
      *
      * @return string
      */

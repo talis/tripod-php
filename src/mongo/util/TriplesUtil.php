@@ -27,11 +27,11 @@ class TriplesUtil
      * Add $triples about a given $subject to Mongo. Only $triples with subject matching $subject will be added, others will be ignored.
      * Make them quads with a $context.
      *
-     * @param string $storeName
-     * @param string $podName
-     * @param null   $context
-     * @param null   $allowableTypes
-     * @param mixed  $subject
+     * @param mixed         $subject
+     * @param string        $storeName
+     * @param string        $podName
+     * @param string|null   $context
+     * @param string[]|null $allowableTypes
      */
     public function loadTriplesAbout($subject, array $triples, $storeName, $podName, $context = null, $allowableTypes = null)
     {

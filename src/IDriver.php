@@ -15,7 +15,7 @@ interface IDriver
      *
      * @return mixed
      */
-    public function graph($filter, $includeProperties = []);
+    public function graph(array $filter, array $includeProperties = []);
 
     /**
      * Return (DESCRIBE) the concise bound description of a resource.
@@ -80,22 +80,21 @@ interface IDriver
     /**
      * Select data in a tabular format.
      *
-     * @param array $filter  pattern to match to select views
-     * @param null  $sortBy
-     * @param null  $limit
-     * @param null  $context
-     * @param mixed $fields
+     * @param array       $fields  array of fields, in the same format as prescribed by MongoPHP
+     * @param int|null    $limit
+     * @param int         $offset
+     * @param string|null $context
      *
      * @return array
      */
-    public function select($filter, $fields, $sortBy = null, $limit = null, $context = null);
+    public function select(array $query, array $fields, ?array $sortBy = null, $limit = null, $offset = 0, $context = null);
 
     /**
      * Select data from a table.
      *
-     * @param int   $offset
-     * @param int   $limit
-     * @param mixed $tableType
+     * @param string $tableType
+     * @param int    $offset
+     * @param int    $limit
      *
      * @return array
      */
@@ -109,8 +108,8 @@ interface IDriver
     );
 
     /**
-     * @param mixed $tableType
-     * @param mixed $fieldName
+     * @param string $tableType
+     * @param string $fieldName
      *
      * @return array
      */
@@ -120,11 +119,11 @@ interface IDriver
      * Get a count of resources matching the pattern in $query. Optionally group counts by specifying a $groupBy predicate.
      *
      * @param string|null $groupBy
-     * @param mixed       $query
+     * @param int|null    $ttl     acceptable time to live if you're willing to accept a cached version of this request
      *
      * @return array|int multidimensional array with int values if grouped by, otherwise int
      */
-    public function getCount($query, $groupBy = null);
+    public function getCount(array $query, $groupBy = null, $ttl = null);
 
     /**
      * Save the changes between $oldGraph -> $newGraph.
@@ -139,7 +138,7 @@ interface IDriver
     /**
      * Register an event hook, which will be executed when the event fires.
      *
-     * @param mixed $eventType
+     * @param string $eventType
      */
     public function registerHook($eventType, IEventHook $hook);
 
@@ -161,9 +160,9 @@ interface IDriver
      *
      * @deprecated calling save will generate table rows - this method seems to be only used in tests and does not belong on the interface
      *
+     * @param string      $tableType
      * @param string|null $resource
      * @param string|null $context
-     * @param mixed       $tableType
      */
     public function generateTableRows($tableType, $resource = null, $context = null);
 

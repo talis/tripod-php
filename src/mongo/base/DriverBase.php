@@ -47,10 +47,13 @@ abstract class DriverBase
      */
     protected $podName;
 
+    /**
+     * @var string|null
+     */
     protected $defaultContext;
 
     /**
-     * @var ITripodStat
+     * @var ITripodStat|null
      */
     protected $stat;
 

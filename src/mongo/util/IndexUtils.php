@@ -9,9 +9,9 @@ class IndexUtils
     /**
      * Ensures the index for the given $storeName.
      *
-     * @param bool $reindex    - force a reindex of existing data
-     * @param null $storeName  - database name to ensure indexes for
-     * @param bool $background - index in the background (default) or lock DB whilst indexing
+     * @param bool        $reindex    - force a reindex of existing data
+     * @param string|null $storeName  - database name to ensure indexes for
+     * @param bool        $background - index in the background (default) or lock DB whilst indexing
      */
     public function ensureIndexes($reindex = false, $storeName = null, $background = true)
     {

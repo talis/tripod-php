@@ -4,6 +4,7 @@ namespace Tripod\Mongo;
 
 // @noinspection PhpIncludeInspection
 
+use MongoDB\BSON\UTCDateTime;
 use MongoDB\Driver\ReadPreference;
 use Tripod\Exceptions\Exception;
 use Tripod\Exceptions\SearchException;
@@ -68,7 +69,8 @@ class Driver extends DriverBase implements IDriver
             OP_ASYNC => [OP_VIEWS => false, OP_TABLES => true, OP_SEARCH => true],
             'statsConfig' => [],
             'readPreference' => ReadPreference::RP_PRIMARY_PREFERRED,
-            'retriesToGetLock' => 20], $opts);
+            'retriesToGetLock' => 20,
+        ], $opts);
 
         $this->podName = $podName;
         $this->storeName = $storeName;
@@ -120,8 +122,8 @@ class Driver extends DriverBase implements IDriver
     /**
      * Pass a subject to $resource and have mongo return a DESCRIBE <?resource>.
      *
-     * @param mixed      $resource
-     * @param mixed|null $context
+     * @param string      $resource uri resource you'd like to describe
+     * @param string|null $context  string uri of the context, or named graph, you'd like to describe from
      *
      * @return MongoGraph
      */
@@ -131,7 +133,9 @@ class Driver extends DriverBase implements IDriver
         $query = [
             '_id' => [
                 _ID_RESOURCE => $resource,
-                _ID_CONTEXT => $this->getContextAlias($context)]];
+                _ID_CONTEXT => $this->getContextAlias($context),
+            ],
+        ];
 
         return $this->fetchGraph($query, MONGO_DESCRIBE);
     }
@@ -139,7 +143,7 @@ class Driver extends DriverBase implements IDriver
     /**
      * Pass subjects as to $resources and have mongo return a DESCRIBE <?resource[0]> <?resource[1]> <?resource[2]> etc.
      *
-     * @param null $context
+     * @param string|null $context
      *
      * @return MongoGraph
      */
@@ -150,7 +154,8 @@ class Driver extends DriverBase implements IDriver
             $resource = $this->labeller->uri_to_alias($resource);
             $ids[] = [
                 _ID_RESOURCE => $resource,
-                _ID_CONTEXT => $this->getContextAlias($context)];
+                _ID_CONTEXT => $this->getContextAlias($context),
+            ];
         }
         $query = ['_id' => ['$in' => $ids]];
 
@@ -331,13 +336,13 @@ class Driver extends DriverBase implements IDriver
     /**
      * Returns a count according to the $query and $groupBy conditions.
      *
-     * @param array $query   Mongo query object
-     * @param null  $groupBy
-     * @param null  $ttl     acceptable time to live if you're willing to accept a cached version of this request
+     * @param array       $query   Mongo query object
+     * @param string|null $groupBy
+     * @param int|null    $ttl     acceptable time to live if you're willing to accept a cached version of this request
      *
      * @return array|int
      */
-    public function getCount($query, $groupBy = null, $ttl = null)
+    public function getCount(array $query, $groupBy = null, $ttl = null)
     {
         $t = new Timer();
         $t->start();
@@ -407,16 +412,14 @@ class Driver extends DriverBase implements IDriver
      * Selects $fields from the result set determined by $query.
      * Returns an array of all results, each array element is a CBD graph, keyed by r.
      *
-     * @param array $query
-     * @param array $fields  array of fields, in the same format as prescribed by MongoPHP
-     * @param null  $sortBy
-     * @param null  $limit
-     * @param int   $offset
-     * @param null  $context
+     * @param array       $fields  array of fields, in the same format as prescribed by MongoPHP
+     * @param int|null    $limit
+     * @param int         $offset
+     * @param string|null $context
      *
-     * @return array MongoGraphs, keyed by subject
+     * @return array
      */
-    public function select($query, $fields, $sortBy = null, $limit = null, $offset = 0, $context = null)
+    public function select(array $query, array $fields, ?array $sortBy = null, $limit = null, $offset = 0, $context = null)
     {
         $t = new Timer();
         $t->start();
@@ -497,7 +500,8 @@ class Driver extends DriverBase implements IDriver
                 'offset' => $offset,
                 'limit' => $limit,
             ],
-            'results' => $rows];
+            'results' => $rows,
+        ];
     }
 
     /**
@@ -520,21 +524,21 @@ class Driver extends DriverBase implements IDriver
      * contain properties specified in $includeProperties, an empty graph will be returned
      * todo: unit test.
      *
-     * @param array $includeProperties
-     * @param mixed $query
+     * @param array $filter            conditions to filter by
+     * @param array $includeProperties only include these predicates, empty array means return all predicates
      *
      * @return MongoGraph
      */
-    public function graph($query, $includeProperties = [])
+    public function graph(array $filter, array $includeProperties = [])
     {
-        return $this->fetchGraph($query, MONGO_GET_GRAPH, null, $includeProperties);
+        return $this->fetchGraph($filter, MONGO_GET_GRAPH, null, $includeProperties);
     }
 
     /**
      * Retuns the eTag of the $resource, useful for cache control or optimistic concurrency control.
      *
-     * @param null  $context
-     * @param mixed $resource
+     * @param string      $resource
+     * @param string|null $context
      *
      * @return string
      */
@@ -545,12 +549,15 @@ class Driver extends DriverBase implements IDriver
         $query = [
             '_id' => [
                 _ID_RESOURCE => $resource,
-                _ID_CONTEXT => $this->getContextAlias($context)]];
+                _ID_CONTEXT => $this->getContextAlias($context),
+            ],
+        ];
         $doc = $this->collection->findOne($query, ['projection' => [_UPDATED_TS => true]]);
-        // @var $lastUpdatedDate UTCDateTime
-        $lastUpdatedDate = ($doc != null && array_key_exists(_UPDATED_TS, $doc)) ? $doc[_UPDATED_TS] : null;
 
-        if (isset($lastUpdatedDate) == null) {
+        /** @var UTCDateTime|null $lastUpdatedDate */
+        $lastUpdatedDate = $doc[_UPDATED_TS] ?? null;
+
+        if ($lastUpdatedDate === null) {
             $eTag = '';
         } else {
             // PHP 5.3 used MongoDate::__toString() to generate the etag.
@@ -622,8 +629,8 @@ class Driver extends DriverBase implements IDriver
      * replays all transactions from the transaction log, use the function params to control the from and to date if you
      * only want to replay transactions created during specific window.
      *
-     * @param null $fromDate
-     * @param null $toDate
+     * @param string|null $fromDate only transactions after this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
+     * @param string|null $toDate   only transactions before this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
      *
      * @return bool
      */
@@ -633,12 +640,11 @@ class Driver extends DriverBase implements IDriver
     }
 
     /**
-     * Register an event hook, which.
+     * Register an event hook, which will be executed when the event fires.
      *
-     * @param IEventHook $
-     * @param mixed $eventType
+     * @param string $eventType
      *
-     * @return mixed
+     * @throws Exception when an unrecognised event type is given
      */
     public function registerHook($eventType, IEventHook $hook)
     {

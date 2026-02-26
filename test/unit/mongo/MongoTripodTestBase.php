@@ -7,6 +7,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Tripod\Config;
 use Tripod\ExtendedGraph;
+use Tripod\IDriver;
 use Tripod\Mongo\DateUtil;
 use Tripod\Mongo\Driver;
 use Tripod\Mongo\Labeller;
@@ -133,9 +134,9 @@ abstract class MongoTripodTestBase extends TestCase
     }
 
     /**
-     * @param mixed           $_id
-     * @param Collection|null $collection
-     * @param bool            $fromTransactionLog
+     * @param mixed                   $_id
+     * @param Collection|IDriver|null $collection
+     * @param bool                    $fromTransactionLog
      *
      * @return array|null
      */
@@ -235,13 +236,13 @@ abstract class MongoTripodTestBase extends TestCase
     }
 
     /**
-     * @param      $_id                = the id of the document to retrieve from mongo
-     * @param      $property           = the property you are checking for
-     * @param null $expectedValue      = if not null the property value will be matched against this expectedValue
-     * @param null $tripod             = optional tripod object, defaults to this->tripod
-     * @param bool $fromTransactionLog = true if you want to retrieve the document from transaction log
+     * @param array                   $_id                the id of the document to retrieve from mongo
+     * @param string                  $property           the property you are checking for
+     * @param mixed                   $expectedValue      if not null the property value will be matched against this expectedValue
+     * @param Collection|IDriver|null $tripod             where to retrieve the document from
+     * @param bool                    $fromTransactionLog if you want to retrieve the document from transaction log
      */
-    protected function assertDocumentHasProperty($_id, $property, $expectedValue = null, $tripod = null, $fromTransactionLog = false)
+    protected function assertDocumentHasProperty(array $_id, $property, $expectedValue = null, $tripod = null, $fromTransactionLog = false)
     {
         // just make sure $_id is aliased
         $labeller = new Labeller();
@@ -258,10 +259,10 @@ abstract class MongoTripodTestBase extends TestCase
     }
 
     /**
-     * @param      $_id                = the id of the document to retrieve from mongo
-     * @param      $property           = the property you want to make sure does not exist
-     * @param null $tripod             = optional tripod object, defaults to this->tripod
-     * @param bool $fromTransactionLog = true if you want to retrieve the document from transaction log
+     * @param array                   $_id                the id of the document to retrieve from mongo
+     * @param string                  $property           the property you are checking for
+     * @param Collection|IDriver|null $tripod             where to retrieve the document from
+     * @param bool                    $fromTransactionLog if you want to retrieve the document from transaction log
      */
     protected function assertDocumentDoesNotHaveProperty($_id, $property, $tripod = null, $fromTransactionLog = false)
     {

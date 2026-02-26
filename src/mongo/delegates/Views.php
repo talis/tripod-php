@@ -6,6 +6,7 @@ use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
 use MongoDB\Driver\ReadPreference;
 use Tripod\Exceptions\ViewException;
+use Tripod\ITripodStat;
 use Tripod\Mongo\DateUtil;
 use Tripod\Mongo\ImpactedSubject;
 use Tripod\Mongo\Jobs\ApplyOperation;
@@ -19,12 +20,11 @@ class Views extends CompositeBase
      * Construct accepts actual objects rather than strings as this class is a delegate of
      * Tripod and should inherit connections set up there.
      *
-     * @param string $storeName
-     * @param null   $stat
-     * @param string $readPreference
-     * @param mixed  $defaultContext
+     * @param string      $storeName
+     * @param string|null $defaultContext
+     * @param string      $readPreference
      */
-    public function __construct($storeName, Collection $collection, $defaultContext, $stat = null, $readPreference = ReadPreference::RP_PRIMARY)
+    public function __construct($storeName, Collection $collection, $defaultContext, ?ITripodStat $stat = null, $readPreference = ReadPreference::RP_PRIMARY)
     {
         $this->storeName = $storeName;
         $this->labeller = new Labeller();
@@ -173,9 +173,9 @@ class Views extends CompositeBase
     /**
      * For given $resource, return the view of type $viewType.
      *
-     * @param null  $context
-     * @param mixed $resource
-     * @param mixed $viewType
+     * @param string|null $resource
+     * @param string      $viewType
+     * @param string|null $context
      *
      * @return MongoGraph
      */
@@ -221,8 +221,8 @@ class Views extends CompositeBase
     /**
      * For given $resources, return the views of type $viewType.
      *
-     * @param null  $context
-     * @param mixed $viewType
+     * @param string      $viewType
+     * @param string|null $context
      *
      * @return MongoGraph
      */
@@ -279,8 +279,8 @@ class Views extends CompositeBase
     /**
      * Autodiscovers the multiple view specification that may be applicable for a given resource, and submits each for generation.
      *
-     * @param null  $context
-     * @param mixed $resources
+     * @param array       $resources
+     * @param string|null $context
      */
     public function generateViews($resources, $context = null)
     {
@@ -331,9 +331,9 @@ class Views extends CompositeBase
     /**
      * This method finds all the view specs for the given $rdfType and generates the views for the $resource one by one.
      *
-     * @param null  $resource
-     * @param null  $context
-     * @param mixed $rdfType
+     * @param string      $rdfType
+     * @param string|null $resource
+     * @param string|null $context
      *
      * @return mixed
      *

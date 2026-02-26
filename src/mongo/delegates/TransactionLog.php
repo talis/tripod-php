@@ -136,8 +136,8 @@ class TransactionLog
     /**
      * @param string      $storeName
      * @param string      $podName
-     * @param string|null $fromDate  only transactions after this specified date will be replayed. This must be a datetime string i.e. '2010-01-15 00:00:00'
-     * @param string|null $toDate    only transactions after this specified date will be replayed. This must be a datetime string i.e. '2010-01-15 00:00:00'
+     * @param string|null $fromDate  only transactions after this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
+     * @param string|null $toDate    only transactions before this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
      *
      * @return Cursor
      *
