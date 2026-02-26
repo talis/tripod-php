@@ -24,7 +24,7 @@ class Views extends CompositeBase
      * @param null $stat
      * @param string $readPreference
      */
-    public function __construct($storeName, Collection $collection,$defaultContext,$stat=null,$readPreference = ReadPreference::RP_PRIMARY) // todo: $collection -> podname
+    public function __construct($storeName, Collection $collection,$defaultContext,$stat=null,$readPreference = ReadPreference::RP_PRIMARY)
     {
         $this->storeName = $storeName;
         $this->labeller = new Labeller();

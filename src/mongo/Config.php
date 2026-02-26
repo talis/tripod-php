@@ -1469,15 +1469,12 @@ class Config implements IConfigInstance
 
     /**
      * Returns an array of database names
-     * @todo Refactor this for stores/pods
      * @return array
      */
     public function getDbs()
     {
         return array_keys($this->dbConfig);
     }
-
-    /* PROTECTED FUNCTIONS */
 
     /**
      * @return Labeller

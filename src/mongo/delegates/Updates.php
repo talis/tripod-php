@@ -230,8 +230,6 @@ class Updates extends DriverBase
     /**
      * Change the read preferences to RP_PRIMARY
      * Used for a write operation
-     * @todo When there is a getReadPreference function available in the PHP Mongo library (or the read
-     * preference is readable) we should use that instead of the debugInfo function we're using here.
      */
     protected function setReadPreferenceToPrimary()
     {
@@ -318,7 +316,6 @@ class Updates extends DriverBase
             list($namespace, $predicateName) = explode(':', $qname);
             if (!array_key_exists($namespace, $namespaces))
             {
-                //TODO This may be changed to a namespace exception at some point...
                 throw new \Tripod\Exceptions\CardinalityException("Namespace '{$namespace}' not defined for qname: {$qname}");
             }
 
@@ -618,7 +615,6 @@ class Updates extends DriverBase
                 //todo: criteria at this point should probably include all removal statements if they exist
                 // i.e. we only want to update document if it has all these values ( think platform 409 )
                 // currently the only criteria is the doc id
-                //var_dump($targetGraph->to_tripod_array($subjectOfChange));
                 $updatedAt = \Tripod\Mongo\DateUtil::getMongoDate();
 
                 if (!isset($doc[_VERSION]))

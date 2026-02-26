@@ -95,7 +95,6 @@ interface IDriver
     );
 
     /**
-     * todo: work out what this does
      * @param $tableType
      * @param $fieldName
      * @param array $filter

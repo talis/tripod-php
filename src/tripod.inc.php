@@ -1,7 +1,5 @@
 <?php
 
-//todo: this file is mis-named. It has mongo specifics
-
 if (!defined('TRIPOD_DIR')) {
     define('TRIPOD_DIR', dirname(__FILE__) . '/' );
 }

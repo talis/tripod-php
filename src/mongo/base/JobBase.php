@@ -10,9 +10,6 @@ use Tripod\ITripodConfigSerializer;
 use Tripod\TripodConfigFactory;
 use Tripod\Config;
 
-/**
- * Todo: How to inject correct stat class... :-S
- */
 abstract class JobBase extends \Tripod\Mongo\DriverBase
 {
     /**
