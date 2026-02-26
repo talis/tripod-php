@@ -1,10 +1,12 @@
 <?php
 
+use Tripod\Mongo\TriplesUtil;
+
 class TriplesUtilTest extends MongoTripodTestBase
 {
     public function testGetTArrayAbout()
     {
-        $tu = new Tripod\Mongo\TriplesUtil();
+        $tu = new TriplesUtil();
         $triples = [];
 
         $triples[] = '<http://serials.talisaspire.com/issn/0893-0465> <http://xmlns.com/foaf/0.1/page> <http://www.ingentaconnect.com/content/bpl/ciso> . ';

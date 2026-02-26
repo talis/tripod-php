@@ -4,6 +4,4 @@ namespace Tripod\Exceptions;
 
 // @codeCoverageIgnoreStart
 
-class JobException extends Exception {
-
-} // @codeCoverageIgnoreEnd
+class JobException extends Exception {} // @codeCoverageIgnoreEnd

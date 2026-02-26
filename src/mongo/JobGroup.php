@@ -2,7 +2,10 @@
 
 namespace Tripod\Mongo;
 
-use \MongoDB\BSON\ObjectId;
+use MongoDB\BSON\ObjectId;
+use MongoDB\Collection;
+use MongoDB\Operation\FindOneAndUpdate;
+use Tripod\Config;
 
 class JobGroup
 {
@@ -11,9 +14,10 @@ class JobGroup
     private $storeName;
 
     /**
-     * Constructor method
-     * @param string                        $storeName Tripod store (database) name
-     * @param string|ObjectId $groupId   Optional tracking ID, will assign a new one if omitted
+     * Constructor method.
+     *
+     * @param string          $storeName Tripod store (database) name
+     * @param ObjectId|string $groupId   Optional tracking ID, will assign a new one if omitted
      */
     public function __construct($storeName, $groupId = null)
     {
@@ -27,10 +31,9 @@ class JobGroup
     }
 
     /**
-     * Update the number of jobs
+     * Update the number of jobs.
      *
-     * @param integer $count Number of jobs in group
-     * @return void
+     * @param int $count Number of jobs in group
      */
     public function setJobCount($count)
     {
@@ -42,21 +45,23 @@ class JobGroup
     }
 
     /**
-     * Update the number of jobs by $inc.  To decrement, use a negative integer
+     * Update the number of jobs by $inc.  To decrement, use a negative integer.
      *
-     * @param integer $inc Number to increment or decrement by
-     * @return integer Updated job count
+     * @param int $inc Number to increment or decrement by
+     *
+     * @return int Updated job count
      */
     public function incrementJobCount($inc = 1)
     {
         $updateResult = $this->getMongoCollection()->findOneAndUpdate(
             ['_id' => $this->getId()],
             ['$inc' => ['count' => $inc]],
-            ['upsert' => true, 'returnDocument' => \MongoDB\Operation\FindOneAndUpdate::RETURN_DOCUMENT_AFTER]
+            ['upsert' => true, 'returnDocument' => FindOneAndUpdate::RETURN_DOCUMENT_AFTER]
         );
         if (\is_array($updateResult)) {
             return $updateResult['count'];
-        } elseif (isset($updateResult->count)) {
+        }
+        if (isset($updateResult->count)) {
             return $updateResult->count;
         }
     }
@@ -70,17 +75,18 @@ class JobGroup
     }
 
     /**
-     * For mocking
+     * For mocking.
      *
-     * @return \MongoDB\Collection
+     * @return Collection
      */
     protected function getMongoCollection()
     {
         if (!isset($this->collection)) {
-            $config = \Tripod\Config::getInstance();
+            $config = Config::getInstance();
 
             $this->collection = $config->getCollectionForJobGroups($this->storeName);
         }
+
         return $this->collection;
     }
 }

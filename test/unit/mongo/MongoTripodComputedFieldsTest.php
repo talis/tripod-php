@@ -1,5 +1,8 @@
 <?php
 
+use Tripod\Config;
+use Tripod\Mongo\Driver;
+
 class MongoTripodComputedFieldsTest extends MongoTripodTestBase
 {
     protected $originalConfig = [];
@@ -7,13 +10,13 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->originalConfig = Tripod\Config::getConfig();
+        $this->originalConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
     }
 
     protected function tearDown(): void
     {
-        Tripod\Config::setConfig($this->originalConfig);
+        Config::setConfig($this->originalConfig);
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MIN);
         parent::tearDown();
     }
@@ -56,16 +59,16 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
             ],
         ];
 
-        $oldConfig = Tripod\Config::getConfig();
-        $newConfig = Tripod\Config::getConfig();
+        $oldConfig = Config::getConfig();
+        $newConfig = Config::getConfig();
         $newConfig['stores']['tripod_php_testing']['table_specifications'][] = $tableSpec;
-        Tripod\Config::setConfig($newConfig);
-        Tripod\Config::getInstance();
-        $this->tripod = new Tripod\Mongo\Driver('CBD_testing', 'tripod_php_testing');
+        Config::setConfig($newConfig);
+        Config::getInstance();
+        $this->tripod = new Driver('CBD_testing', 'tripod_php_testing');
         $this->loadDatesDataViaTripod();
         $this->tripod->generateTableRows('t_conditional_creators');
 
-        $collection = Tripod\Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_conditional_creators');
+        $collection = Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_conditional_creators');
 
         $tableDoc = $collection->findOne(['_id.type' => 't_conditional_creators', '_id.r' => 'baseData:foo1234']);
         $this->assertEquals('Updated', $tableDoc['value']['status']);
@@ -73,8 +76,8 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         $tableDoc = $collection->findOne(['_id.type' => 't_conditional_creators', '_id.r' => 'baseData:foo12345']);
         $this->assertEquals('Published', $tableDoc['value']['status']);
 
-        Tripod\Config::setConfig($oldConfig);
-        Tripod\Config::getInstance();
+        Config::setConfig($oldConfig);
+        Config::getInstance();
         $collection->drop();
     }
 
@@ -118,15 +121,15 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
             ],
         ];
 
-        $oldConfig = Tripod\Config::getConfig();
-        $newConfig = Tripod\Config::getConfig();
+        $oldConfig = Config::getConfig();
+        $newConfig = Config::getConfig();
         $newConfig['stores']['tripod_php_testing']['table_specifications'][] = $tableSpec;
-        Tripod\Config::setConfig($newConfig);
-        Tripod\Config::getInstance();
-        $this->tripod = new Tripod\Mongo\Driver('CBD_testing', 'tripod_php_testing');
+        Config::setConfig($newConfig);
+        Config::getInstance();
+        $this->tripod = new Driver('CBD_testing', 'tripod_php_testing');
         $this->loadResourceDataViaTripod();
         $this->tripod->generateTableRows('t_conditional_creators');
-        $collection = Tripod\Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_conditional_creators');
+        $collection = Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_conditional_creators');
 
         $tableDoc = $collection->findOne(['_id.type' => 't_conditional_creators', '_id.r' => 'baseData:foo1234']);
 
@@ -137,19 +140,13 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         $this->assertEquals(1, $tableDoc['value']['creatorCount']);
         $this->assertEquals(2, $tableDoc['value']['contributorCount']);
 
-        Tripod\Config::setConfig($oldConfig);
-        Tripod\Config::getInstance();
+        Config::setConfig($oldConfig);
+        Config::getInstance();
         $collection->drop();
-    }
-
-    protected function generateUniqueTableId($prefix)
-    {
-        return uniqid($prefix);
     }
 
     public function testNestedConditionalComputedField()
     {
-
         $tableSpec = [
             '_id' => 't_conditional_creators',
             'type' => ['bibo:Book', 'bibo:Document'],
@@ -186,15 +183,15 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
             ],
         ];
 
-        $oldConfig = Tripod\Config::getConfig();
-        $newConfig = Tripod\Config::getConfig();
+        $oldConfig = Config::getConfig();
+        $newConfig = Config::getConfig();
         $newConfig['stores']['tripod_php_testing']['table_specifications'] = [$tableSpec];
-        Tripod\Config::setConfig($newConfig);
-        Tripod\Config::getInstance();
-        $this->tripod = new Tripod\Mongo\Driver('CBD_testing', 'tripod_php_testing');
+        Config::setConfig($newConfig);
+        Config::getInstance();
+        $this->tripod = new Driver('CBD_testing', 'tripod_php_testing');
         $this->loadResourceDataViaTripod();
         $this->tripod->generateTableRows('t_conditional_creators');
-        $collection = Tripod\Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_conditional_creators');
+        $collection = Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_conditional_creators');
 
         $tableDoc = $collection->findOne(['_id.type' => 't_conditional_creators', '_id.r' => 'baseData:foo1234']);
 
@@ -227,8 +224,8 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         $this->assertArrayNotHasKey('contributorCount', $tableDoc['value']);
         $this->assertArrayNotHasKey('creatorCount', $tableDoc['value']);
 
-        Tripod\Config::setConfig($oldConfig);
-        Tripod\Config::getInstance();
+        Config::setConfig($oldConfig);
+        Config::getInstance();
         $collection->drop();
     }
 
@@ -271,15 +268,15 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
             ],
         ];
 
-        $oldConfig = Tripod\Config::getConfig();
-        $newConfig = Tripod\Config::getConfig();
+        $oldConfig = Config::getConfig();
+        $newConfig = Config::getConfig();
         $newConfig['stores']['tripod_php_testing']['table_specifications'][] = $tableSpec;
-        Tripod\Config::setConfig($newConfig);
-        Tripod\Config::getInstance();
-        $this->tripod = new Tripod\Mongo\Driver('CBD_testing', 'tripod_php_testing');
+        Config::setConfig($newConfig);
+        Config::getInstance();
+        $this->tripod = new Driver('CBD_testing', 'tripod_php_testing');
         $this->loadResourceDataViaTripod();
         $this->tripod->generateTableRows('t_replace_type');
-        $collection = Tripod\Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_replace_type');
+        $collection = Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_replace_type');
 
         $tableDoc = $collection->findOne(['_id.type' => 't_replace_type', '_id.r' => 'baseData:foo1234']);
 
@@ -306,8 +303,8 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         $this->assertEquals('Book Work', $tableDoc['value']['resourceType']);
         $this->assertArrayNotHasKey('rdfType', $tableDoc['value']);
 
-        Tripod\Config::setConfig($oldConfig);
-        Tripod\Config::getInstance();
+        Config::setConfig($oldConfig);
+        Config::getInstance();
         $collection->drop();
     }
 
@@ -361,15 +358,15 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
             ],
         ];
 
-        $oldConfig = Tripod\Config::getConfig();
-        $newConfig = Tripod\Config::getConfig();
+        $oldConfig = Config::getConfig();
+        $newConfig = Config::getConfig();
         $newConfig['stores']['tripod_php_testing']['table_specifications'][] = $tableSpec;
-        Tripod\Config::setConfig($newConfig);
-        Tripod\Config::getInstance();
-        $this->tripod = new Tripod\Mongo\Driver('CBD_testing', 'tripod_php_testing');
+        Config::setConfig($newConfig);
+        Config::getInstance();
+        $this->tripod = new Driver('CBD_testing', 'tripod_php_testing');
         $this->loadResourceDataViaTripod();
         $this->tripod->generateTableRows('t_creator_count');
-        $collection = Tripod\Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_creator_count');
+        $collection = Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_creator_count');
 
         $tableDoc = $collection->findOne(['_id.type' => 't_creator_count', '_id.r' => 'baseData:foo1234']);
 
@@ -402,8 +399,8 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         $this->assertArrayNotHasKey('contributorCount', $tableDoc['value']);
         $this->assertArrayNotHasKey('creatorCount', $tableDoc['value']);
 
-        Tripod\Config::setConfig($oldConfig);
-        Tripod\Config::getInstance();
+        Config::setConfig($oldConfig);
+        Config::getInstance();
         $collection->drop();
     }
 
@@ -430,20 +427,20 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
                 ],
             ],
         ];
-        $oldConfig = Tripod\Config::getConfig();
-        $newConfig = Tripod\Config::getConfig();
+        $oldConfig = Config::getConfig();
+        $newConfig = Config::getConfig();
         $newConfig['stores']['tripod_php_testing']['table_specifications'][] = $tableSpec;
-        Tripod\Config::setConfig($newConfig);
-        Tripod\Config::getInstance();
-        $this->tripod = new Tripod\Mongo\Driver('CBD_testing', 'tripod_php_testing');
+        Config::setConfig($newConfig);
+        Config::getInstance();
+        $this->tripod = new Driver('CBD_testing', 'tripod_php_testing');
         $this->loadResourceDataViaTripod();
         $this->tripod->generateTableRows('t_conditional_with_nested_arithmetic');
-        $collection = Tripod\Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_conditional_with_nested_arithmetic');
+        $collection = Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_conditional_with_nested_arithmetic');
         $tableDoc = $collection->findOne(['_id.type' => 't_conditional_with_nested_arithmetic']);
 
         $this->assertEquals('b', $tableDoc['value']['foobar']);
-        Tripod\Config::setConfig($oldConfig);
-        Tripod\Config::getInstance();
+        Config::setConfig($oldConfig);
+        Config::getInstance();
         $collection->drop();
     }
 
@@ -478,20 +475,25 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
                 ],
             ],
         ];
-        $oldConfig = Tripod\Config::getConfig();
-        $newConfig = Tripod\Config::getConfig();
+        $oldConfig = Config::getConfig();
+        $newConfig = Config::getConfig();
         $newConfig['stores']['tripod_php_testing']['table_specifications'][] = $tableSpec;
-        Tripod\Config::setConfig($newConfig);
-        Tripod\Config::getInstance();
-        $this->tripod = new Tripod\Mongo\Driver('CBD_testing', 'tripod_php_testing');
+        Config::setConfig($newConfig);
+        Config::getInstance();
+        $this->tripod = new Driver('CBD_testing', 'tripod_php_testing');
         $this->loadResourceDataViaTripod();
         $this->tripod->generateTableRows('t_arithmetic_with_nested_conditional');
-        $collection = Tripod\Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_arithmetic_with_nested_conditional');
+        $collection = Config::getInstance()->getCollectionForTable('tripod_php_testing', 't_arithmetic_with_nested_conditional');
         $tableDoc = $collection->findOne(['_id.type' => 't_arithmetic_with_nested_conditional']);
 
         $this->assertEquals(300, $tableDoc['value']['foobar']);
-        Tripod\Config::setConfig($oldConfig);
-        Tripod\Config::getInstance();
+        Config::setConfig($oldConfig);
+        Config::getInstance();
         $collection->drop();
+    }
+
+    protected function generateUniqueTableId($prefix)
+    {
+        return uniqid($prefix);
     }
 }

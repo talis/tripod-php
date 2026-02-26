@@ -1,8 +1,5 @@
 <?php
 
-
 namespace Tripod\Exceptions;
 
-class ConfigException extends Exception {
-
-}
+class ConfigException extends Exception {}

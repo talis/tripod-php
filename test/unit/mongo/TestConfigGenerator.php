@@ -1,6 +1,8 @@
 <?php
 
-class TestConfigGenerator extends Tripod\Mongo\Config
+use Tripod\Mongo\Config;
+
+class TestConfigGenerator extends Config
 {
     protected $fileName;
 
@@ -17,6 +19,7 @@ class TestConfigGenerator extends Tripod\Mongo\Config
         $instance->fileName = $config['filename'];
         $cfg = json_decode(file_get_contents($config['filename']), true);
         $instance->loadConfig($cfg);
+
         return $instance;
     }
 }

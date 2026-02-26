@@ -1,10 +1,12 @@
 <?php
 
-class TestJobBase extends Tripod\Mongo\Jobs\JobBase
+use Tripod\Mongo\Jobs\JobBase;
+
+class TestJobBase extends JobBase
 {
     /**
-     * Expose this method for testing
-     * @inheritDoc
+     * Expose this method for testing.
+     * {@inheritDoc}
      */
     public function getTripodConfig()
     {

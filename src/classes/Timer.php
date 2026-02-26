@@ -2,30 +2,32 @@
 
 namespace Tripod;
 
+use Tripod\Exceptions\TimerException;
+
 class Timer
 {
     /**
      * @var string, start time of event as returned from php microtime()
      */
-    private $start_time = NULL;
+    private $start_time;
 
     /**
      * @var string, end time of event as returned from php microtime()
      */
-    private $end_time = NULL;
+    private $end_time;
 
     /**
      * @var int, difference in milliseconds of event's start time and end time
      */
-    private $result = NULL;
+    private $result;
 
     /**
      * @var int, difference in micro-seconds of event's start time and end time
      */
-    private $micro_result = NULL;
+    private $micro_result;
 
     /**
-     * Captures current microtime as time of start. Call this before start of event
+     * Captures current microtime as time of start. Call this before start of event.
      */
     public function start()
     {
@@ -42,62 +44,62 @@ class Timer
 
     /**
      * Calculate difference between start and end time of event and return in milli-seconds.
-     * @throws \Exception
+     *
      * @return number time difference in milliseconds between start and end time of event
+     *
+     * @throws \Exception
      */
     public function result()
     {
-        if (is_null($this->start_time))
-        {
+        if (is_null($this->start_time)) {
             throw new \Exception('Timer: start method not called !');
         }
-        else if (is_null($this->end_time))
-        {
+        if (is_null($this->end_time)) {
             throw new \Exception('Timer: stop method not called !');
         }
 
-        if ($this->result==null)
-        {
-            list($endTimeMicroSeconds, $endTimeSeconds) = explode(' ', $this->end_time);
-            list($startTimeMicroSeconds, $startTimeSeconds) = explode(' ', $this->start_time);
+        if ($this->result == null) {
+            [$endTimeMicroSeconds, $endTimeSeconds] = explode(' ', $this->end_time);
+            [$startTimeMicroSeconds, $startTimeSeconds] = explode(' ', $this->start_time);
 
-            $differenceInMilliSeconds =  ((float)$endTimeSeconds - (float)$startTimeSeconds)*1000;
+            $differenceInMilliSeconds = ((float) $endTimeSeconds - (float) $startTimeSeconds) * 1000;
 
-            $this->result = round(($differenceInMilliSeconds + ((float)$endTimeMicroSeconds *1000)) -  (float)$startTimeMicroSeconds *1000);
+            $this->result = round(($differenceInMilliSeconds + ((float) $endTimeMicroSeconds * 1000)) - (float) $startTimeMicroSeconds * 1000);
         }
+
         return $this->result;
     }
 
     /**
      * Calculate difference between start and end time of event and return in micro-seconds.
+     *
      * @return number time difference in micro seconds between start and end time of event
+     *
      * @throws \Exception, if either of or both  of start or stop method are not called before this method
      */
     public function microResult()
     {
-        if (is_null($this->start_time))
-        {
-            throw new \Tripod\Exceptions\TimerException('Timer: start method not called !');
+        if (is_null($this->start_time)) {
+            throw new TimerException('Timer: start method not called !');
         }
-        else if (is_null($this->end_time))
-        {
-            throw new \Tripod\Exceptions\TimerException('Timer: stop method not called !');
+        if (is_null($this->end_time)) {
+            throw new TimerException('Timer: stop method not called !');
         }
 
-        if ($this->micro_result==null)
-        {
-            list($endTimeMicroSeconds, $endTimeSeconds) = explode(' ', $this->end_time);
-            list($startTimeMicroSeconds, $startTimeSeconds) = explode(' ', $this->start_time);
+        if ($this->micro_result == null) {
+            [$endTimeMicroSeconds, $endTimeSeconds] = explode(' ', $this->end_time);
+            [$startTimeMicroSeconds, $startTimeSeconds] = explode(' ', $this->start_time);
 
-            $differenceInMicroSeconds =  ((float)$endTimeSeconds - (float)$startTimeSeconds)*1000000;
+            $differenceInMicroSeconds = ((float) $endTimeSeconds - (float) $startTimeSeconds) * 1000000;
 
-            $this->micro_result = round(($differenceInMicroSeconds + ((float)$endTimeMicroSeconds *1000000)) -  (float)$startTimeMicroSeconds *1000000);
+            $this->micro_result = round(($differenceInMicroSeconds + ((float) $endTimeMicroSeconds * 1000000)) - (float) $startTimeMicroSeconds * 1000000);
         }
+
         return $this->micro_result;
     }
 
     /**
-     * @return string current system time in pair of seconds microseconds.
+     * @return string current system time in pair of seconds microseconds
      */
     private function getMicrotime()
     {

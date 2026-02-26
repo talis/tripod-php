@@ -1,16 +1,19 @@
 <?php
 
 use PHPUnit\Framework\MockObject\MockObject;
+use Tripod\Mongo\Driver;
+use Tripod\Mongo\MongoGraph;
+use Tripod\Mongo\TransactionLog;
 
 class MongoTripodDocumentStructureTest extends MongoTripodTestBase
 {
     /**
-     * @var MockObject&Tripod\Mongo\Driver
+     * @var Driver&MockObject
      */
     protected $tripod;
 
     /**
-     * @var Tripod\Mongo\TransactionLog
+     * @var TransactionLog
      */
     protected $tripodTransactionLog;
 
@@ -19,10 +22,10 @@ class MongoTripodDocumentStructureTest extends MongoTripodTestBase
         parent::setup();
         // Mongo::setPoolSize(200);
 
-        $this->tripodTransactionLog = new Tripod\Mongo\TransactionLog();
+        $this->tripodTransactionLog = new TransactionLog();
         $this->tripodTransactionLog->purgeAllTransactions();
 
-        $this->tripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $this->tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods([])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing', ['defaultContext' => 'http://talisaspire.com/']])
             ->getMock();
@@ -37,9 +40,9 @@ class MongoTripodDocumentStructureTest extends MongoTripodTestBase
     {
         $id = ['r' => 'http://talisaspire.com/resources/testDocument', 'c' => 'http://talisaspire.com/'];
 
-        $graph = new Tripod\Mongo\MongoGraph();
+        $graph = new MongoGraph();
         $graph->add_literal_triple($id['r'], $graph->qname_to_uri('searchterms:title'), 'TEST TITLE');
-        $this->tripod->saveChanges(new Tripod\Mongo\MongoGraph(), $graph);
+        $this->tripod->saveChanges(new MongoGraph(), $graph);
 
         $this->assertDocumentExists($id);
         $this->assertDocumentHasProperty($id, _VERSION, 0);
@@ -52,9 +55,9 @@ class MongoTripodDocumentStructureTest extends MongoTripodTestBase
         // create an initial document
         $id = ['r' => 'http://talisaspire.com/resources/testDocument', 'c' => 'http://talisaspire.com/'];
 
-        $graph = new Tripod\Mongo\MongoGraph();
+        $graph = new MongoGraph();
         $graph->add_literal_triple($id['r'], $graph->qname_to_uri('searchterms:title'), 'TEST TITLE');
-        $this->tripod->saveChanges(new Tripod\Mongo\MongoGraph(), $graph);
+        $this->tripod->saveChanges(new MongoGraph(), $graph);
         // assert that it is at version 0
         $this->assertDocumentExists($id);
         $this->assertDocumentHasProperty($id, _VERSION, 0);
@@ -67,7 +70,7 @@ class MongoTripodDocumentStructureTest extends MongoTripodTestBase
         sleep(1); // have to sleep to make sure ->sec will be greater between writes.
 
         // change document through tripod
-        $newGraph = new Tripod\Mongo\MongoGraph();
+        $newGraph = new MongoGraph();
         $newGraph->add_literal_triple($id['r'], $graph->qname_to_uri('searchterms:title'), 'CHANGED TITLE');
         $this->tripod->saveChanges($graph, $newGraph);
 
@@ -86,7 +89,7 @@ class MongoTripodDocumentStructureTest extends MongoTripodTestBase
         sleep(1);
 
         // update again
-        $finalGraph = new Tripod\Mongo\MongoGraph();
+        $finalGraph = new MongoGraph();
         $finalGraph->add_literal_triple($id['r'], $graph->qname_to_uri('searchterms:title'), 'CHANGED TITLE AGAIN');
         $this->tripod->saveChanges($newGraph, $finalGraph);
 
@@ -104,7 +107,7 @@ class MongoTripodDocumentStructureTest extends MongoTripodTestBase
 
         // now delete through tripod, only the _ID, _VERSION, _UPDATED_TS and _CREATED_TS properties should exist on the document
         // updated ts will have changed the created should not have
-        $this->tripod->saveChanges($finalGraph, new Tripod\Mongo\MongoGraph());
+        $this->tripod->saveChanges($finalGraph, new MongoGraph());
 
         $this->assertDocumentExists($id);
         $deleted_document = $this->getDocument($id);
@@ -120,7 +123,7 @@ class MongoTripodDocumentStructureTest extends MongoTripodTestBase
 
     /**
      * This test verifies that if a document was previously added to mongo without any timestamps i.e. _UPDATED_TS and _CREATED_TS
-     * then on a tripod write only the _UPDATED_TS will be added to the document
+     * then on a tripod write only the _UPDATED_TS will be added to the document.
      */
     public function testOnlyDocumentUpdatedTimestampIsAddedToDocumentThatDidntHaveTimestampsToBeginWith()
     {
@@ -142,9 +145,9 @@ class MongoTripodDocumentStructureTest extends MongoTripodTestBase
         $this->assertDocumentDoesNotHaveProperty($_id, _CREATED_TS);
 
         // change the document through tripod, for this im just doing a new addition
-        $graph = new Tripod\Mongo\MongoGraph();
+        $graph = new MongoGraph();
         $graph->add_literal_triple($_id['r'], $graph->qname_to_uri('searchterms:title'), 'a new property');
-        $this->tripod->saveChanges(new Tripod\Mongo\MongoGraph(), $graph);
+        $this->tripod->saveChanges(new MongoGraph(), $graph);
 
         // Now assert, document should contain the additiona triple we added, an updated _version.
         // Should now also contain an _UPDATED_TS but not a _CREATED_TS

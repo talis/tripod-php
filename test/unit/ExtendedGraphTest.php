@@ -16,6 +16,8 @@ class ExtendedGraphTest extends TestCase
 
     /**
      * @dataProvider addValidValueToLiteralResultsInTriple_Provider
+     *
+     * @param mixed $value
      */
     public function testAddValidValueToLiteralResultsInTriple($value)
     {
@@ -39,6 +41,8 @@ class ExtendedGraphTest extends TestCase
 
     /**
      * @dataProvider addInvalidValueToLiteralResultsInNoTriple_Provider
+     *
+     * @param mixed $value
      */
     public function testAddInvalidValueToLiteralResultsInNoTriple($value)
     {
@@ -61,6 +65,8 @@ class ExtendedGraphTest extends TestCase
 
     /**
      * @dataProvider addInvalidSubjectToLiteralResultsInNoTriple_Provider
+     *
+     * @param mixed $value
      */
     public function testAddInvalidSubjectToLiteralThrowsException($value)
     {
@@ -86,6 +92,8 @@ class ExtendedGraphTest extends TestCase
 
     /**
      * @dataProvider addInvalidSubjectToLiteralResultsInNoTriple_Provider
+     *
+     * @param mixed $value
      */
     public function testAddInvalidPredicateToLiteralThrowsException($value)
     {
@@ -122,6 +130,8 @@ class ExtendedGraphTest extends TestCase
 
     /**
      * @dataProvider addInvalidValueToResourceResultsInNoTriple_Provider
+     *
+     * @param mixed $value
      */
     public function testAddInvalidValueToResourceResultsInNoTriple($value)
     {
@@ -149,6 +159,8 @@ class ExtendedGraphTest extends TestCase
 
     /**
      * @dataProvider addInvalidSubjectToResourceResultsInNoTriple_Provider
+     *
+     * @param mixed $value
      */
     public function testAddInvalidSubjectToResourceThrowsException($value)
     {
@@ -174,6 +186,8 @@ class ExtendedGraphTest extends TestCase
 
     /**
      * @dataProvider addInvalidSubjectToLiteralResultsInNoTriple_Provider
+     *
+     * @param mixed $value
      */
     public function testAddInvalidPredicateToResourceThrowsException($value)
     {
@@ -557,7 +571,6 @@ class ExtendedGraphTest extends TestCase
 
     public function testGetResources()
     {
-
         $graph = new ExtendedGraph();
 
         $graph->add_literal_triple('http://some/subject/1', 'http://some/predicate/p1', 'some object');
@@ -578,7 +591,6 @@ class ExtendedGraphTest extends TestCase
 
     public function testGetLabelForUri()
     {
-
         $graph = new ExtendedGraph();
 
         $label = 'Wuthering Heights';
@@ -624,7 +636,6 @@ class ExtendedGraphTest extends TestCase
         ExtendedGraph::initProperties(['labelProperties' => ['http://www.w3.org/2000/01/rdf-schema#label']]);
 
         $this->assertEquals($graph->get_label_for_uri('http://example.com/1'), '');
-
     }
 
     public function testGetLabelForUriReturnsEmptyStringLabelNotFound()
@@ -641,7 +652,6 @@ class ExtendedGraphTest extends TestCase
         ExtendedGraph::initProperties(['labelProperties' => ['http://www.w3.org/2000/01/rdf-schema#label2']]);
 
         $this->assertEquals($graph->get_label_for_uri($s1), '');
-
     }
 
     public function testIsEqualToReturnsTrueForIdenticalGraphs()
@@ -696,7 +706,6 @@ class ExtendedGraphTest extends TestCase
         // Different object
         $this->assertFalse($graph2->is_equal_to($graph5), 'graph2 should not equal graph5');
         $this->assertFalse($graph5->is_equal_to($graph2), 'graph5 should not equal graph2');
-
     }
 
     public function testIsEqualToIgnoresNamespaceDifferences()

@@ -5,7 +5,8 @@ namespace Tripod\Exceptions;
 /**
  * @codeCoverageIgnore
  */
-class LabellerException extends Exception {
+class LabellerException extends Exception
+{
     private $target;
 
     /**
@@ -14,7 +15,7 @@ class LabellerException extends Exception {
     public function __construct($target)
     {
         $this->target = $target;
-        parent::__construct("Could not label: $target");
+        parent::__construct("Could not label: {$target}");
     }
 
     /**

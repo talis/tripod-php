@@ -12,12 +12,12 @@ interface ITripodConfig
     public static function getInstance(): IConfigInstance;
 
     /**
-     * Loads the Tripod config into the instance
+     * Loads the Tripod config into the instance.
      */
     public static function setConfig(array $config): void;
 
     /**
-     * Returns the Tripod config array
+     * Returns the Tripod config array.
      */
     public static function getConfig(): array;
 }

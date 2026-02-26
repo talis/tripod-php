@@ -1,47 +1,49 @@
 <?php
+
+use Tripod\Config;
+use Tripod\Mongo\TriplesUtil;
+
 require_once dirname(__FILE__) . '/common.inc.php';
 
-require_once dirname(dirname(dirname(__FILE__))).'/src/tripod.inc.php';
+require_once dirname(dirname(dirname(__FILE__))) . '/src/tripod.inc.php';
 
-if ($argc!=2)
-{
-	echo "usage: ./triplesToBSON.php tripodconfig.json < ntriplesdata\n";
-	die();
+if ($argc != 2) {
+    echo "usage: ./triplesToBSON.php tripodconfig.json < ntriplesdata\n";
+
+    exit;
 }
 array_shift($argv);
 
 $config = json_decode(file_get_contents($argv[0]), true);
-\Tripod\Config::setConfig($config);
+Config::setConfig($config);
 
-$currentSubject = "";
-$triples = array();
-$docs = array();
-$errors = array(); // array of subjects that failed to insert, even after retry...
-$tu = new \Tripod\Mongo\TriplesUtil();
+$currentSubject = '';
+$triples = [];
+$docs = [];
+$errors = []; // array of subjects that failed to insert, even after retry...
+$tu = new TriplesUtil();
 
 while (($line = fgets(STDIN)) !== false) {
     $line = rtrim($line);
 
-    $parts = preg_split("/\s/",$line);
-    $subject = trim($parts[0],'><');
+    $parts = preg_split('/\\s/', $line);
+    $subject = trim($parts[0], '><');
 
-    if (empty($currentSubject)) // set for first iteration
-    {
+    if (empty($currentSubject)) { // set for first iteration
         $currentSubject = $subject;
     }
 
-    if ($currentSubject!=$subject) // once subject changes, we have all triples for that subject, flush to Mongo
-    {
-        print(json_encode($tu->getTArrayAbout($currentSubject,$triples,\Tripod\Config::getInstance()->getDefaultContextAlias()))."\n");
-        $currentSubject=$subject; // reset current subject to next subject
-        $triples = array(); // reset triples
+    if ($currentSubject != $subject) { // once subject changes, we have all triples for that subject, flush to Mongo
+        echo json_encode($tu->getTArrayAbout($currentSubject, $triples, Config::getInstance()->getDefaultContextAlias())) . "\n";
+        $currentSubject = $subject; // reset current subject to next subject
+        $triples = []; // reset triples
     }
 
     $triples[] = $line;
 }
 
 // last doc
-print(json_encode($tu->getTArrayAbout($currentSubject,$triples,\Tripod\Config::getInstance()->getDefaultContextAlias()))."\n");
+echo json_encode($tu->getTArrayAbout($currentSubject, $triples, Config::getInstance()->getDefaultContextAlias())) . "\n";
 
 ?>
 

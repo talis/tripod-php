@@ -1,145 +1,133 @@
 <?php
+
+use Tripod\Config;
+use Tripod\Mongo\TriplesUtil;
+
 require_once dirname(__FILE__) . '/common.inc.php';
-require_once dirname(dirname(dirname(__FILE__))).'/src/tripod.inc.php';
 
-ini_set('memory_limit','32M');
+require_once dirname(dirname(dirname(__FILE__))) . '/src/tripod.inc.php';
 
-if ($argc!=1)
-{
+ini_set('memory_limit', '32M');
+
+if ($argc != 1) {
     echo "usage: php detectNamespaces.php < triples\n";
-    die();
+
+    exit;
 }
 array_shift($argv);
 
-$dummyDbConfig = array(
-    "database"=>"foo",
-    "collection"=>"bar",
-    "connStr"=>"baz"
-);
-$config = array(
-    "namespaces"=>array(),
-    "defaultContext"=>"http://example.com/",
-    "transaction_log"=>$dummyDbConfig,
-    "es_config"=>array(
-        "endpoint"=>"http://example.com/",
-        "indexes"=>array(),
-        "search_document_specifications"=>array()
-    ),
-    "queue"=>$dummyDbConfig,
-    "databases"=>array(
-        "default"=>array(
-            "connStr"=>"baz",
-            "collections"=>array()
-        )
-    ),
-);
+$dummyDbConfig = [
+    'database' => 'foo',
+    'collection' => 'bar',
+    'connStr' => 'baz',
+];
+$config = [
+    'namespaces' => [],
+    'defaultContext' => 'http://example.com/',
+    'transaction_log' => $dummyDbConfig,
+    'es_config' => [
+        'endpoint' => 'http://example.com/',
+        'indexes' => [],
+        'search_document_specifications' => [],
+    ],
+    'queue' => $dummyDbConfig,
+    'databases' => [
+        'default' => [
+            'connStr' => 'baz',
+            'collections' => [],
+        ],
+    ],
+];
 
-\Tripod\Config::setConfig($config);
+Config::setConfig($config);
 
-
-$util = new \Tripod\Mongo\TriplesUtil();
-$objectNs = array();
-$i=0;
+$util = new TriplesUtil();
+$objectNs = [];
+$i = 0;
 while (($line = fgets(STDIN)) !== false) {
     $i++;
 
     $line = rtrim($line);
-    $parts = preg_split("/\s/",$line);
-    $subject = trim($parts[0],'><');
+    $parts = preg_split('/\\s/', $line);
+    $subject = trim($parts[0], '><');
 
-    if (($i % 2500)==0)
-    {
-        print '.';
+    if (($i % 2500) == 0) {
+        echo '.';
     }
-    if (($i % 50000)==0)
-    {
-        foreach ($objectNs as $key=>$val)
-        {
-            if ($val < 5)
-            {
+    if (($i % 50000) == 0) {
+        foreach ($objectNs as $key => $val) {
+            if ($val < 5) {
                 // flush
                 unset($objectNs[$key]);
             }
         }
         gc_collect_cycles();
-        print 'F';
+        echo 'F';
     }
 
-    if (empty($currentSubject)) // set for first iteration
-    {
+    if (empty($currentSubject)) { // set for first iteration
         $currentSubject = $subject;
-    }
-    else if ($currentSubject!=$subject) // once subject changes, we have all triples for that subject, flush to Mongo
-    {
+    } elseif ($currentSubject != $subject) { // once subject changes, we have all triples for that subject, flush to Mongo
         $ns = $util->extractMissingPredicateNs($triples);
-        if (count($ns)>0)
-        {
-            $newNsConfig = array();
-            foreach($ns as $n)
-            {
+        if (count($ns) > 0) {
+            $newNsConfig = [];
+            foreach ($ns as $n) {
                 $prefix = $util->suggestPrefix($n);
-                if (array_key_exists($prefix,$config['namespaces']))
-                {
-                    $prefix = $prefix.uniqid();
+                if (array_key_exists($prefix, $config['namespaces'])) {
+                    $prefix = $prefix . uniqid();
                 }
                 $newNsConfig[$prefix] = $n;
-                echo "\nFound ns $n suggest prefix $prefix";
-                $config["namespaces"] = array_merge($config["namespaces"],$newNsConfig);
-                \Tripod\Config::setConfig($config);
+                echo "\nFound ns {$n} suggest prefix {$prefix}";
+                $config['namespaces'] = array_merge($config['namespaces'], $newNsConfig);
+                Config::setConfig($config);
             }
         }
         $ns = $util->extractMissingObjectNs($triples);
-        if (count($ns)>0)
-        {
-            $newNsConfig = array();
-            foreach($ns as $n)
-            {
-                if (array_key_exists($n,$objectNs)) {
+        if (count($ns) > 0) {
+            $newNsConfig = [];
+            foreach ($ns as $n) {
+                if (array_key_exists($n, $objectNs)) {
                     $objectNs[$n]++;
-                }
-                else
-                {
+                } else {
                     $objectNs[$n] = 1;
                 }
-                if ($objectNs[$n]>500)
-                {
+                if ($objectNs[$n] > 500) {
                     $prefix = $util->suggestPrefix($n);
-                    if (array_key_exists($prefix,$config['namespaces']))
-                    {
-                        $prefix = $prefix.uniqid();
+                    if (array_key_exists($prefix, $config['namespaces'])) {
+                        $prefix = $prefix . uniqid();
                     }
                     $newNsConfig[$prefix] = $n;
-                    echo "\nFound object ns $n occurs > 500 times, suggest prefix $prefix";
-                    $config["namespaces"] = array_merge($config["namespaces"],$newNsConfig);
-                    \Tripod\Config::setConfig($config);
+                    echo "\nFound object ns {$n} occurs > 500 times, suggest prefix {$prefix}";
+                    $config['namespaces'] = array_merge($config['namespaces'], $newNsConfig);
+                    Config::setConfig($config);
                 }
             }
         }
 
-        $currentSubject=$subject; // reset current subject to next subject
-        $triples = array(); // reset triples
+        $currentSubject = $subject; // reset current subject to next subject
+        $triples = []; // reset triples
     }
     $triples[] = $line;
 }
 
-print "Suggested namespace configuration:\n\n";
+echo "Suggested namespace configuration:\n\n";
 
 /**
  * @param string $json
+ *
  * @return string
  */
-function indent($json) {
-
-    $result      = '';
-    $pos         = 0;
-    $strLen      = strlen($json);
-    $indentStr   = '  ';
-    $newLine     = "\n";
-    $prevChar    = '';
+function indent($json)
+{
+    $result = '';
+    $pos = 0;
+    $strLen = strlen($json);
+    $indentStr = '  ';
+    $newLine = "\n";
+    $prevChar = '';
     $outOfQuotes = true;
 
-    for ($i=0; $i<=$strLen; $i++) {
-
+    for ($i = 0; $i <= $strLen; $i++) {
         // Grab the next character in the string.
         $char = substr($json, $i, 1);
 
@@ -147,12 +135,12 @@ function indent($json) {
         if ($char == '"' && $prevChar != '\\') {
             $outOfQuotes = !$outOfQuotes;
 
-            // If this character is the end of an element,
-            // output a new line and indent the next line.
-        } else if(($char == '}' || $char == ']') && $outOfQuotes) {
+        // If this character is the end of an element,
+        // output a new line and indent the next line.
+        } elseif (($char == '}' || $char == ']') && $outOfQuotes) {
             $result .= $newLine;
-            $pos --;
-            for ($j=0; $j<$pos; $j++) {
+            $pos--;
+            for ($j = 0; $j < $pos; $j++) {
                 $result .= $indentStr;
             }
         }
@@ -165,7 +153,7 @@ function indent($json) {
         if (($char == ',' || $char == '{' || $char == '[') && $outOfQuotes) {
             $result .= $newLine;
             if ($char == '{' || $char == '[') {
-                $pos ++;
+                $pos++;
             }
 
             for ($j = 0; $j < $pos; $j++) {
@@ -179,6 +167,6 @@ function indent($json) {
     return $result;
 }
 
-$json = json_encode(array("namespaces"=>$config["namespaces"]));
+$json = json_encode(['namespaces' => $config['namespaces']]);
 
-print indent($json);
+echo indent($json);

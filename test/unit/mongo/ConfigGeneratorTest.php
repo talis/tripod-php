@@ -1,9 +1,15 @@
 <?php
 
-use Tripod\Mongo\Jobs\DiscoverImpactedSubjects;
-use Tripod\Mongo\Jobs\JobBase;
+use Tripod\Config;
+use Tripod\ExtendedGraph;
+use Tripod\ITripodConfigSerializer;
+use Tripod\Mongo\Composites\Views;
+use Tripod\Mongo\Driver;
 use Tripod\Mongo\ImpactedSubject;
 use Tripod\Mongo\Jobs\ApplyOperation;
+use Tripod\Mongo\Jobs\DiscoverImpactedSubjects;
+use Tripod\Mongo\Jobs\JobBase;
+use Tripod\Mongo\Updates;
 
 class ConfigGeneratorTest extends MongoTripodTestBase
 {
@@ -15,16 +21,16 @@ class ConfigGeneratorTest extends MongoTripodTestBase
             'class' => 'TestConfigGenerator',
             'filename' => dirname(__FILE__) . '/data/config.json',
         ];
-        Tripod\Config::setConfig($this->config);
+        Config::setConfig($this->config);
     }
 
     public function testCreateFromConfig()
     {
         /** @var TestConfigGenerator $instance */
-        $instance = Tripod\Config::getInstance();
+        $instance = Config::getInstance();
         $this->assertInstanceOf(TestConfigGenerator::class, $instance);
         $this->assertInstanceOf(Tripod\Mongo\Config::class, $instance);
-        $this->assertInstanceOf(Tripod\ITripodConfigSerializer::class, $instance);
+        $this->assertInstanceOf(ITripodConfigSerializer::class, $instance);
         $this->assertEquals(
             ['CBD_testing', 'CBD_test_related_content', 'CBD_testing_2'],
             $instance->getPods('tripod_php_testing')
@@ -34,27 +40,27 @@ class ConfigGeneratorTest extends MongoTripodTestBase
     public function testSerializeConfig()
     {
         /** @var TestConfigGenerator $instance */
-        $instance = Tripod\Config::getInstance();
+        $instance = Config::getInstance();
         $this->assertEquals($this->config, $instance->serialize());
     }
 
     public function testConfigGeneratorsSerializedInDiscoverJobs()
     {
-        $originalGraph = new Tripod\ExtendedGraph();
+        $originalGraph = new ExtendedGraph();
         $originalGraph->add_resource_triple('http://example.com/1', RDF_TYPE, RDFS_CLASS);
 
-        $newGraph = new Tripod\ExtendedGraph();
+        $newGraph = new ExtendedGraph();
         $newGraph->add_resource_triple('http://example.com/1', RDF_TYPE, OWL_CLASS);
         $subjectsAndPredicatesOfChange = ['http://example.com/1' => [RDF_TYPE]];
 
-        $tripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getDataUpdater'])
             ->setConstructorArgs(
                 ['CBD_testing', 'tripod_php_testing']
             )
             ->getMock();
 
-        $updates = $this->getMockBuilder(Tripod\Mongo\Updates::class)
+        $updates = $this->getMockBuilder(Updates::class)
             ->onlyMethods(
                 [
                     'applyHooks',
@@ -118,12 +124,12 @@ class ConfigGeneratorTest extends MongoTripodTestBase
             JobBase::TRIPOD_CONFIG_GENERATOR => $this->config,
         ];
 
-        $tripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getComposite'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
 
-        $views = $this->getMockBuilder(Tripod\Mongo\Composites\Views::class)
+        $views = $this->getMockBuilder(Views::class)
             ->onlyMethods(['getImpactedSubjects'])
             ->disableOriginalConstructor()
             ->getMock();
@@ -146,7 +152,7 @@ class ConfigGeneratorTest extends MongoTripodTestBase
         $discoverJob->job = (object) ['payload' => ['id' => uniqid()]];
         $discoverJob->expects($this->once())->method('getTripod')->will($this->returnValue($tripod));
         $discoverJob->expects($this->once())->method('getApplyOperation')->will($this->returnValue($applyJob));
-        $configInstance = Tripod\Config::getInstance();
+        $configInstance = Config::getInstance();
         $applyJob->expects($this->once())->method('submitJob')
             ->with(
                 $configInstance::getApplyQueueName(),

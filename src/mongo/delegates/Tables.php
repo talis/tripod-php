@@ -4,57 +4,67 @@ namespace Tripod\Mongo\Composites;
 
 require_once TRIPOD_DIR . 'mongo/MongoTripodConstants.php';
 
-use \Tripod\Mongo\Jobs\ApplyOperation;
-use \Tripod\Mongo\ImpactedSubject;
-use \Tripod\Mongo\Labeller;
-use \MongoDB\Driver\ReadPreference;
-use \MongoDB\Collection;
+use MongoDB\BSON\UTCDateTime;
+use MongoDB\Collection;
+use MongoDB\Driver\ReadPreference;
+use Tripod\Exceptions\LabellerException;
+use Tripod\ITripodStat;
+use Tripod\Mongo\DateUtil;
+use Tripod\Mongo\ImpactedSubject;
+use Tripod\Mongo\Jobs\ApplyOperation;
+use Tripod\Mongo\Labeller;
+use Tripod\Timer;
 
 class Tables extends CompositeBase
 {
     /**
      * Modifier config - list of allowed functions and their attributes that can be passed through in tablespecs.json
      * Note about the "true" value - this is so that the keys are defined as keys rather than values. If we move to
-     * a json schema we could define the types of attribute and whether they are required or not
+     * a json schema we could define the types of attribute and whether they are required or not.
+     *
      * @var array
+     *
      * @static
      */
-    public static $predicateModifiers = array(
-        'join' => array(
+    public static $predicateModifiers = [
+        'join' => [
             'glue' => true,
-            'predicates' => true
-        ),
-        'lowercase' => array(
-            'predicates' => true
-        ),
-        'date' => array(
-            'predicates' => true
-        )
-    );
+            'predicates' => true,
+        ],
+        'lowercase' => [
+            'predicates' => true,
+        ],
+        'date' => [
+            'predicates' => true,
+        ],
+    ];
 
     /**
-     * Computed field config - A list of valid functions to write dynamic table row field values
+     * Computed field config - A list of valid functions to write dynamic table row field values.
      *
      * @var array
+     *
      * @static
      */
-    public static $computedFieldFunctions = array('conditional', "replace", "arithmetic");
+    public static $computedFieldFunctions = ['conditional', 'replace', 'arithmetic'];
 
     /**
-     * Computed conditional config - list of allowed conditional operators
+     * Computed conditional config - list of allowed conditional operators.
      *
      * @var array
+     *
      * @static
      */
-    public static $conditionalOperators = array(">","<",">=", "<=", "==", "!=", "contains", "not contains", "~=", "!~");
+    public static $conditionalOperators = ['>', '<', '>=', '<=', '==', '!=', 'contains', 'not contains', '~=', '!~'];
 
     /**
-     * Computed arithmetic config - list of allowed arithmetic operators
+     * Computed arithmetic config - list of allowed arithmetic operators.
      *
      * @var array
+     *
      * @static
      */
-    public static $arithmeticOperators = array("+", "-", "*", "/", "%");
+    public static $arithmeticOperators = ['+', '-', '*', '/', '%'];
 
     /**
      * @var array
@@ -63,13 +73,13 @@ class Tables extends CompositeBase
 
     /**
      * Construct accepts actual objects rather than strings as this class is a delegate of
-     * Tripod and should inherit connections set up there
-     * @param string $storeName
-     * @param Collection $collection
-     * @param string $defaultContext
-     * @param \Tripod\ITripodStat|null $stat
-     * @param string $readPreference
-     * todo: MongoCollection -> podName
+     * Tripod and should inherit connections set up there.
+     *
+     * @param string           $storeName
+     * @param string           $defaultContext
+     * @param ITripodStat|null $stat
+     * @param string           $readPreference
+     *                                         todo: MongoCollection -> podName
      */
     public function __construct(
         $storeName,
@@ -89,21 +99,22 @@ class Tables extends CompositeBase
     }
 
     /**
-     * Receive update from subject
-     * @param \Tripod\Mongo\ImpactedSubject
-     * @return void
+     * Receive update from subject.
+     *
+     * @param ImpactedSubject
      */
     public function update(ImpactedSubject $subject)
     {
         $resource = $subject->getResourceId();
-        $resourceUri    = $resource[_ID_RESOURCE];
-        $context        = $resource[_ID_CONTEXT];
+        $resourceUri = $resource[_ID_RESOURCE];
+        $context = $resource[_ID_CONTEXT];
 
         $this->generateTableRowsForResource($resourceUri, $context, $subject->getSpecTypes());
     }
 
     /**
-     * Returns an array of the rdf types that will trigger the table specification
+     * Returns an array of the rdf types that will trigger the table specification.
+     *
      * @return array
      */
     public function getTypesInSpecifications()
@@ -112,9 +123,10 @@ class Tables extends CompositeBase
     }
 
     /**
-     * Returns an array of table rows that are impacted by the changes
-     * @param array $resourcesAndPredicates
+     * Returns an array of table rows that are impacted by the changes.
+     *
      * @param string $contextAlias
+     *
      * @return array
      */
     public function findImpactedComposites(array $resourcesAndPredicates, $contextAlias)
@@ -135,7 +147,7 @@ class Tables extends CompositeBase
         $resourceFilters = [];
         foreach ($resourcesAndPredicates as $resource => $resourcePredicates) {
             $resourceAlias = $this->labeller->uri_to_alias($resource);
-            $id = array(_ID_RESOURCE=>$resourceAlias,_ID_CONTEXT=>$contextAlias);
+            $id = [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias];
             // If we don't have a working config or there are no predicates listed, remove all
             // rows associated with the resource in all tables
             if (empty($tablePredicates) || empty($resourcePredicates)) {
@@ -153,49 +165,41 @@ class Tables extends CompositeBase
                     }
                 }
             }
-
         }
 
         if (empty($tableFilters) && !empty($resourceFilters)) {
-            $query = array("value."._IMPACT_INDEX=>array('$in'=>$resourceFilters));
+            $query = ['value.' . _IMPACT_INDEX => ['$in' => $resourceFilters]];
         } else {
             $query = [];
             foreach ($tableFilters as $tableType => $filters) {
                 // first re-gen table rows where resources appear in the impact index
-                $query[] = array("value."._IMPACT_INDEX=>array('$in'=>$filters), '_id.'._ID_TYPE=>$tableType);
+                $query[] = ['value.' . _IMPACT_INDEX => ['$in' => $filters], '_id.' . _ID_TYPE => $tableType];
             }
 
-            if(!empty($resourceFilters))
-            {
-                $query[] = array("value."._IMPACT_INDEX=>array('$in'=>$resourceFilters));
+            if (!empty($resourceFilters)) {
+                $query[] = ['value.' . _IMPACT_INDEX => ['$in' => $resourceFilters]];
             }
 
-            if(count($query) === 1)
-            {
+            if (count($query) === 1) {
                 $query = $query[0];
-            }
-            elseif(count($query) > 1)
-            {
-                $query = array('$or'=>$query);
+            } elseif (count($query) > 1) {
+                $query = ['$or' => $query];
             }
         }
 
-        if(empty($query))
-        {
+        if (empty($query)) {
             return [];
         }
 
         $affectedTableRows = [];
 
-        foreach($this->config->getCollectionsForTables($this->storeName) as $collection)
-        {
-            $t = new \Tripod\Timer();
+        foreach ($this->config->getCollectionsForTables($this->storeName) as $collection) {
+            $t = new Timer();
             $t->start();
-            $tableRows = $collection->find($query, array('projection' => array("_id"=>true)));
+            $tableRows = $collection->find($query, ['projection' => ['_id' => true]]);
             $t->stop();
-            $this->timingLog(MONGO_FIND_IMPACTED, array('duration'=>$t->result(), 'query'=>$query, 'storeName'=>$this->storeName, 'collection'=>$collection));
-            foreach($tableRows as $t)
-            {
+            $this->timingLog(MONGO_FIND_IMPACTED, ['duration' => $t->result(), 'query' => $query, 'storeName' => $this->storeName, 'collection' => $collection]);
+            foreach ($tableRows as $t) {
                 $affectedTableRows[] = $t;
             }
         }
@@ -206,15 +210,17 @@ class Tables extends CompositeBase
     /**
      * @param string $storeName
      * @param string $tableSpecId
+     *
      * @return array|null
      */
     public function getSpecification($storeName, $tableSpecId)
     {
-        return $this->config->getTableSpecification($storeName,$tableSpecId);
+        return $this->config->getTableSpecification($storeName, $tableSpecId);
     }
 
     /**
-     * Returns the operation this composite can satisfy
+     * Returns the operation this composite can satisfy.
+     *
      * @return string
      */
     public function getOperationType()
@@ -223,13 +229,13 @@ class Tables extends CompositeBase
     }
 
     /**
-     * Query the tables collection and return the results
+     * Query the tables collection and return the results.
+     *
      * @param string $tableSpecId
-     * @param array $filter
-     * @param array $sortBy
-     * @param int $offset
-     * @param int $limit
-     * @param array $options Table query options
+     * @param int    $offset
+     * @param int    $limit
+     * @param array  $options     Table query options
+     *
      * @return array
      */
     public function getTableRows(
@@ -240,14 +246,14 @@ class Tables extends CompositeBase
         $limit = 10,
         array $options = []
     ) {
-        $t = new \Tripod\Timer();
+        $t = new Timer();
         $t->start();
 
         $options = array_merge(
             [
                 'returnCursor' => false,
                 'includeCount' => true,
-                'documentType' => '\Tripod\Mongo\Documents\Tables'
+                'documentType' => '\Tripod\Mongo\Documents\Tables',
             ],
             $options
         );
@@ -277,7 +283,6 @@ class Tables extends CompositeBase
             $count = -1;
         }
 
-
         $results->setTypeMap(['root' => $options['documentType'], 'document' => 'array', 'array' => 'array']);
 
         $t->stop();
@@ -285,245 +290,154 @@ class Tables extends CompositeBase
             MONGO_TABLE_ROWS,
             ['duration' => $t->result(), 'query' => $filter, 'collection' => TABLE_ROWS_COLLECTION]
         );
-        $this->getStat()->timer(MONGO_TABLE_ROWS . ".$tableSpecId", $t->result());
+        $this->getStat()->timer(MONGO_TABLE_ROWS . ".{$tableSpecId}", $t->result());
 
         return [
             'head' => [
                 'count' => $count,
                 'offset' => $offset,
-                'limit' => $limit
+                'limit' => $limit,
             ],
-            'results' => $options['returnCursor'] ? $results : $results->toArray()
+            'results' => $options['returnCursor'] ? $results : $results->toArray(),
         ];
     }
 
     /**
-     * Returns the distinct values for a table column, optionally filtered by query
+     * Returns the distinct values for a table column, optionally filtered by query.
      *
      * @param string $tableSpecId
      * @param string $fieldName
-     * @param array $filter
+     *
      * @return array
      */
-    public function distinct($tableSpecId, $fieldName, array $filter=[])
+    public function distinct($tableSpecId, $fieldName, array $filter = [])
     {
-        $t = new \Tripod\Timer();
+        $t = new Timer();
         $t->start();
 
-        $filter['_id.'._ID_TYPE] = $tableSpecId;
+        $filter['_id.' . _ID_TYPE] = $tableSpecId;
 
         $collection = $this->config->getCollectionForTable($this->storeName, $tableSpecId, $this->readPreference);
         $results = $collection->distinct($fieldName, $filter);
 
         $t->stop();
-        $query = array('distinct'=>$fieldName, 'filter'=>$filter);
-        $this->timingLog(MONGO_TABLE_ROWS_DISTINCT, array('duration'=>$t->result(), 'query'=>$query, 'collection'=>TABLE_ROWS_COLLECTION));
-        $this->getStat()->timer(MONGO_TABLE_ROWS_DISTINCT.".$tableSpecId",$t->result());
-        return array(
-            "head"=>array(
-                "count"=>count($results)
-            ),
-            "results"=>$results
-        );
+        $query = ['distinct' => $fieldName, 'filter' => $filter];
+        $this->timingLog(MONGO_TABLE_ROWS_DISTINCT, ['duration' => $t->result(), 'query' => $query, 'collection' => TABLE_ROWS_COLLECTION]);
+        $this->getStat()->timer(MONGO_TABLE_ROWS_DISTINCT . ".{$tableSpecId}", $t->result());
+
+        return [
+            'head' => [
+                'count' => count($results),
+            ],
+            'results' => $results,
+        ];
     }
 
     /**
-     * @param string $resource The URI or alias of the resource to delete from tables
-     * @param string|null $context Optional context
-     * @param array|string|null $specType Optional table type or array of table types to delete from
+     * This method will delete all table rows where the _id.type matches the specified $tableId.
+     *
+     * @param string           $tableId   Table spec ID
+     * @param UTCDateTime|null $timestamp Optional timestamp to delete all table rows that are older than
+     *
+     * @return int The number of table rows deleted
      */
-    protected function deleteTableRowsForResource($resource, $context=null, $specType = null)
+    public function deleteTableRowsByTableId($tableId, $timestamp = null)
     {
-        $t = new \Tripod\Timer();
-        $t->start();
-
-        $resourceAlias = $this->labeller->uri_to_alias($resource);
-        $contextAlias = $this->getContextAlias($context);
-        $query = array(_ID_KEY . '.' . _ID_RESOURCE => $resourceAlias,  _ID_KEY . '.' . _ID_CONTEXT => $contextAlias);
-        $specNames = [];
-        $specTypes = $this->config->getTableSpecifications($this->storeName);
-        if (empty($specType)) {
-            $specNames = array_keys($specTypes);
-        }
-        else
-        {
-            if(is_string($specType))
-            {
-                $query[_ID_KEY][_ID_TYPE] = $specType;
-                $specNames = array($specType);
-            }
-            elseif(is_array($specType))
-            {
-                $query[_ID_KEY . '.' . _ID_TYPE] = array('$in'=>$specType);
-                $specNames = $specType;
-            }
-        }
-        foreach($specNames as $specName)
-        {
-            // Ignore any other types of specs that might have been passed in here
-            if(isset($specTypes[$specName]))
-            {
-                $this->config->getCollectionForTable($this->storeName, $specName)->deleteMany($query);
-            }
-        }
-
-        $t->stop();
-        $this->timingLog(MONGO_DELETE_TABLE_ROWS, array('duration'=>$t->result(), 'query'=>$query, 'collection'=>TABLE_ROWS_COLLECTION));
-    }
-
-    /**
-     * This method will delete all table rows where the _id.type matches the specified $tableId
-     * @param string                         $tableId   Table spec ID
-     * @param \MongoDB\BSON\UTCDateTime|null $timestamp Optional timestamp to delete all table rows that are older than
-     * @return integer                                  The number of table rows deleted
-     */
-    public function deleteTableRowsByTableId($tableId, $timestamp = null) {
-        $t = new \Tripod\Timer();
+        $t = new Timer();
         $t->start();
         $tableSpec = $this->getConfigInstance()->getTableSpecification($this->storeName, $tableId);
         if ($tableSpec == null) {
-            $this->debugLog("Could not find a table specification for $tableId");
+            $this->debugLog("Could not find a table specification for {$tableId}");
+
             return;
         }
 
         $query = ['_id.type' => $tableId];
         if ($timestamp) {
-            if (!($timestamp instanceof \MongoDB\BSON\UTCDateTime)) {
-                $timestamp = \Tripod\Mongo\DateUtil::getMongoDate($timestamp);
+            if (!$timestamp instanceof UTCDateTime) {
+                $timestamp = DateUtil::getMongoDate($timestamp);
             }
             $query['$or'] = [
                 [\_CREATED_TS => ['$lt' => $timestamp]],
-                [\_CREATED_TS => ['$exists' => false]]
+                [\_CREATED_TS => ['$exists' => false]],
             ];
         }
         $deleteResult = $this->getCollectionForTableSpec($tableId)
             ->deleteMany($query);
 
         $t->stop();
-        $this->timingLog(MONGO_DELETE_TABLE_ROWS, array('duration'=>$t->result(), 'query'=>$query));
+        $this->timingLog(MONGO_DELETE_TABLE_ROWS, ['duration' => $t->result(), 'query' => $query]);
+
         return $deleteResult->getDeletedCount();
     }
 
     /**
-     * This method handles invalidation and regeneration of table rows based on impact index, before delegating to
-     * generateTableRowsForType() for re-generation of any table rows for the $resource
-     * @param string $resource
-     * @param string|null $context
-     * @param array $specTypes
-     */
-    protected function generateTableRowsForResource($resource, $context=null, $specTypes=[])
-    {
-        $resourceAlias = $this->labeller->uri_to_alias($resource);
-        $contextAlias = $this->getContextAlias($context);
-
-        $this->deleteTableRowsForResource($resource, $context, $specTypes);
-
-        $filter = [];
-        $filter[] = array("r"=>$resourceAlias,"c"=>$contextAlias);
-
-        // now go through the types
-        $query = array("_id"=>array('$in'=>$filter));
-        $resourceAndType = $this->config->getCollectionForCBD($this->storeName, $this->podName)
-            ->find($query, array('projection' => array("_id"=>1,"rdf:type"=>1)));
-
-        foreach ($resourceAndType as $rt)
-        {
-            $id = $rt["_id"];
-            if (isset($rt["rdf:type"]))
-            {
-                if (isset($rt["rdf:type"][VALUE_URI]))
-                {
-                    // single type, not an array of values
-                    $this->generateTableRowsForType($rt["rdf:type"][VALUE_URI],$id[_ID_RESOURCE],$id[_ID_CONTEXT], $specTypes);
-                }
-                else
-                {
-                    // an array of types
-                    foreach ($rt["rdf:type"] as $type)
-                    {
-                        // Defensive check in case there is bad data for rdf:type
-                        if (isset($type[VALUE_URI]))
-                        {
-                            $this->generateTableRowsForType($type[VALUE_URI],$id[_ID_RESOURCE],$id[_ID_CONTEXT], $specTypes);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * This method finds all the table specs for the given $rdfType and generates the table rows for the $subject one by one
-     * @param string $rdfType
+     * This method finds all the table specs for the given $rdfType and generates the table rows for the $subject one by one.
+     *
+     * @param string      $rdfType
      * @param string|null $subject
      * @param string|null $context
-     * @param array $specTypes
+     * @param array       $specTypes
+     *
      * @return mixed
      */
-    public function generateTableRowsForType($rdfType,$subject=null,$context=null, $specTypes = [])
+    public function generateTableRowsForType($rdfType, $subject = null, $context = null, $specTypes = [])
     {
         $rdfType = $this->labeller->qname_to_alias($rdfType);
         $rdfTypeAlias = $this->labeller->uri_to_alias($rdfType);
         $foundSpec = false;
 
-        if(empty($specTypes))
-        {
+        if (empty($specTypes)) {
             $tableSpecs = $this->getConfigInstance()->getTableSpecifications($this->storeName);
-        }
-        else
-        {
+        } else {
             $tableSpecs = [];
-            foreach($specTypes as $specType)
-            {
+            foreach ($specTypes as $specType) {
                 $spec = $this->getConfigInstance()->getTableSpecification($this->storeName, $specType);
-                if($spec)
-                {
+                if ($spec) {
                     $tableSpecs[$specType] = $spec;
                 }
             }
         }
 
-        foreach($tableSpecs as $key=>$tableSpec)
-        {
-            if(isset($tableSpec["type"]))
-            {
-                $types = $tableSpec["type"];
-                if(!is_array($types))
-                {
-                    $types = array($types);
+        foreach ($tableSpecs as $key => $tableSpec) {
+            if (isset($tableSpec['type'])) {
+                $types = $tableSpec['type'];
+                if (!is_array($types)) {
+                    $types = [$types];
                 }
-                if (in_array($rdfType, $types) || in_array($rdfTypeAlias, $types))
-                {
+                if (in_array($rdfType, $types) || in_array($rdfTypeAlias, $types)) {
                     $foundSpec = true;
                     $this->debugLog("Processing {$tableSpec[_ID_KEY]}");
-                    $this->generateTableRows($key,$subject,$context);
+                    $this->generateTableRows($key, $subject, $context);
                 }
             }
         }
-        if (!$foundSpec)
-        {
-            $this->debugLog("Could not find any table specifications for $subject with resource type '$rdfType'");
+        if (!$foundSpec) {
+            $this->debugLog("Could not find any table specifications for {$subject} with resource type '{$rdfType}'");
+
             return;
         }
     }
 
     /**
-     * @param string $tableType
+     * @param string      $tableType
      * @param string|null $resource
      * @param string|null $context
      * @param string|null $queueName Queue for background bulk generation
+     *
      * @return array
      */
     public function generateTableRows($tableType, $resource = null, $context = null, $queueName = null)
     {
-        $t = new \Tripod\Timer();
+        $t = new Timer();
         $t->start();
         $this->temporaryFields = [];
         $tableSpec = $this->getConfigInstance()->getTableSpecification($this->storeName, $tableType);
         $collection = $this->getConfigInstance()->getCollectionForTable($this->storeName, $tableType);
 
         if (empty($tableSpec)) {
-            $this->debugLog("Could not find a table specification for $tableType");
+            $this->debugLog("Could not find a table specification for {$tableType}");
+
             return null;
         }
 
@@ -531,23 +445,23 @@ class Tables extends CompositeBase
         $contextAlias = $this->getContextAlias($context);
 
         // default collection
-        $from = isset($tableSpec["from"]) ? $tableSpec["from"] : $this->podName;
+        $from = $tableSpec['from'] ?? $this->podName;
 
         $types = [];
-        if (is_array($tableSpec["type"])) {
-            foreach ($tableSpec["type"] as $type) {
-                $types[] = ["rdf:type.u" => $this->labeller->qname_to_alias($type)];
-                $types[] = ["rdf:type.u" => $this->labeller->uri_to_alias($type)];
+        if (is_array($tableSpec['type'])) {
+            foreach ($tableSpec['type'] as $type) {
+                $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($type)];
+                $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($type)];
             }
         } else {
-            $types[] = ["rdf:type.u" => $this->labeller->qname_to_alias($tableSpec["type"])];
-            $types[] = ["rdf:type.u" => $this->labeller->uri_to_alias($tableSpec["type"])];
+            $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($tableSpec['type'])];
+            $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($tableSpec['type'])];
         }
         $filter = ['$or' => $types];
         if (isset($resource)) {
-            $filter["_id"] = [
+            $filter['_id'] = [
                 _ID_RESOURCE => $this->labeller->uri_to_alias($resource),
-                _ID_CONTEXT => $contextAlias
+                _ID_CONTEXT => $contextAlias,
             ];
         }
 
@@ -573,7 +487,7 @@ class Tables extends CompositeBase
                     OP_TABLES,
                     $this->storeName,
                     $from,
-                    array($tableType)
+                    [$tableType]
                 );
                 $subjects[] = $subject;
                 if (count($subjects) >= $this->getConfigInstance()->getBatchSize(OP_TABLES)) {
@@ -586,9 +500,9 @@ class Tables extends CompositeBase
                     '_id' => [
                         _ID_RESOURCE => $doc['_id'][_ID_RESOURCE],
                         _ID_CONTEXT => $doc['_id'][_ID_CONTEXT],
-                        _ID_TYPE=>$tableSpec['_id']
+                        _ID_TYPE => $tableSpec['_id'],
                     ],
-                    \_CREATED_TS => \Tripod\Mongo\DateUtil::getMongoDate()
+                    \_CREATED_TS => DateUtil::getMongoDate(),
                 ];
                 // everything must go in the value object todo: this is a hang over from map reduce days, engineer out once we have stability on new PHP method for M/R
                 $value = ['_id' => $doc['_id']];
@@ -617,18 +531,113 @@ class Tables extends CompositeBase
         }
 
         $t->stop();
-        $this->timingLog(MONGO_CREATE_TABLE, array(
-            'type'=>$tableSpec['type'],
-            'duration'=>$t->result(),
-            'filter'=>$filter,
-            'from'=>$from));
-        $this->getStat()->timer(MONGO_CREATE_TABLE.".$tableType", $t->result());
+        $this->timingLog(MONGO_CREATE_TABLE, [
+            'type' => $tableSpec['type'],
+            'duration' => $t->result(),
+            'filter' => $filter,
+            'from' => $from]);
+        $this->getStat()->timer(MONGO_CREATE_TABLE . ".{$tableType}", $t->result());
 
         $stat = ['count' => $count];
         if (isset($jobOptions[ApplyOperation::TRACKING_KEY])) {
             $stat[ApplyOperation::TRACKING_KEY] = $jobOptions[ApplyOperation::TRACKING_KEY];
         }
+
         return $stat;
+    }
+
+    /**
+     * Count the number of documents in the spec that match $filters.
+     *
+     * @param string $tableSpec Table spec ID
+     * @param array  $filters   Query filters to get count on
+     *
+     * @return int
+     */
+    public function count($tableSpec, array $filters = [])
+    {
+        $filters['_id.type'] = $tableSpec;
+
+        return $this->getCollectionForTableSpec($tableSpec)->count($filters);
+    }
+
+    /**
+     * @param string            $resource The URI or alias of the resource to delete from tables
+     * @param string|null       $context  Optional context
+     * @param array|string|null $specType Optional table type or array of table types to delete from
+     */
+    protected function deleteTableRowsForResource($resource, $context = null, $specType = null)
+    {
+        $t = new Timer();
+        $t->start();
+
+        $resourceAlias = $this->labeller->uri_to_alias($resource);
+        $contextAlias = $this->getContextAlias($context);
+        $query = [_ID_KEY . '.' . _ID_RESOURCE => $resourceAlias, _ID_KEY . '.' . _ID_CONTEXT => $contextAlias];
+        $specNames = [];
+        $specTypes = $this->config->getTableSpecifications($this->storeName);
+        if (empty($specType)) {
+            $specNames = array_keys($specTypes);
+        } else {
+            if (is_string($specType)) {
+                $query[_ID_KEY][_ID_TYPE] = $specType;
+                $specNames = [$specType];
+            } elseif (is_array($specType)) {
+                $query[_ID_KEY . '.' . _ID_TYPE] = ['$in' => $specType];
+                $specNames = $specType;
+            }
+        }
+        foreach ($specNames as $specName) {
+            // Ignore any other types of specs that might have been passed in here
+            if (isset($specTypes[$specName])) {
+                $this->config->getCollectionForTable($this->storeName, $specName)->deleteMany($query);
+            }
+        }
+
+        $t->stop();
+        $this->timingLog(MONGO_DELETE_TABLE_ROWS, ['duration' => $t->result(), 'query' => $query, 'collection' => TABLE_ROWS_COLLECTION]);
+    }
+
+    /**
+     * This method handles invalidation and regeneration of table rows based on impact index, before delegating to
+     * generateTableRowsForType() for re-generation of any table rows for the $resource.
+     *
+     * @param string      $resource
+     * @param string|null $context
+     * @param array       $specTypes
+     */
+    protected function generateTableRowsForResource($resource, $context = null, $specTypes = [])
+    {
+        $resourceAlias = $this->labeller->uri_to_alias($resource);
+        $contextAlias = $this->getContextAlias($context);
+
+        $this->deleteTableRowsForResource($resource, $context, $specTypes);
+
+        $filter = [];
+        $filter[] = ['r' => $resourceAlias, 'c' => $contextAlias];
+
+        // now go through the types
+        $query = ['_id' => ['$in' => $filter]];
+        $resourceAndType = $this->config->getCollectionForCBD($this->storeName, $this->podName)
+            ->find($query, ['projection' => ['_id' => 1, 'rdf:type' => 1]]);
+
+        foreach ($resourceAndType as $rt) {
+            $id = $rt['_id'];
+            if (isset($rt['rdf:type'])) {
+                if (isset($rt['rdf:type'][VALUE_URI])) {
+                    // single type, not an array of values
+                    $this->generateTableRowsForType($rt['rdf:type'][VALUE_URI], $id[_ID_RESOURCE], $id[_ID_CONTEXT], $specTypes);
+                } else {
+                    // an array of types
+                    foreach ($rt['rdf:type'] as $type) {
+                        // Defensive check in case there is bad data for rdf:type
+                        if (isset($type[VALUE_URI])) {
+                            $this->generateTableRowsForType($type[VALUE_URI], $id[_ID_RESOURCE], $id[_ID_CONTEXT], $specTypes);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -637,33 +646,28 @@ class Tables extends CompositeBase
      * If an exception in thrown because a field is too large to index, the field is
      * truncated and the save is retried.
      *
-     * @param Collection $collection
-     * @param array $generatedRow The rows to save.
+     * @param array $generatedRow the rows to save
+     *
      * @throws \Exception
      */
     protected function truncatingSave(Collection $collection, array $generatedRow)
     {
-        try
-        {
-            $collection->updateOne(array('_id' => $generatedRow['_id']), array('$set' => $generatedRow), array('upsert' => true));
+        try {
+            $collection->updateOne(['_id' => $generatedRow['_id']], ['$set' => $generatedRow], ['upsert' => true]);
         } catch (\Exception $e) {
             // We only truncate and retry the save if the \Exception contains this text.
-            if (strpos($e->getMessage(),"Btree::insert: key too large to index") !== FALSE)
-            {
+            if (strpos($e->getMessage(), 'Btree::insert: key too large to index') !== false) {
                 $this->truncateFields($collection, $generatedRow);
-                $collection->updateOne(array('_id' => $generatedRow['_id']), array('$set' => $generatedRow), array('upsert' => true));
-            }
-            else
-            {
+                $collection->updateOne(['_id' => $generatedRow['_id']], ['$set' => $generatedRow], ['upsert' => true]);
+            } else {
                 throw $e;
             }
         }
     }
 
     /**
-     * Truncate any indexed fields in the generated rows which are too large to index
+     * Truncate any indexed fields in the generated rows which are too large to index.
      *
-     * @param Collection $collection
      * @param array $generatedRow - Pass by reference so that the contents is truncated
      */
     protected function truncateFields(Collection $collection, array &$generatedRow)
@@ -671,19 +675,13 @@ class Tables extends CompositeBase
         // Find the name of any indexed fields
         $indexedFields = [];
         $indexesGroupedByCollection = $this->config->getIndexesGroupedByCollection($this->storeName);
-        if (isset($indexesGroupedByCollection) && isset($indexesGroupedByCollection[$collection->getCollectionName()]))
-        {
+        if (isset($indexesGroupedByCollection, $indexesGroupedByCollection[$collection->getCollectionName()])) {
             $indexes = $indexesGroupedByCollection[$collection->getCollectionName()];
-            if (isset($indexes))
-            {
-                foreach($indexes as $repset)
-                {
-                    foreach ($repset as $index)
-                    {
-                        foreach ($index as $indexedFieldname => $v)
-                        {
-                            if (strpos($indexedFieldname, "value.") === 0)
-                            {
+            if (isset($indexes)) {
+                foreach ($indexes as $repset) {
+                    foreach ($repset as $index) {
+                        foreach ($index as $indexedFieldname => $v) {
+                            if (strpos($indexedFieldname, 'value.') === 0) {
                                 $indexedFields[] = substr($indexedFieldname, strlen('value.'));
                             }
                         }
@@ -692,19 +690,15 @@ class Tables extends CompositeBase
             }
         }
 
-        if (count($indexedFields) > 0 && isset($generatedRow['value']) && is_array($generatedRow['value']))
-        {
+        if (count($indexedFields) > 0 && isset($generatedRow['value']) && is_array($generatedRow['value'])) {
             // Iterate over generated rows BY REFERENCE (&) - we are going to modify the contents of $field
-            foreach($generatedRow as &$field)
-            {
-                foreach($indexedFields as $indexedFieldname)
-                {
+            foreach ($generatedRow as &$field) {
+                foreach ($indexedFields as $indexedFieldname) {
                     // The key will have the index name in the following format added to it.
                     // Adjust the max key size allowed to take it into account.
-                    $maxKeySize = 1020 - strlen("value_".$indexedFieldname."_1");
+                    $maxKeySize = 1020 - strlen('value_' . $indexedFieldname . '_1');
 
-                    if (array_key_exists($indexedFieldname, $field))
-                    {
+                    if (array_key_exists($indexedFieldname, $field)) {
                         // It's important that we count the number of bytes
                         // in the field - not just the number of characters.
                         // UTF-8 characters can be between 1 and 4 bytes.
@@ -716,9 +710,8 @@ class Tables extends CompositeBase
                         //
                         // So strlen does count the bytes - not the characters.
 
-                        if (is_string($field[$indexedFieldname]) && strlen($field[$indexedFieldname]) > $maxKeySize)
-                        {
-                            $field[$indexedFieldname] = substr($field[$indexedFieldname],0, $maxKeySize);
+                        if (is_string($field[$indexedFieldname]) && strlen($field[$indexedFieldname]) > $maxKeySize) {
+                            $field[$indexedFieldname] = substr($field[$indexedFieldname], 0, $maxKeySize);
                         }
                     }
                 }
@@ -732,16 +725,11 @@ class Tables extends CompositeBase
      */
     protected function doComputedFields(array $spec, array &$dest)
     {
-        if (isset($spec['computed_fields']))
-        {
-            foreach ($spec['computed_fields'] as $f)
-            {
-                if(isset($f['fieldName']) && isset($f['value']) && is_array($f['value']))
-                {
-                    if(isset($f['temporary']) && $f['temporary'] === true)
-                    {
-                        if(!in_array($f['fieldName'], $this->temporaryFields))
-                        {
+        if (isset($spec['computed_fields'])) {
+            foreach ($spec['computed_fields'] as $f) {
+                if (isset($f['fieldName'], $f['value']) && is_array($f['value'])) {
+                    if (isset($f['temporary']) && $f['temporary'] === true) {
+                        if (!in_array($f['fieldName'], $this->temporaryFields)) {
                             $this->temporaryFields[] = $f['fieldName'];
                         }
                     }
@@ -754,23 +742,29 @@ class Tables extends CompositeBase
 
     /**
      * @param string $function A defined computed value function
-     * @param array $spec The computed field spec
-     * @param array $dest The table row document to save
+     * @param array  $spec     The computed field spec
+     * @param array  $dest     The table row document to save
+     *
      * @return mixed The computed value
      */
     protected function getComputedValue($function, array $spec, array &$dest)
     {
         $value = null;
-        switch($function)
-        {
+
+        switch ($function) {
             case 'conditional':
                 $value = $this->generateConditionalValue($spec[$function], $dest);
+
                 break;
+
             case 'replace':
                 $value = $this->generateReplaceValue($spec[$function], $dest);
+
                 break;
+
             case 'arithmetic':
                 $value = $this->computeArithmeticValue($spec[$function], $dest);
+
                 break;
         }
 
@@ -778,59 +772,65 @@ class Tables extends CompositeBase
     }
 
     /**
-     * @param array $equation
-     * @param array $dest
      * @return float|int|null
+     *
      * @throws \InvalidArgumentException
      */
     protected function computeArithmeticValue(array $equation, array &$dest)
     {
-        if(count($equation) < 3)
-        {
-            throw new \InvalidArgumentException("Equations must consist of an array with 3 values");
+        if (count($equation) < 3) {
+            throw new \InvalidArgumentException('Equations must consist of an array with 3 values');
         }
-        if(!in_array($equation[1], self::$arithmeticOperators))
-        {
-            throw new \InvalidArgumentException("Invalid arithmetic operator");
+        if (!in_array($equation[1], self::$arithmeticOperators)) {
+            throw new \InvalidArgumentException('Invalid arithmetic operator');
         }
 
         $left = $this->rewriteVariableValue($equation[0], $dest, 'numeric');
         $right = $this->rewriteVariableValue($equation[2], $dest, 'numeric');
-        if(is_array($left))
-        {
+        if (is_array($left)) {
             $left = $this->computeArithmeticValue($left, $dest);
         }
-        if(is_array($right))
-        {
+        if (is_array($right)) {
             $right = $this->computeArithmeticValue($right, $dest);
         }
 
-        switch($equation[1])
-        {
-            case "+":
+        switch ($equation[1]) {
+            case '+':
                 $value = $left + $right;
+
                 break;
-            case "-":
+
+            case '-':
                 $value = $left - $right;
+
                 break;
-            case "*":
+
+            case '*':
                 $value = $left * $right;
+
                 break;
-            case "/":
+
+            case '/':
                 $value = $left / $right;
+
                 break;
-            case "%":
+
+            case '%':
                 $value = $left % $right;
+
                 break;
+
             default:
                 $value = null;
         }
+
         return $value;
     }
 
     /**
      * @param array $replaceSpec The replace value spec
-     * @param array $dest The table row document to save
+     * @param array $dest        The table row document to save
+     *
      * @return mixed
      */
     protected function generateReplaceValue(array $replaceSpec, array &$dest)
@@ -838,16 +838,13 @@ class Tables extends CompositeBase
         $search = null;
         $replace = null;
         $subject = null;
-        if(isset($replaceSpec['search']))
-        {
+        if (isset($replaceSpec['search'])) {
             $search = $this->rewriteVariableValue($replaceSpec['search'], $dest);
         }
-        if(isset($replaceSpec['replace']))
-        {
+        if (isset($replaceSpec['replace'])) {
             $replace = $this->rewriteVariableValue($replaceSpec['replace'], $dest);
         }
-        if(isset($replaceSpec['subject']))
-        {
+        if (isset($replaceSpec['subject'])) {
             $subject = $this->rewriteVariableValue($replaceSpec['subject'], $dest);
         }
 
@@ -856,27 +853,24 @@ class Tables extends CompositeBase
 
     /**
      * @param array $conditionalSpec The conditional spec
-     * @param array $dest The table row document to save
+     * @param array $dest            The table row document to save
+     *
      * @return mixed The computed value
      */
     protected function generateConditionalValue(array $conditionalSpec, array &$dest)
     {
         $value = null;
-        if(isset($conditionalSpec['if']) && is_array($conditionalSpec['if']))
-        {
+        if (isset($conditionalSpec['if']) && is_array($conditionalSpec['if'])) {
             $left = null;
             $operator = null;
             $right = null;
-            if(isset($conditionalSpec['if'][0]))
-            {
+            if (isset($conditionalSpec['if'][0])) {
                 $left = $this->rewriteVariableValue($conditionalSpec['if'][0], $dest);
             }
-            if(isset($conditionalSpec['if'][1]))
-            {
+            if (isset($conditionalSpec['if'][1])) {
                 $operator = $conditionalSpec['if'][1];
             }
-            if(isset($conditionalSpec['if'][2]))
-            {
+            if (isset($conditionalSpec['if'][2])) {
                 $right = $this->rewriteVariableValue($conditionalSpec['if'][2], $dest);
             }
 
@@ -884,66 +878,55 @@ class Tables extends CompositeBase
 
             $path = ($bool ? 'then' : 'else');
 
-            if(isset($conditionalSpec[$path]))
-            {
-                if(is_array($conditionalSpec[$path]))
-                {
+            if (isset($conditionalSpec[$path])) {
+                if (is_array($conditionalSpec[$path])) {
                     $nestedComputedFunctions = array_intersect(self::$computedFieldFunctions, array_keys($conditionalSpec[$path]));
                     // This is 'just a regular old array'
-                    if(empty($nestedComputedFunctions))
-                    {
+                    if (empty($nestedComputedFunctions)) {
                         return $this->rewriteVariableValue($conditionalSpec[$path], $dest);
                     }
 
                     return $this->getComputedValue($nestedComputedFunctions[0], $conditionalSpec[$path], $dest);
+                }
 
-                }
-                else
-                {
-                    return $this->rewriteVariableValue($conditionalSpec[$path], $dest);
-                }
+                return $this->rewriteVariableValue($conditionalSpec[$path], $dest);
             }
-
         }
+
         return $value;
     }
 
     /**
-     * @param mixed $value The value to replace, if it contains a variable
-     * @param array $dest The table row document to save
+     * @param mixed       $value   The value to replace, if it contains a variable
+     * @param array       $dest    The table row document to save
      * @param string|null $setType Force the return to be set to specified type
+     *
      * @return mixed
      */
-    protected function rewriteVariableValue($value, array &$dest, $setType=null)
+    protected function rewriteVariableValue($value, array &$dest, $setType = null)
     {
-        if(is_string($value))
-        {
-            if(strpos($value, '$') === 0)
-            {
-                $key =  str_replace('$','', $value);
-                if(isset($dest[$key]))
-                {
+        if (is_string($value)) {
+            if (strpos($value, '$') === 0) {
+                $key = str_replace('$', '', $value);
+                if (isset($dest[$key])) {
                     return $this->castValueType($dest[$key], $setType);
                 }
+
                 return null;
             }
-            else
-            {
-                return $this->castValueType($value, $setType);
-            }
-        }
-        elseif(is_array($value))
-        {
-            if($this->isFunction($value))
-            {
+
+            return $this->castValueType($value, $setType);
+        } elseif (is_array($value)) {
+            if ($this->isFunction($value)) {
                 $function = array_keys($value);
+
                 return $this->getComputedValue($function[0], $value, $dest);
             }
             $aryValue = [];
-            foreach($value as $v)
-            {
+            foreach ($value as $v) {
                 $aryValue[] = $this->rewriteVariableValue($v, $dest);
             }
+
             return $aryValue;
         }
 
@@ -952,166 +935,164 @@ class Tables extends CompositeBase
 
     /**
      * @param mixed $value
+     *
      * @return bool
      */
     protected function isFunction($value)
     {
-        return (is_array($value) && count(array_keys($value)) === 1 && count(array_intersect(array_keys($value), self::$computedFieldFunctions)) ===1);
+        return is_array($value) && count(array_keys($value)) === 1 && count(array_intersect(array_keys($value), self::$computedFieldFunctions)) === 1;
     }
 
     /**
-     * @param mixed $value
+     * @param mixed       $value
      * @param string|null $type
+     *
      * @return mixed
      */
-    protected function castValueType($value, $type=null)
+    protected function castValueType($value, $type = null)
     {
         // If value is a UTCDateTime, turn into a DateTime object in order to perform comparison
-        if ($value instanceof \MongoDB\BSON\UTCDateTime) {
+        if ($value instanceof UTCDateTime) {
             $value = $value->toDateTime();
         }
 
-        switch($type)
-        {
+        switch ($type) {
             case 'string':
-                $value = (string)$value;
+                $value = (string) $value;
+
                 break;
+
             case 'bool':
             case 'boolean':
-                $value = (bool)$value;
+                $value = (bool) $value;
+
                 break;
+
             case 'numeric':
-                if((!is_int($value)) && !is_float($value))
-                {
-                    if($value == (string)(int)$value)
-                    {
-                        $value = (int)$value;
-                    }
-                    else
-                    {
-                        $value = (float)$value;
+                if ((!is_int($value)) && !is_float($value)) {
+                    if ($value == (string) (int) $value) {
+                        $value = (int) $value;
+                    } else {
+                        $value = (float) $value;
                     }
                 }
+
                 break;
         }
+
         return $value;
     }
 
     /**
-     * @param mixed $left The left value of the condition
+     * @param mixed  $left     The left value of the condition
      * @param string $operator The comparison operator
-     * @param mixed $right The right value of the condition
+     * @param mixed  $right    The right value of the condition
+     *
      * @return bool
+     *
      * @throws \InvalidArgumentException
      */
     protected function doConditional($left, $operator, $right)
     {
-        if((!empty($operator)) && !in_array($operator, self::$conditionalOperators))
-        {
-            throw new \InvalidArgumentException("Invalid conditional operator");
+        if ((!empty($operator)) && !in_array($operator, self::$conditionalOperators)) {
+            throw new \InvalidArgumentException('Invalid conditional operator');
         }
-        elseif(!$operator)
-        {
-            return ($left ? true : false);
+        if (!$operator) {
+            return $left ? true : false;
         }
         $result = false;
-        switch($operator)
-        {
-            case ">":
+
+        switch ($operator) {
+            case '>':
                 $result = $left > $right;
+
                 break;
-            case ">=":
+
+            case '>=':
                 $result = $left >= $right;
+
                 break;
-            case "<":
+
+            case '<':
                 $result = $left < $right;
+
                 break;
-            case "<=":
+
+            case '<=':
                 $result = $left <= $right;
+
                 break;
-            case "==":
+
+            case '==':
                 $result = $left == $right;
+
                 break;
-            case "!=":
+
+            case '!=':
                 $result = $left != $right;
+
                 break;
-            case "contains":
-            case "not contains":
-                if(is_array($left))
-                {
+
+            case 'contains':
+            case 'not contains':
+                if (is_array($left)) {
                     $bool = in_array($right, $left);
+                } else {
+                    $bool = (strpos((string) $left, (string) $right) !== false);
                 }
-                else
-                {
+                $result = ($bool && $operator != 'not contains');
 
-                    $bool = (strpos((string)$left, (string)$right) !== false);
-                }
-                $result = ($bool && $operator != "not contains");
                 break;
-            case "~=":
-            case "!~":
+
+            case '~=':
+            case '!~':
                 $match = preg_match($right, $left);
-                $result = ($match > 0 && $operator != "!~");
-                break;
+                $result = ($match > 0 && $operator != '!~');
 
+                break;
         }
+
         return $result;
     }
 
     /**
-     * Add fields to a table row
+     * Add fields to a table row.
+     *
      * @param array $source
      * @param array $spec
      * @param array $dest
-     * @access protected
-     * @return void
      */
-    protected function addFields($source,$spec,&$dest)
+    protected function addFields($source, $spec, &$dest)
     {
-        if (isset($spec['fields']))
-        {
-            foreach ($spec['fields'] as $f)
-            {
-                if(isset($f['temporary']) && $f['temporary'] === true)
-                {
-                    if(!in_array($f['fieldName'], $this->temporaryFields))
-                    {
+        if (isset($spec['fields'])) {
+            foreach ($spec['fields'] as $f) {
+                if (isset($f['temporary']) && $f['temporary'] === true) {
+                    if (!in_array($f['fieldName'], $this->temporaryFields)) {
                         $this->temporaryFields[] = $f['fieldName'];
                     }
                 }
-                if(isset($f['predicates']))
-                {
-                    foreach ($f['predicates'] as $p)
-                    {
-                        if (is_string($p) && isset($source[$p]))
-                        {
+                if (isset($f['predicates'])) {
+                    foreach ($f['predicates'] as $p) {
+                        if (is_string($p) && isset($source[$p])) {
                             // Predicate is referenced directly
                             $this->generateValues($source, $f, $p, $dest);
-                        } else
-                        {
+                        } else {
                             // Get a list of functions to run over a predicate - reverse it
                             $predicateFunctions = $this->getPredicateFunctions($p);
                             $predicateFunctions = array_reverse($predicateFunctions);
 
-                            foreach($predicateFunctions as $function => $functionOptions)
-                            {
+                            foreach ($predicateFunctions as $function => $functionOptions) {
                                 // If we've got values then we're the innermost function, so we need to get the values
-                                if($function == 'predicates')
-                                {
-                                    foreach($functionOptions as $v)
-                                    {
+                                if ($function == 'predicates') {
+                                    foreach ($functionOptions as $v) {
                                         $v = trim($v);
-                                        if (isset($source[$v]))
-                                        {
+                                        if (isset($source[$v])) {
                                             $this->generateValues($source, $f, $v, $dest);
                                         }
                                     }
                                 // Otherwise apply a modifier
-                                }
-                                else
-                                {
-                                    if(isset($dest[$f['fieldName']]))
-                                    {
+                                } else {
+                                    if (isset($dest[$f['fieldName']])) {
                                         $dest[$f['fieldName']] = $this->applyModifier($function, $dest[$f['fieldName']], $functionOptions);
                                     }
                                 }
@@ -1121,20 +1102,15 @@ class Tables extends CompositeBase
                 }
 
                 // Allow URI linking to the ID
-                if(isset($f['value']))
-                {
-                    if($f['value'] == '_link_' || $f['value'] == 'link' )
-                    {
-                        if($f['value'] == '_link_')
-                        {
+                if (isset($f['value'])) {
+                    if ($f['value'] == '_link_' || $f['value'] == 'link') {
+                        if ($f['value'] == '_link_') {
                             $this->warningLog("Table spec value '_link_' is deprecated", $f);
                         }
                         // If value exists, set as array
-                        if(isset($dest[$f['fieldName']]))
-                        {
-                            if(!is_array($dest[$f['fieldName']]))
-                            {
-                                $dest[$f['fieldName']] = array($dest[$f['fieldName']]);
+                        if (isset($dest[$f['fieldName']])) {
+                            if (!is_array($dest[$f['fieldName']])) {
+                                $dest[$f['fieldName']] = [$dest[$f['fieldName']]];
                             }
                             $dest[$f['fieldName']][] = $this->labeller->qname_to_alias($source['_id']['r']);
                         } else {
@@ -1147,39 +1123,27 @@ class Tables extends CompositeBase
     }
 
     /**
-     * Generate values for a given predicate
-     * @param array $source
-     * @param array $f
+     * Generate values for a given predicate.
+     *
+     * @param array  $source
+     * @param array  $f
      * @param string $predicate
-     * @param array $dest
-     * @access protected
-     * @return void
+     * @param array  $dest
      */
     protected function generateValues($source, $f, $predicate, &$dest)
     {
         $values = [];
-        if (isset($source[$predicate][VALUE_URI]) && !empty($source[$predicate][VALUE_URI]))
-        {
+        if (isset($source[$predicate][VALUE_URI]) && !empty($source[$predicate][VALUE_URI])) {
             $values[] = $source[$predicate][VALUE_URI];
-        }
-        else if (isset($source[$predicate][VALUE_LITERAL]) && !empty($source[$predicate][VALUE_LITERAL]))
-        {
+        } elseif (isset($source[$predicate][VALUE_LITERAL]) && !empty($source[$predicate][VALUE_LITERAL])) {
             $values[] = $source[$predicate][VALUE_LITERAL];
-        }
-        else if (isset($source[$predicate][_ID_RESOURCE])) // field being joined is the _id, will have _id{r:'',c:''}
-        {
+        } elseif (isset($source[$predicate][_ID_RESOURCE])) { // field being joined is the _id, will have _id{r:'',c:''}
             $values[] = $source[$predicate][_ID_RESOURCE];
-        }
-        else
-        {
-            foreach ($source[$predicate] as $v)
-            {
-                if (isset($v[VALUE_LITERAL]) && !empty($v[VALUE_LITERAL]))
-                {
+        } else {
+            foreach ($source[$predicate] as $v) {
+                if (isset($v[VALUE_LITERAL]) && !empty($v[VALUE_LITERAL])) {
                     $values[] = $v[VALUE_LITERAL];
-                }
-                else if (isset($v[VALUE_URI]) && !empty($v[VALUE_URI]))
-                {
+                } elseif (isset($v[VALUE_URI]) && !empty($v[VALUE_URI])) {
                     $values[] = $v[VALUE_URI];
                 }
                 // _id's shouldn't appear in value arrays, so no need for third condition here
@@ -1187,20 +1151,14 @@ class Tables extends CompositeBase
         }
 
         // now add all the values
-        foreach ($values as $v)
-        {
-            if (!isset($dest[$f['fieldName']]))
-            {
+        foreach ($values as $v) {
+            if (!isset($dest[$f['fieldName']])) {
                 // single value
                 $dest[$f['fieldName']] = $v;
-            }
-            else if (is_array($dest[$f['fieldName']]))
-            {
+            } elseif (is_array($dest[$f['fieldName']])) {
                 // add to existing array of values
                 $dest[$f['fieldName']][] = $v;
-            }
-            else
-            {
+            } else {
                 // convert from single value to array of values
                 $existingVal = $dest[$f['fieldName']];
                 $dest[$f['fieldName']] = [];
@@ -1211,26 +1169,187 @@ class Tables extends CompositeBase
     }
 
     /**
-     * Recursively get functions that can modify a predicate
+     * Recursively get functions that can modify a predicate.
+     *
      * @param array $array
-     * @access protected
+     *
      * @return array
      */
     protected function getPredicateFunctions($array)
     {
         $predicateFunctions = [];
-        if(is_array($array))
-        {
-            if(isset($array['predicates']))
-            {
+        if (is_array($array)) {
+            if (isset($array['predicates'])) {
                 $predicateFunctions['predicates'] = $array['predicates'];
-            } else
-            {
+            } else {
                 $predicateFunctions[key($array)] = $array[key($array)];
                 $predicateFunctions = array_merge($predicateFunctions, $this->getPredicateFunctions($array[key($array)]));
             }
         }
+
         return $predicateFunctions;
+    }
+
+    /**
+     * @param array  $source
+     * @param array  $joins
+     * @param array  $dest
+     * @param string $from
+     * @param string $contextAlias
+     */
+    protected function doJoins($source, $joins, &$dest, $from, $contextAlias)
+    {
+        $this->expandSequence($joins, $source);
+        foreach ($joins as $predicate => $ruleset) {
+            if (isset($source[$predicate])) {
+                // todo: perhaps we can get better performance by detecting whether or not
+                // the uri to join on is already in the impact index, and if so not attempting
+                // to join on it. However, we need to think about different combinations of
+                // nested joins in different points of the view spec and see if this would
+                // complicate things. Needs a unit test or two.
+                $joinUris = [];
+                if (isset($source[$predicate][VALUE_URI])) {
+                    // single value for join
+                    $joinUris[] = [_ID_RESOURCE => $source[$predicate][VALUE_URI], _ID_CONTEXT => $contextAlias];
+                } elseif ($predicate == '_id') {
+                    // single value for join
+                    $joinUris[] = [_ID_RESOURCE => $source[$predicate][_ID_RESOURCE], _ID_CONTEXT => $contextAlias];
+                } else {
+                    // multiple values for join
+                    foreach ($source[$predicate] as $v) {
+                        $joinUris[] = [_ID_RESOURCE => $v[VALUE_URI], _ID_CONTEXT => $contextAlias];
+                    }
+                }
+
+                $recursiveJoins = [];
+                $collection = (
+                    isset($ruleset['from'])
+                    ? $this->config->getCollectionForCBD($this->storeName, $ruleset['from'])
+                    : $this->config->getCollectionForCBD($this->storeName, $from)
+                );
+
+                $cursor = $collection->find(['_id' => ['$in' => $joinUris]], [
+                    'maxTimeMS' => 1000000,
+                ]);
+
+                $this->addIdToImpactIndex($joinUris, $dest);
+                foreach ($cursor as $linkMatch) {
+                    $this->addFields($linkMatch, $ruleset, $dest);
+
+                    if (isset($ruleset['counts'])) {
+                        $this->doCounts($linkMatch, $ruleset['counts'], $dest);
+                    }
+
+                    if (isset($ruleset['joins'])) {
+                        // recursive joins must be done after this cursor has completed, otherwise things get messy
+                        $recursiveJoins[] = ['data' => $linkMatch, 'ruleset' => $ruleset['joins']];
+                    }
+                }
+
+                if (count($recursiveJoins) > 0) {
+                    foreach ($recursiveJoins as $r) {
+                        $this->doJoins($r['data'], $r['ruleset'], $dest, $from, $contextAlias);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Add counts to $dest by counting what is in $source according to $countSpec.
+     */
+    protected function doCounts($source, $countSpec, &$dest)
+    {
+        // process count aggregate function
+        foreach ($countSpec as $c) {
+            $fieldName = $c['fieldName'];
+            if (isset($c['temporary']) && $c['temporary'] === true) {
+                if (!in_array($fieldName, $this->temporaryFields)) {
+                    $this->temporaryFields[] = $fieldName;
+                }
+            }
+            $applyRegex = (isset($c['regex'])) ? isset($c['regex']) : null;
+            $count = 0;
+            // just count predicates at current location
+            if (isset($source[$c['property']])) {
+                if (isset($source[$c['property']][VALUE_URI]) || isset($source[$c['property']][VALUE_LITERAL])) {
+                    if ($applyRegex != null) {
+                        $count = $this->applyRegexToValue($c['regex'], $source[$c['property']]);
+                    } else {
+                        $count = 1;
+                    }
+                } else {
+                    if ($applyRegex != null) {
+                        foreach ($source[$c['property']] as $value) {
+                            if ($this->applyRegexToValue($c['regex'], $value)) {
+                                $count++;
+                            }
+                        }
+                    } else {
+                        $count = count($source[$c['property']]);
+                    }
+                }
+            }
+            if (!isset($dest[$fieldName])) {
+                $dest[$fieldName] = 0;
+            }
+            $dest[$fieldName] += $count;
+        }
+    }
+
+    /**
+     * Test if the a particular type appears in the array of types associated with a particular spec and that the changeset
+     * includes rdf:type (or is empty, meaning addition or deletion vs. update).
+     *
+     * @param string $rdfType
+     *
+     * @return bool
+     */
+    protected function checkIfTypeShouldTriggerOperation($rdfType, array $validTypes, array $subjectPredicates)
+    {
+        // We don't know if this is an alias or a fqURI, nor what is in the valid types, necessarily
+        $types = [$rdfType];
+
+        try {
+            $types[] = $this->labeller->qname_to_uri($rdfType);
+        } catch (LabellerException $e) {
+        }
+
+        try {
+            $types[] = $this->labeller->uri_to_alias($rdfType);
+        } catch (LabellerException $e) {
+        }
+
+        $intersectingTypes = array_unique(array_intersect($types, $validTypes));
+        if (!empty($intersectingTypes)) {
+            // Table rows only need to be invalidated if their rdf:type property has changed
+            // This means we're either adding or deleting a graph
+            if (empty($subjectPredicates)) {
+                return true;
+            }
+            // Check for alias in changed predicates
+            if (in_array('rdf:type', $subjectPredicates)) {
+                return true;
+            }
+            // Check for fully qualified URI in changed predicates
+            if (in_array(RDF_TYPE, $subjectPredicates)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * For mocking.
+     *
+     * @param string $tableSpecId Table spec ID
+     *
+     * @return Collection
+     */
+    protected function getCollectionForTableSpec($tableSpecId)
+    {
+        return $this->getConfigInstance()->getCollectionForTable($this->storeName, $tableSpecId);
     }
 
     /**
@@ -1238,267 +1357,74 @@ class Tables extends CompositeBase
      * Options you can use are
      *      lowercase - no options
      *      join - pass in "glue":" " to specify what to glue multiple values together with
-     *      date - no options
+     *      date - no options.
+     *
      * @param string $modifier
      * @param string $value
-     * @param array $options
-     * @throws \Exception
+     * @param array  $options
+     *
      * @return mixed
+     *
+     * @throws \Exception
      */
     private function applyModifier($modifier, $value, $options = [])
     {
-        try
-        {
-            switch($modifier)
-            {
+        try {
+            switch ($modifier) {
                 case 'predicates':
                     // Used to generate a list of values - does nothing here
                     break;
+
                 case 'lowercase':
-                    if(is_array($value))
-                    {
+                    if (is_array($value)) {
                         $value = array_map('strtolower', $value);
-                    } else
-                    {
+                    } else {
                         $value = strtolower($value);
                     }
+
                     break;
+
                 case 'join':
-                    if(is_array($value)) $value = implode($options['glue'], $value);
+                    if (is_array($value)) {
+                        $value = implode($options['glue'], $value);
+                    }
+
                     break;
+
                 case 'date':
-                    if(is_string($value)) $value = \Tripod\Mongo\DateUtil::getMongoDate((strtotime($value) * 1000));
+                    if (is_string($value)) {
+                        $value = DateUtil::getMongoDate(strtotime($value) * 1000);
+                    }
+
                     break;
+
                 default:
-                    throw new \Exception("Could not apply modifier:".$modifier);
+                    throw new \Exception('Could not apply modifier:' . $modifier);
+
                     break;
             }
-        } catch(\Exception $e)
-        {
+        } catch (\Exception $e) {
             throw $e;
         }
+
         return $value;
     }
 
     /**
-     * @param array $source
-     * @param array $joins
-     * @param array $dest
-     * @param string $from
-     * @param string $contextAlias
-     */
-    protected function doJoins($source,$joins,&$dest,$from,$contextAlias)
-    {
-        $this->expandSequence($joins,$source);
-        foreach ($joins as $predicate=>$ruleset)
-        {
-            if (isset($source[$predicate]))
-            {
-                // todo: perhaps we can get better performance by detecting whether or not
-                // the uri to join on is already in the impact index, and if so not attempting
-                // to join on it. However, we need to think about different combinations of
-                // nested joins in different points of the view spec and see if this would
-                // complicate things. Needs a unit test or two.
-                $joinUris = [];
-                if (isset($source[$predicate][VALUE_URI]))
-                {
-                    // single value for join
-                    $joinUris[] = array(_ID_RESOURCE=>$source[$predicate][VALUE_URI],_ID_CONTEXT=>$contextAlias);
-                }
-                else if($predicate == '_id')
-                {
-                    // single value for join
-                    $joinUris[] = array(_ID_RESOURCE=>$source[$predicate][_ID_RESOURCE],_ID_CONTEXT=>$contextAlias);
-                }
-                else
-                {
-                    // multiple values for join
-                    foreach ($source[$predicate] as $v)
-                    {
-                        $joinUris[] = array(_ID_RESOURCE=>$v[VALUE_URI],_ID_CONTEXT=>$contextAlias);
-                    }
-                }
-
-                $recursiveJoins = [];
-                $collection = (isset($ruleset['from'])
-                    ? $this->config->getCollectionForCBD($this->storeName, $ruleset['from'])
-                    : $this->config->getCollectionForCBD($this->storeName, $from)
-                );
-
-                $cursor = $collection->find(array('_id'=>array('$in'=>$joinUris)), array(
-                    'maxTimeMS' => 1000000
-                ));
-
-                $this->addIdToImpactIndex($joinUris, $dest);
-                foreach($cursor as $linkMatch) {
-
-                    $this->addFields($linkMatch,$ruleset,$dest);
-
-                    if (isset($ruleset['counts']))
-                    {
-                        $this->doCounts($linkMatch,$ruleset['counts'],$dest);
-                    }
-
-                    if (isset($ruleset['joins']))
-                    {
-                        // recursive joins must be done after this cursor has completed, otherwise things get messy
-                        $recursiveJoins[] = array('data'=>$linkMatch, 'ruleset'=>$ruleset['joins']);
-                    }
-                }
-
-                if (count($recursiveJoins)>0)
-                {
-                    foreach ($recursiveJoins as $r)
-                    {
-                        $this->doJoins($r['data'],$r['ruleset'],$dest,$from,$contextAlias);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Add counts to $dest by counting what is in $source according to $countSpec
-     * @param $source
-     * @param $countSpec
-     * @param $dest
-     */
-    protected function doCounts($source, $countSpec, &$dest)
-    {
-        // process count aggregate function
-        foreach ($countSpec as $c)
-        {
-            $fieldName = $c['fieldName'];
-            if(isset($c['temporary']) && $c['temporary'] === true)
-            {
-                if(!in_array($fieldName, $this->temporaryFields))
-                {
-                    $this->temporaryFields[] = $fieldName;
-                }
-            }
-            $applyRegex = (isset($c['regex'])) ? isset($c['regex']) : null;
-            $count = 0;
-            // just count predicates at current location
-            if (isset($source[$c['property']]))
-            {
-                if (isset($source[$c['property']][VALUE_URI]) || isset($source[$c['property']][VALUE_LITERAL]))
-                {
-                    if ($applyRegex != null)
-                    {
-                        $count = $this->applyRegexToValue($c['regex'],$source[$c['property']]);
-                    } else {
-                        $count = 1;
-                    }
-                }
-                else
-                {
-                    if ($applyRegex != null)
-                    {
-                        foreach ($source[$c['property']] as $value)
-                        {
-                            if ($this->applyRegexToValue($c['regex'],$value)) {
-                                $count++;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        $count = count($source[$c['property']]);
-                    }
-                }
-            }
-            if (!isset($dest[$fieldName])) $dest[$fieldName] = 0;
-            $dest[$fieldName] += $count;
-        }
-    }
-
-    /**
-     * Test if the a particular type appears in the array of types associated with a particular spec and that the changeset
-     * includes rdf:type (or is empty, meaning addition or deletion vs. update)
-     * @param string $rdfType
-     * @param array $validTypes
-     * @param array $subjectPredicates
-     * @return bool
-     */
-    protected function checkIfTypeShouldTriggerOperation($rdfType, array $validTypes, Array $subjectPredicates)
-    {
-        // We don't know if this is an alias or a fqURI, nor what is in the valid types, necessarily
-        $types = array($rdfType);
-        try
-        {
-            $types[] = $this->labeller->qname_to_uri($rdfType);
-        }
-        catch(\Tripod\Exceptions\LabellerException $e) {}
-        try
-        {
-            $types[] = $this->labeller->uri_to_alias($rdfType);
-        }
-        catch(\Tripod\Exceptions\LabellerException $e) {}
-
-        $intersectingTypes = array_unique(array_intersect($types, $validTypes));
-        if(!empty($intersectingTypes))
-        {
-            // Table rows only need to be invalidated if their rdf:type property has changed
-            // This means we're either adding or deleting a graph
-            if(empty($subjectPredicates))
-            {
-                return true;
-            }
-            // Check for alias in changed predicates
-            elseif(in_array('rdf:type', $subjectPredicates))
-            {
-                return true;
-            }
-            // Check for fully qualified URI in changed predicates
-            elseif(in_array(RDF_TYPE, $subjectPredicates))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Apply a regex to the RDF property value defined in $value
-     * @param $regex
-     * @param $value
-     * @throws \Tripod\Exceptions\Exception
+     * Apply a regex to the RDF property value defined in $value.
+     *
      * @return int
+     *
+     * @throws \Tripod\Exceptions\Exception
      */
     private function applyRegexToValue($regex, $value)
     {
-        if (isset($value[VALUE_URI]) || isset($value[VALUE_LITERAL]))
-        {
+        if (isset($value[VALUE_URI]) || isset($value[VALUE_LITERAL])) {
             $v = ($value[VALUE_URI]) ? $value[VALUE_URI] : $value[VALUE_LITERAL];
+
             return preg_match($regex, $v);
         }
-        else
-        {
-            throw new \Tripod\Exceptions\Exception("Was expecting either VALUE_URI or VALUE_LITERAL when applying regex to value - possible data corruption with: ".var_export($value,true));
-        }
-    }
 
-    /**
-     * Count the number of documents in the spec that match $filters
-     *
-     * @param string $tableSpec Table spec ID
-     * @param array  $filters   Query filters to get count on
-     * @return integer
-     */
-    public function count($tableSpec, array $filters = [])
-    {
-        $filters['_id.type'] = $tableSpec;
-        return $this->getCollectionForTableSpec($tableSpec)->count($filters);
-    }
-
-    /**
-     * For mocking
-     *
-     * @param string $tableSpecId Table spec ID
-     * @return \MongoDB\Collection
-     */
-    protected function getCollectionForTableSpec($tableSpecId)
-    {
-        return $this->getConfigInstance()->getCollectionForTable($this->storeName, $tableSpecId);
+        throw new \Tripod\Exceptions\Exception('Was expecting either VALUE_URI or VALUE_LITERAL when applying regex to value - possible data corruption with: ' . var_export($value,true));
     }
 }

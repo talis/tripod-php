@@ -1,16 +1,24 @@
 <?php
 
+use MongoDB\InsertOneResult;
 use PHPUnit\Framework\MockObject\MockObject;
+use Tripod\Config;
+use Tripod\ExtendedGraph;
+use Tripod\Mongo\DateUtil;
+use Tripod\Mongo\Driver;
+use Tripod\Mongo\MongoGraph;
+use Tripod\Mongo\TransactionLog;
+use Tripod\Mongo\Updates;
 
 class MongoTransactionLogTest extends MongoTripodTestBase
 {
     /**
-     * @var MockObject&Tripod\Mongo\Driver
+     * @var Driver&MockObject
      */
     protected $tripod;
 
     /**
-     * @var Tripod\Mongo\TransactionLog
+     * @var TransactionLog
      */
     protected $tripodTransactionLog;
 
@@ -18,7 +26,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
     {
         parent::setup();
 
-        $this->tripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $this->tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods([])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
@@ -26,14 +34,13 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         $this->getTripodCollection($this->tripod)->drop();
 
         // Lock collection no longer available from Driver, so drop it manually
-        Tripod\Config::getInstance()->getCollectionForLocks($this->tripod->getStoreName())->drop();
+        Config::getInstance()->getCollectionForLocks($this->tripod->getStoreName())->drop();
 
         $this->loadResourceDataViaTripod();
 
-        $this->tripodTransactionLog = new Tripod\Mongo\TransactionLog();
+        $this->tripodTransactionLog = new TransactionLog();
         $this->tripodTransactionLog->purgeAllTransactions();
         $this->tripod->setTransactionLog($this->tripodTransactionLog);
-
     }
 
     public function testReplayLogSimpleChangesSinglePropertyOnExistingDocument()
@@ -41,11 +48,11 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         $uri = 'http://talisaspire.com/examples/1';
 
         // store a new entity
-        $originalGraph = new Tripod\Mongo\MongoGraph();
+        $originalGraph = new MongoGraph();
         $originalGraph->add_resource_triple($uri, $originalGraph->qname_to_uri('rdf:type'), $originalGraph->qname_to_uri('acorn:Resource'));
         $originalGraph->add_literal_triple($uri, $originalGraph->qname_to_uri('searchterms:title'), 'Physics 3rd Edition');
         $originalGraph->add_literal_triple($uri, $originalGraph->qname_to_uri('searchterms:author'), 'Joe Bloggs');
-        $this->tripod->saveChanges(new Tripod\ExtendedGraph(), $originalGraph, 'http://talisaspire.com/');
+        $this->tripod->saveChanges(new ExtendedGraph(), $originalGraph, 'http://talisaspire.com/');
         // jsut confirm the values we just added were set in the store
         $oG = $this->tripod->describeResource($uri);
 
@@ -55,7 +62,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         $this->assertDocumentVersion(['r' => $uri, 'c' => 'http://talisaspire.com/'], 0); // the document should be at version 0
 
         // now save a change which alters one property
-        $nG = new Tripod\Mongo\MongoGraph();
+        $nG = new MongoGraph();
         $nG->add_graph($originalGraph);
         $nG->remove_literal_triple($uri, $nG->qname_to_uri('searchterms:title'), 'Physics 3rd Edition');
         $nG->add_literal_triple($uri, $nG->qname_to_uri('searchterms:title'), 'TEST TITLE');
@@ -91,10 +98,10 @@ class MongoTransactionLogTest extends MongoTripodTestBase
     {
         $uri = 'http://example.com/resources/1';
 
-        $g = new Tripod\Mongo\MongoGraph();
+        $g = new MongoGraph();
         $g->add_resource_triple($uri, $g->qname_to_uri('rdf:type'), $g->qname_to_uri('acorn:Resource'));
         $g->add_literal_triple($uri, $g->qname_to_uri('dct:title'), 'wibble');
-        $this->tripod->saveChanges(new Tripod\Mongo\MongoGraph(), $g, 'http://talisaspire.com/', 'something new');
+        $this->tripod->saveChanges(new MongoGraph(), $g, 'http://talisaspire.com/', 'something new');
 
         // make sure the new entity was saved correctly
         $uG = $this->tripod->describeResource($uri);
@@ -121,10 +128,10 @@ class MongoTransactionLogTest extends MongoTripodTestBase
     {
         $uri = 'http://basedata.com/b/3';
 
-        $g = new Tripod\Mongo\MongoGraph();
+        $g = new MongoGraph();
         $g->add_resource_triple($uri, $g->qname_to_uri('rdf:type'), $g->qname_to_uri('acorn:Resource'));
         $g->add_literal_triple($uri, $g->qname_to_uri('dct:title'), 'wibble');
-        $this->tripod->saveChanges(new Tripod\Mongo\MongoGraph(), $g, 'http://basedata.com/b/DefaultGraph', 'something new');
+        $this->tripod->saveChanges(new MongoGraph(), $g, 'http://basedata.com/b/DefaultGraph', 'something new');
 
         // make sure the new entity was saved correctly
         $uG = $this->tripod->describeResource($uri, 'baseData:DefaultGraph');
@@ -160,7 +167,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         $oG = $this->tripod->describeResource($uri);
 
         // save change which effectively removes the entire entity.
-        $this->tripod->saveChanges($oG, new Tripod\ExtendedGraph(), 'http://talisaspire.com/');
+        $this->tripod->saveChanges($oG, new ExtendedGraph(), 'http://talisaspire.com/');
         $this->assertDocumentHasBeenDeleted(['r' => $uri, 'c' => 'http://talisaspire.com/']);
 
         // drop the collection so CBD collection is empty
@@ -182,7 +189,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
      * In this case we start with a document in the store.
      * We modify the entity creating a transaction.
      * We then remove the entity, which generates another transaction.
-     * We then clear the db, and replay the transaction log, against an empty DB
+     * We then clear the db, and replay the transaction log, against an empty DB.
      *
      * Since we step backwards through the transaction log. This test verifies that if a more recent
      * transaction deleted an entity then an older transaction should not re-introduce it.
@@ -193,16 +200,16 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         $uri = 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA';
 
         // Save a change to entity
-        $oG = new Tripod\Mongo\MongoGraph();
+        $oG = new MongoGraph();
         $oG->add_literal_triple($uri, $oG->qname_to_uri('searchterms:title'), 'Physics 3rd Edition');
-        $nG = new Tripod\Mongo\MongoGraph();
+        $nG = new MongoGraph();
         $nG->add_literal_triple($uri, $oG->qname_to_uri('searchterms:title'), 'A different title');
         $this->tripod->saveChanges($oG, $nG, 'http://talisaspire.com/');
         $this->assertDocumentVersion(['r' => $uri, 'c' => 'http://talisaspire.com/'], 1);
 
         // now delete the entity & confirm
         $oG = $this->tripod->describeResource($uri);
-        $this->tripod->saveChanges($oG, new Tripod\ExtendedGraph(), 'http://talisaspire.com/');
+        $this->tripod->saveChanges($oG, new ExtendedGraph(), 'http://talisaspire.com/');
         $this->assertDocumentHasBeenDeleted(['r' => $uri, 'c' => 'http://talisaspire.com/']);
 
         // transaction log should have 2 transactions in it at this point.
@@ -225,11 +232,11 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         $uri_2 = 'http://talisaspire.com/works/4d101f63c10a6';
 
         // save a changes that results in a changeset with more than one subject of change
-        $oG = new Tripod\Mongo\MongoGraph();
+        $oG = new MongoGraph();
         $oG->add_literal_triple($uri_1, $oG->qname_to_uri('searchterms:title'), 'Physics 3rd Edition');
         $oG->add_literal_triple($uri_2, $oG->qname_to_uri('searchterms:discipline'), 'physics');
         $oG->add_resource_triple($uri_2, $oG->qname_to_uri('dct:subject'), 'http://talisaspire.com/disciplines/physics');
-        $nG = new Tripod\Mongo\MongoGraph();
+        $nG = new MongoGraph();
         $nG->add_literal_triple($uri_1, $nG->qname_to_uri('searchterms:title'), 'History of UK');
         $nG->add_literal_triple($uri_2, $nG->qname_to_uri('searchterms:discipline'), 'history');
         $nG->add_resource_triple($uri_2, $nG->qname_to_uri('dct:subject'), 'http://talisaspire.com/disciplines/history');
@@ -240,18 +247,18 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         $this->assertEquals(1, $this->tripodTransactionLog->getTotalTransactionCount(), 'There should only be 1 transaction in the transaction log');
 
         // add a title to second entity:
-        $nG2 = new Tripod\Mongo\MongoGraph();
+        $nG2 = new MongoGraph();
         $nG2->add_literal_triple($uri_2, $nG2->qname_to_uri('searchterms:title'), 'some test title');
         // this save should add a triple to just one of the documents
-        $this->tripod->saveChanges(new Tripod\ExtendedGraph(), $nG2, 'http://talisaspire.com/');
+        $this->tripod->saveChanges(new ExtendedGraph(), $nG2, 'http://talisaspire.com/');
         $this->assertDocumentVersion(['r' => $uri_1, 'c' => 'http://talisaspire.com/'], 1); // this document should not have been changed
         $this->assertDocumentVersion(['r' => $uri_2, 'c' => 'http://talisaspire.com/'], 2);
         $this->assertEquals(2, $this->tripodTransactionLog->getTotalTransactionCount(), 'There should only be 2 transactions in the transaction log');
 
         // change same entity again:
-        $nG2 = new Tripod\Mongo\MongoGraph();
+        $nG2 = new MongoGraph();
         $nG2->add_literal_triple($uri_2, $nG2->qname_to_uri('searchterms:title'), 'some test title');
-        $nG3 = new Tripod\Mongo\MongoGraph();
+        $nG3 = new MongoGraph();
         $nG3->add_literal_triple($uri_2, $nG2->qname_to_uri('searchterms:title'), 'a different title');
 
         // this save should change a triple on on document
@@ -262,9 +269,9 @@ class MongoTransactionLogTest extends MongoTripodTestBase
 
         // change the other entity once more so it has a second revision
         // change same entity again:
-        $nG2 = new Tripod\Mongo\MongoGraph();
+        $nG2 = new MongoGraph();
         $nG2->add_literal_triple($uri_1, $nG2->qname_to_uri('searchterms:title'), 'History of UK');
-        $nG3 = new Tripod\Mongo\MongoGraph();
+        $nG3 = new MongoGraph();
         $nG3->add_literal_triple($uri_1, $nG2->qname_to_uri('searchterms:title'), 'History of the United Kingdom');
 
         // this save should change a triple on the first resource
@@ -294,23 +301,23 @@ class MongoTransactionLogTest extends MongoTripodTestBase
     public function testReplayTransactionsAddingAndDeleting()
     {
         $uri = 'http://example.com/resources/1';
-        $g = new Tripod\Mongo\MongoGraph();
+        $g = new MongoGraph();
         $g->add_literal_triple($uri, $g->qname_to_uri('searchterms:title'), 'Anything at all');
 
         // add the entity to the store
-        $this->tripod->saveChanges(new Tripod\ExtendedGraph(), $g, 'http://talisaspire.com/');
+        $this->tripod->saveChanges(new ExtendedGraph(), $g, 'http://talisaspire.com/');
         $this->assertDocumentVersion(['r' => $uri, 'c' => 'http://talisaspire.com/'], 0);
         $this->assertEquals(1, $this->tripodTransactionLog->getTotalTransactionCount(), 'There should only be 1 transaction in the transaction log');
 
         // delete the entity from the store
-        $this->tripod->saveChanges($g, new Tripod\ExtendedGraph(), 'http://talisaspire.com/');
+        $this->tripod->saveChanges($g, new ExtendedGraph(), 'http://talisaspire.com/');
         $this->assertDocumentHasBeenDeleted(['r' => $uri, 'c' => 'http://talisaspire.com/']);
         $this->assertDocumentVersion(['r' => $uri, 'c' => 'http://talisaspire.com/'], 1);
         $this->assertEquals(2, $this->tripodTransactionLog->getTotalTransactionCount(), 'There should only be 2 transactions in the transaction log');
 
         // add it again ( slightly different document for assertion)
         $g->add_literal_triple($uri, $g->qname_to_uri('searchterms:isbn'), '1234567890');
-        $this->tripod->saveChanges(new Tripod\ExtendedGraph(), $g, 'http://talisaspire.com/');
+        $this->tripod->saveChanges(new ExtendedGraph(), $g, 'http://talisaspire.com/');
         $this->assertDocumentVersion(['r' => $uri, 'c' => 'http://talisaspire.com/'], 2);
         $this->assertEquals(3, $this->tripodTransactionLog->getTotalTransactionCount(), 'There should only be 3 transaction in the transaction log');
 
@@ -328,11 +335,10 @@ class MongoTransactionLogTest extends MongoTripodTestBase
 
     /**
      * This test addes a set of precanned transactions to the transaction log, and then verifies that
-     * only the transactions $gte the given date are replayed
+     * only the transactions $gte the given date are replayed.
      */
     public function testReplayTransactionsFromAGivenDate()
     {
-
         $transaction_1 = $this->buildTransactionDocument(1, 'http://example.com/resources/1', '2013-01-21T13:00:00.000Z', '2013-01-21T13:01:00.000Z', 0);
         $transaction_2 = $this->buildTransactionDocument(2, 'http://example.com/resources/2', '2013-01-21T13:00:00.000Z', '2013-01-21T13:02:00.000Z', 0);
         $transaction_3 = $this->buildTransactionDocument(3, 'http://example.com/resources/3', '2013-01-21T13:00:00.000Z', '2013-01-21T13:03:00.000Z', 0);
@@ -365,11 +371,10 @@ class MongoTransactionLogTest extends MongoTripodTestBase
 
     /**
      * This test addes a set of precanned transactions to the transaction log, and then verifies that
-     * only the transactions $gte the given date are replayed
+     * only the transactions $gte the given date are replayed.
      */
     public function testReplayTransactionsBetweenTwoDates()
     {
-
         $transaction_1 = $this->buildTransactionDocument(1, 'http://example.com/resources/1', '2013-01-21T13:00:00.000Z', '2013-01-21T13:01:00.000Z', 0);
         $transaction_2 = $this->buildTransactionDocument(2, 'http://example.com/resources/2', '2013-01-21T13:00:00.000Z', '2013-01-21T13:02:00.000Z', 0);
         $transaction_3 = $this->buildTransactionDocument(3, 'http://example.com/resources/3', '2013-01-21T13:00:00.000Z', '2013-01-21T13:03:00.000Z', 0);
@@ -400,69 +405,20 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         $this->assertFalse($g->has_triples_about('http://example.com/resources/5'), 'Should not contain triples about /resources/5');
     }
 
-    /**
-     * helper method
-     * @param string $id
-     * @param string $subjectOfChange
-     * @param string $startTime
-     * @param string $endTime
-     * @param int $_version
-     * @return array
-     */
-    protected function buildTransactionDocument($id, $subjectOfChange, $startTime, $endTime, $_version)
-    {
-        return [
-            '_id' => "transaction_{$id}",
-            'changes' => [
-                [
-                    '_id' => ['r' => '_:cs0', 'c' => 'http://talisaspire.com/'],
-                    'rdf:type' => ['u' => 'cs:ChangeSet'],
-                    'cs:subjectOfChange' => ['u' => $subjectOfChange],
-                    'cs:createdDate' => ['l' => date('c')],
-                    'cs:creatorName' => ['l' => 'Unit Test'],
-                    'cs:changeReason' => ['l' => 'Unit Test'],
-                    'cs:addition' => ['u' => '_:Add1'],
-                ],
-                [
-                    '_id' => ['r' => '_:Add1', 'c' => 'http://talisaspire.com/'],
-                    'rdf:type' => ['u' => 'rdf:Statement'],
-                    'rdf:subject' => ['u' => $subjectOfChange],
-                    'rdf:predicate' => ['u' => 'searchterms:title'],
-                    'rdf:object' => ['l' => 'anything at all'],
-                ],
-            ],
-            'collectionName' => 'CBD_testing',
-            'dbName' => 'tripod_php_testing',
-            'startTime' => Tripod\Mongo\DateUtil::getMongoDate(strtotime($startTime) * 1000),
-            'endTime' => Tripod\Mongo\DateUtil::getMongoDate(strtotime($endTime) * 1000),
-            'status' => 'completed',
-            'newCBDs' => [[
-                '_id' => ['r' => $subjectOfChange, 'c' => 'http://talisaspire.com/'],
-                'searchterms:title' => ['l' => 'anything at all'],
-                '_version' => $_version,
-                '_uts' => Tripod\Mongo\DateUtil::getMongoDate(),
-                '_cts' => Tripod\Mongo\DateUtil::getMongoDate(),
-            ]],
-            'originalCBDs' => [[
-                '_id' => ['r' => $subjectOfChange, 'c' => 'http://talisaspire.com/'],
-            ]],
-        ];
-    }
-
     public function testTransactionIsLoggedCorrectlyWhenCompletedSuccessfully()
     {
         // STEP 1
         $uri = 'http://example.com/resources/1';
         // save a new entity, and retrieve it
-        $g = new Tripod\Mongo\MongoGraph();
+        $g = new MongoGraph();
         $g->add_resource_triple($uri, $g->qname_to_uri('rdf:type'), $g->qname_to_uri('acorn:Resource'));
         $g->add_literal_triple($uri, $g->qname_to_uri('dct:title'), 'wibble');
 
-        $mTripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $mTripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getDataUpdater'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
-        $mTripodUpdate = $this->getMockBuilder(Tripod\Mongo\Updates::class)
+        $mTripodUpdate = $this->getMockBuilder(Updates::class)
             ->onlyMethods(['getUniqId'])
             ->setConstructorArgs([$mTripod])
             ->getMock();
@@ -475,7 +431,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
             ->will($this->returnValue($mTripodUpdate));
 
         $mTripod->setTransactionLog($this->tripodTransactionLog);
-        $mTripod->saveChanges(new Tripod\Mongo\MongoGraph(), $g, 'http://talisaspire.com/');
+        $mTripod->saveChanges(new MongoGraph(), $g, 'http://talisaspire.com/');
 
         // assert that the transaction in the transaction log is correct
         $transactionId = 'transaction_1';
@@ -494,11 +450,11 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         // STEP 2
         // update the same entity with an addition
         $mTripod = null;
-        $mTripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $mTripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getDataUpdater'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
-        $mTripodUpdate = $this->getMockBuilder(Tripod\Mongo\Updates::class)
+        $mTripodUpdate = $this->getMockBuilder(Updates::class)
             ->onlyMethods(['getUniqId'])
             ->setConstructorArgs([$mTripod])
             ->getMock();
@@ -511,7 +467,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
             ->will($this->returnValue($mTripodUpdate));
         $mTripod->setTransactionLog($this->tripodTransactionLog);
 
-        $nG = new Tripod\Mongo\MongoGraph();
+        $nG = new MongoGraph();
         $nG->add_graph($g);
         $nG->add_literal_triple($uri, $g->qname_to_uri('dct:title'), 'another title');
         $mTripod->saveChanges($g, $nG, 'http://talisaspire.com/');
@@ -546,11 +502,11 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         // STEP 3
         // update the same entity with a removal
         $mTripod = null;
-        $mTripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $mTripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getDataUpdater'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
-        $mTripodUpdate = $this->getMockBuilder(Tripod\Mongo\Updates::class)
+        $mTripodUpdate = $this->getMockBuilder(Updates::class)
             ->onlyMethods(['getUniqId'])
             ->setConstructorArgs([$mTripod])
             ->getMock();
@@ -563,7 +519,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
             ->will($this->returnValue($mTripodUpdate));
         $mTripod->setTransactionLog($this->tripodTransactionLog);
 
-        $g = new Tripod\Mongo\MongoGraph();
+        $g = new MongoGraph();
         $g->add_graph($nG);
         $g->remove_literal_triple($uri, $g->qname_to_uri('dct:title'), 'another title');
         $mTripod->saveChanges($nG, $g, 'http://talisaspire.com/');
@@ -598,14 +554,14 @@ class MongoTransactionLogTest extends MongoTripodTestBase
     {
         $uri = 'http://example.com/resources/1';
         // save a new entity, and retrieve it
-        $g = new Tripod\Mongo\MongoGraph();
+        $g = new MongoGraph();
         $g->add_resource_triple($uri, $g->qname_to_uri('rdf:type'), $g->qname_to_uri('acorn:Resource'));
         $g->add_literal_triple($uri, $g->qname_to_uri('dct:title'), 'wibble');
-        $mTripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $mTripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getDataUpdater'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
-        $mTripodUpdate = $this->getMockBuilder(Tripod\Mongo\Updates::class)
+        $mTripodUpdate = $this->getMockBuilder(Updates::class)
             ->onlyMethods(['getUniqId'])
             ->setConstructorArgs([$mTripod])
             ->getMock();
@@ -618,17 +574,17 @@ class MongoTransactionLogTest extends MongoTripodTestBase
             ->will($this->returnValue($mTripodUpdate));
 
         $mTripod->setTransactionLog($this->tripodTransactionLog);
-        $mTripod->saveChanges(new Tripod\Mongo\MongoGraph(), $g, 'http://talisaspire.com/');
+        $mTripod->saveChanges(new MongoGraph(), $g, 'http://talisaspire.com/');
 
         // STEP 2
         // now attempt to update the entity but throw an exception in applyChangeset
         // this should cause the save to fail, and this should be reflected in the transaction log
         $mTripod = null;
-        $mTripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $mTripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getDataUpdater'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
-        $mTripodUpdate = $this->getMockBuilder(Tripod\Mongo\Updates::class)
+        $mTripodUpdate = $this->getMockBuilder(Updates::class)
             ->onlyMethods(['getUniqId', 'applyChangeSet'])
             ->setConstructorArgs([$mTripod])
             ->getMock();
@@ -645,7 +601,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
             ->will($this->returnValue($mTripodUpdate));
 
         $mTripod->setTransactionLog($this->tripodTransactionLog);
-        $nG = new Tripod\Mongo\MongoGraph();
+        $nG = new MongoGraph();
         $nG->add_graph($g);
         $nG->add_literal_triple($uri, $g->qname_to_uri('dct:title'), 'another title');
 
@@ -682,7 +638,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         ksort($expectedCBD);
         $this->assertEquals($expectedCBD, $actualCBD, 'CBD in transaction should match our expected value exactly');
         // finally check that the actual error was logged in the transaction_log
-        $this->assertTrue(isset($transactionDocument['error']) && isset($transactionDocument['error']['reason']) && isset($transactionDocument['error']['trace']), 'The error should be logged, both the message and a stack trace');
+        $this->assertTrue(isset($transactionDocument['error'], $transactionDocument['error']['reason']) && isset($transactionDocument['error']['trace']), 'The error should be logged, both the message and a stack trace');
         $this->assertEquals('exception thrown by mock test', $transactionDocument['error']['reason'], 'The transaction log should have logged the exception our test suite threw');
         $this->assertNotEmpty($transactionDocument['error']['trace'], 'The transaction log have a non empty error trace');
     }
@@ -690,14 +646,14 @@ class MongoTransactionLogTest extends MongoTripodTestBase
     public function testTransactionsLoggedCorrectlyFromMultipleTripods()
     {
         // Create two tripods onto different collection/dbname and make them use the same transaction log
-        $tripod1 = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $tripod1 = $this->getMockBuilder(Driver::class)
             ->onlyMethods([])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
         $this->getTripodCollection($tripod1)->drop();
         $tripod1->setTransactionLog($this->tripodTransactionLog);
 
-        $tripod2 = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $tripod2 = $this->getMockBuilder(Driver::class)
             ->onlyMethods([])
             ->setConstructorArgs(['CBD_testing_2', 'tripod_php_testing'])
             ->getMock();
@@ -705,13 +661,13 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         $tripod2->setTransactionLog($this->tripodTransactionLog);
 
         $uri = 'http://example.com/resources/1';
-        $g = new Tripod\Mongo\MongoGraph();
+        $g = new MongoGraph();
         $g->add_literal_triple($uri, $g->qname_to_uri('searchterms:title'), 'Some title');
         $g->add_literal_triple($uri, $g->qname_to_uri('searchterms:author'), 'Some author');
 
         // save entity using both tripods ( creates same doc in two different collections )
-        $tripod1->saveChanges(new Tripod\ExtendedGraph(), $g, 'http://talisaspire.com/');
-        $tripod2->saveChanges(new Tripod\ExtendedGraph(), $g, 'http://talisaspire.com/');
+        $tripod1->saveChanges(new ExtendedGraph(), $g, 'http://talisaspire.com/');
+        $tripod2->saveChanges(new ExtendedGraph(), $g, 'http://talisaspire.com/');
 
         // assert the document is in both collections
         $this->assertDocumentVersion(['r' => $uri, 'c' => 'http://talisaspire.com/'], 0, true, $tripod1);
@@ -721,9 +677,9 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         $this->assertEquals(2, $this->tripodTransactionLog->getTotalTransactionCount());
 
         // change one of the documents
-        $oG = new Tripod\Mongo\MongoGraph();
+        $oG = new MongoGraph();
         $oG->add_literal_triple($uri, $g->qname_to_uri('searchterms:title'), 'Some title');
-        $nG = new Tripod\Mongo\MongoGraph();
+        $nG = new MongoGraph();
         $nG->add_literal_triple($uri, $g->qname_to_uri('searchterms:title'), 'Changed title');
         $tripod1->saveChanges($oG, $nG, 'http://talisaspire.com/');
 
@@ -734,11 +690,11 @@ class MongoTransactionLogTest extends MongoTripodTestBase
     }
 
     /**
-     * This test ensures that if insertTransaction returns an error, then a Exception is actually thrown
+     * This test ensures that if insertTransaction returns an error, then a Exception is actually thrown.
      */
     public function testCreateNewTransactionThrowsExceptionIfInsertFails()
     {
-        $mockInsert = $this->getMockBuilder(MongoDB\InsertOneResult::class)
+        $mockInsert = $this->getMockBuilder(InsertOneResult::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['isAcknowledged'])
             ->getMock();
@@ -747,7 +703,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
             ->method('isAcknowledged')
             ->will($this->returnValue(false));
 
-        $mockTransactionLog = $this->getMockBuilder(Tripod\Mongo\TransactionLog::class)
+        $mockTransactionLog = $this->getMockBuilder(TransactionLog::class)
             ->onlyMethods(['insertTransaction'])
             ->disableOriginalConstructor()
             ->getMock();
@@ -761,5 +717,56 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         } catch (Exception $e) {
             $this->assertStringContainsString('Error creating new transaction:', $e->getMessage());
         }
+    }
+
+    /**
+     * helper method.
+     *
+     * @param string $id
+     * @param string $subjectOfChange
+     * @param string $startTime
+     * @param string $endTime
+     * @param int    $_version
+     *
+     * @return array
+     */
+    protected function buildTransactionDocument($id, $subjectOfChange, $startTime, $endTime, $_version)
+    {
+        return [
+            '_id' => "transaction_{$id}",
+            'changes' => [
+                [
+                    '_id' => ['r' => '_:cs0', 'c' => 'http://talisaspire.com/'],
+                    'rdf:type' => ['u' => 'cs:ChangeSet'],
+                    'cs:subjectOfChange' => ['u' => $subjectOfChange],
+                    'cs:createdDate' => ['l' => date('c')],
+                    'cs:creatorName' => ['l' => 'Unit Test'],
+                    'cs:changeReason' => ['l' => 'Unit Test'],
+                    'cs:addition' => ['u' => '_:Add1'],
+                ],
+                [
+                    '_id' => ['r' => '_:Add1', 'c' => 'http://talisaspire.com/'],
+                    'rdf:type' => ['u' => 'rdf:Statement'],
+                    'rdf:subject' => ['u' => $subjectOfChange],
+                    'rdf:predicate' => ['u' => 'searchterms:title'],
+                    'rdf:object' => ['l' => 'anything at all'],
+                ],
+            ],
+            'collectionName' => 'CBD_testing',
+            'dbName' => 'tripod_php_testing',
+            'startTime' => DateUtil::getMongoDate(strtotime($startTime) * 1000),
+            'endTime' => DateUtil::getMongoDate(strtotime($endTime) * 1000),
+            'status' => 'completed',
+            'newCBDs' => [[
+                '_id' => ['r' => $subjectOfChange, 'c' => 'http://talisaspire.com/'],
+                'searchterms:title' => ['l' => 'anything at all'],
+                '_version' => $_version,
+                '_uts' => DateUtil::getMongoDate(),
+                '_cts' => DateUtil::getMongoDate(),
+            ]],
+            'originalCBDs' => [[
+                '_id' => ['r' => $subjectOfChange, 'c' => 'http://talisaspire.com/'],
+            ]],
+        ];
     }
 }

@@ -2,11 +2,13 @@
 
 namespace Tripod\Mongo;
 
-use \MongoDB\Driver\ReadPreference;
+use MongoDB\Driver\ReadPreference;
+use Tripod\Exceptions\Exception;
+use Tripod\ITripodStat;
 
 /**
  * A subject that has been involved in an modification event (create/update, delete) and will therefore require
- * view, table and search doc generation
+ * view, table and search doc generation.
  */
 class ImpactedSubject
 {
@@ -36,45 +38,36 @@ class ImpactedSubject
     private $podName;
 
     /**
-     * @var \Tripod\ITripodStat|null
+     * @var ITripodStat|null
      */
     private $stat;
 
     /**
-     * @param array $resourceId
      * @param string $operation
      * @param string $storeName
      * @param string $podName
-     * @param array $specTypes
-     * @param \Tripod\ITripodStat|null $stat
-     * @throws \Tripod\Exceptions\Exception
+     *
+     * @throws Exception
      */
-    public function __construct(Array $resourceId, $operation, $storeName, $podName, Array $specTypes=array(), \Tripod\ITripodStat $stat = null)
+    public function __construct(array $resourceId, $operation, $storeName, $podName, array $specTypes = [], ?ITripodStat $stat = null)
     {
-        if (!is_array($resourceId) || !array_key_exists(_ID_RESOURCE,$resourceId) || !array_key_exists(_ID_CONTEXT,$resourceId))
-        {
-            throw new \Tripod\Exceptions\Exception('Parameter $resourceId needs to be of type array with ' . _ID_RESOURCE . ' and ' . _ID_CONTEXT . ' keys');
-        }
-        else
-        {
-            $this->resourceId = $resourceId;
+        if (!is_array($resourceId) || !array_key_exists(_ID_RESOURCE, $resourceId) || !array_key_exists(_ID_CONTEXT, $resourceId)) {
+            throw new Exception('Parameter $resourceId needs to be of type array with ' . _ID_RESOURCE . ' and ' . _ID_CONTEXT . ' keys');
         }
 
-        if (in_array($operation,array(OP_VIEWS,OP_TABLES,OP_SEARCH)))
-        {
+        $this->resourceId = $resourceId;
+
+        if (in_array($operation, [OP_VIEWS, OP_TABLES, OP_SEARCH])) {
             $this->operation = $operation;
-        }
-        else
-        {
-            throw new \Tripod\Exceptions\Exception("Invalid operation: $operation");
+        } else {
+            throw new Exception("Invalid operation: {$operation}");
         }
 
         $this->storeName = $storeName;
         $this->podName = $podName;
         $this->specTypes = $specTypes;
 
-        if($stat)
-        {
+        if ($stat) {
             $this->stat = $stat;
         }
     }
@@ -120,41 +113,42 @@ class ImpactedSubject
     }
 
     /**
-     * Serialises the data as an array
+     * Serialises the data as an array.
+     *
      * @return array
      */
     public function toArray()
     {
-        return array(
-            "resourceId" => $this->resourceId,
-            "operation" => $this->operation,
-            "specTypes" => $this->specTypes,
-            "storeName" => $this->storeName,
-            "podName" => $this->podName
-        );
+        return [
+            'resourceId' => $this->resourceId,
+            'operation' => $this->operation,
+            'specTypes' => $this->specTypes,
+            'storeName' => $this->storeName,
+            'podName' => $this->podName,
+        ];
     }
 
     /**
-     * Perform the update on the composite defined by the operation
+     * Perform the update on the composite defined by the operation.
      */
     public function update()
     {
         $tripod = $this->getTripod();
-        if(isset($this->stat))
-        {
+        if (isset($this->stat)) {
             $tripod->setStat($this->stat);
         }
         $tripod->getComposite($this->operation)->update($this);
     }
 
     /**
-     * For mocking
-     * @return \Tripod\Mongo\Driver
+     * For mocking.
+     *
+     * @return Driver
      */
     protected function getTripod()
     {
-        return new Driver($this->getPodName(),$this->getStoreName(),array(
-            'readPreference' => ReadPreference::RP_PRIMARY
-        ));
+        return new Driver($this->getPodName(), $this->getStoreName(), [
+            'readPreference' => ReadPreference::RP_PRIMARY,
+        ]);
     }
 }

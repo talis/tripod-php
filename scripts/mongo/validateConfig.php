@@ -1,48 +1,50 @@
 <?php
+
+use Tripod\Config;
+use Tripod\Exceptions\ConfigException;
+
 require_once dirname(__FILE__) . '/common.inc.php';
 $options = getopt(
-    "c:h",
-    array(
-        "config:",
-        "help"
-    )
+    'c:h',
+    [
+        'config:',
+        'help',
+    ]
 );
 
 function showUsage()
 {
-    $help = <<<END
-validateConfig.php
+    $help = <<<'END'
+        validateConfig.php
 
-Usage:
+        Usage:
 
-php validateConfig.php -c/--config path/to/tripod-config.json [options]
+        php validateConfig.php -c/--config path/to/tripod-config.json [options]
 
-Options:
-    -h --help               This help
-    -c --config             path to Config configuration (required)
-END;
+        Options:
+            -h --help               This help
+            -c --config             path to Config configuration (required)
+        END;
     echo $help;
 }
 
-if(empty($options) || isset($options['h']) || isset($options['help']) || (!isset($options['c']) && !isset($options['config'])))
-{
+if (empty($options) || isset($options['h']) || isset($options['help']) || (!isset($options['c']) && !isset($options['config']))) {
     showUsage();
-    exit();
+
+    exit;
 }
-$configLocation = isset($options['c']) ? $options['c'] : $options['config'];
+$configLocation = $options['c'] ?? $options['config'];
 
-require_once dirname(dirname(dirname(__FILE__))).'/src/tripod.inc.php';
+require_once dirname(dirname(dirname(__FILE__))) . '/src/tripod.inc.php';
 
-\Tripod\Mongo\Config::setValidationLevel(\Tripod\Mongo\Config::VALIDATE_MAX);
+Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
 
-\Tripod\Config::setConfig(json_decode(file_get_contents($configLocation),true));
+Config::setConfig(json_decode(file_get_contents($configLocation), true));
 
 try {
-    \Tripod\Config::getInstance();
+    Config::getInstance();
 
     echo "\nConfig OK\n";
-}
-catch(\Tripod\Exceptions\ConfigException $e)
-{
+} catch (ConfigException $e) {
     echo "\nError: " . $e->getMessage() . "\n";
 }

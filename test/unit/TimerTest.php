@@ -66,5 +66,5 @@ class TimerTest extends TestCase
         $status = ($timer->microResult() >= 1000000) ? true : false;
         $this->assertTrue($status);
     }
-    /*  END: microResult() tests */
+    // END: microResult() tests
 }

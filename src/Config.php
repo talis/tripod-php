@@ -3,9 +3,7 @@
 namespace Tripod;
 
 use Tripod\Exceptions\ConfigException;
-use Tripod\ITripodConfig;
 use Tripod\Mongo\IConfigInstance;
-use Tripod\TripodConfigFactory;
 
 class Config implements ITripodConfig
 {
@@ -20,35 +18,33 @@ class Config implements ITripodConfig
     private static $config = [];
 
     /**
-     * Config should not be instantiated directly: use Config::getInstance()
+     * Config should not be instantiated directly: use Config::getInstance().
      */
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     /**
      * Since this is a singleton class, use this method to create a new config instance.
      *
      * @uses               Config::setConfig() Configuration must be set prior to calling this method. To generate a completely new object, set a new config
+     *
      * @codeCoverageIgnore
-     * @throws             ConfigException
-     * @return             IConfigInstance
+     *
+     * @throws ConfigException
      */
     public static function getInstance(): IConfigInstance
     {
         if (!isset(self::$config)) {
-            throw new ConfigException("Call Config::setConfig() first");
+            throw new ConfigException('Call Config::setConfig() first');
         }
         if (!isset(self::$instance)) {
             self::$instance = TripodConfigFactory::create(self::$config);
         }
+
         return self::$instance;
     }
 
     /**
-     * Loads the Tripod config into the instance
-     *
-     * @return void
+     * Loads the Tripod config into the instance.
      */
     public static function setConfig(array $config): void
     {
@@ -57,9 +53,7 @@ class Config implements ITripodConfig
     }
 
     /**
-     * Returns the Tripod config array
-     *
-     * @return array
+     * Returns the Tripod config array.
      */
     public static function getConfig(): array
     {
@@ -67,7 +61,7 @@ class Config implements ITripodConfig
     }
 
     /**
-     * This method was added to allow us to test the getInstance() method
+     * This method was added to allow us to test the getInstance() method.
      *
      * @codeCoverageIgnore
      */

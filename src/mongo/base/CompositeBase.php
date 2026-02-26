@@ -2,20 +2,25 @@
 
 namespace Tripod\Mongo\Composites;
 
-use \Tripod\Mongo\JobGroup;
+use Tripod\Exceptions\LabellerException;
+use Tripod\Mongo\DriverBase;
+use Tripod\Mongo\ImpactedSubject;
+use Tripod\Mongo\JobGroup;
+use Tripod\Mongo\Jobs\ApplyOperation;
 
-abstract class CompositeBase extends \Tripod\Mongo\DriverBase implements \Tripod\Mongo\Composites\IComposite
+abstract class CompositeBase extends DriverBase implements IComposite
 {
     /**
-     * @var \Tripod\Mongo\Jobs\ApplyOperation
+     * @var ApplyOperation
      */
     protected $applyOperation;
 
     /**
-     * Returns an array of ImpactedSubjects based on the subjects and predicates of change
-     * @param array $subjectsAndPredicatesOfChange
+     * Returns an array of ImpactedSubjects based on the subjects and predicates of change.
+     *
      * @param string $contextAlias
-     * @return \Tripod\Mongo\ImpactedSubject[]
+     *
+     * @return ImpactedSubject[]
      */
     public function getImpactedSubjects(array $subjectsAndPredicatesOfChange, $contextAlias)
     {
@@ -26,7 +31,7 @@ abstract class CompositeBase extends \Tripod\Mongo\DriverBase implements \Tripod
             $resourceAlias = $this->labeller->uri_to_alias($s);
             $subjectsToAlias[$s] = $resourceAlias;
             // build $filter for queries to impact index
-            $filter[] = [_ID_RESOURCE=>$resourceAlias, _ID_CONTEXT=>$contextAlias];
+            $filter[] = [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias];
         }
         $query = [_ID_KEY => ['$in' => $filter]];
         $docs = $this->getCollection()->find(
@@ -39,8 +44,8 @@ abstract class CompositeBase extends \Tripod\Mongo\DriverBase implements \Tripod
         if ($this->getCollection()->count($query) !== 0) {
             foreach ($docs as $doc) {
                 $docResource = $doc[_ID_KEY][_ID_RESOURCE];
-                $docContext  = $doc[_ID_KEY][_ID_CONTEXT];
-                $docHash     = md5($docResource.$docContext);
+                $docContext = $doc[_ID_KEY][_ID_CONTEXT];
+                $docHash = md5($docResource . $docContext);
 
                 $docTypes = [];
                 if (isset($doc['rdf:type'])) {
@@ -58,8 +63,8 @@ abstract class CompositeBase extends \Tripod\Mongo\DriverBase implements \Tripod
                 $currentSubjectProperties = [];
                 if (isset($subjectsAndPredicatesOfChange[$docResource])) {
                     $currentSubjectProperties = $subjectsAndPredicatesOfChange[$docResource];
-                } elseif (isset($subjectsToAlias[$docResource]) &&
-                    isset($subjectsAndPredicatesOfChange[$subjectsToAlias[$docResource]])) {
+                } elseif (isset($subjectsToAlias[$docResource], $subjectsAndPredicatesOfChange[$subjectsToAlias[$docResource]])
+                ) {
                     $currentSubjectProperties = $subjectsAndPredicatesOfChange[$subjectsToAlias[$docResource]];
                 }
                 foreach ($docTypes as $type) {
@@ -68,7 +73,7 @@ abstract class CompositeBase extends \Tripod\Mongo\DriverBase implements \Tripod
                             $candidates[$this->getPodName()] = [];
                         }
                         if (!array_key_exists($docHash, $candidates[$this->getPodName()])) {
-                            $candidates[$this->getPodName()][$docHash] = ['id'=>$doc[_ID_KEY]];
+                            $candidates[$this->getPodName()][$docHash] = ['id' => $doc[_ID_KEY]];
                         }
                     }
                 }
@@ -87,9 +92,9 @@ abstract class CompositeBase extends \Tripod\Mongo\DriverBase implements \Tripod
                 if (!array_key_exists($docHash, $candidates[$spec['from']])) {
                     $candidates[$spec['from']][$docHash] = [
                         'id' => [
-                            _ID_RESOURCE=>$doc[_ID_KEY][_ID_RESOURCE],
-                            _ID_CONTEXT=>$doc[_ID_KEY][_ID_CONTEXT],
-                        ]
+                            _ID_RESOURCE => $doc[_ID_KEY][_ID_RESOURCE],
+                            _ID_CONTEXT => $doc[_ID_KEY][_ID_CONTEXT],
+                        ],
                     ];
                 }
                 if (!array_key_exists('specTypes', $candidates[$spec['from']][$docHash])) {
@@ -106,8 +111,8 @@ abstract class CompositeBase extends \Tripod\Mongo\DriverBase implements \Tripod
         $impactedSubjects = [];
         foreach (array_keys($candidates) as $podName) {
             foreach ($candidates[$podName] as $candidate) {
-                $specTypes = (isset($candidate['specTypes']) ? $candidate['specTypes'] : []);
-                $impactedSubjects[] = new \Tripod\Mongo\ImpactedSubject($candidate['id'], $this->getOperationType(), $this->getStoreName(), $podName, $specTypes);
+                $specTypes = ($candidate['specTypes'] ?? []);
+                $impactedSubjects[] = new ImpactedSubject($candidate['id'], $this->getOperationType(), $this->getStoreName(), $podName, $specTypes);
             }
         }
 
@@ -115,74 +120,80 @@ abstract class CompositeBase extends \Tripod\Mongo\DriverBase implements \Tripod
     }
 
     /**
-     * Returns an array of the rdf types that will trigger the specification
+     * Returns an array of the rdf types that will trigger the specification.
+     *
      * @return array
      */
     abstract public function getTypesInSpecifications();
 
     /**
-     * @param array $resourcesAndPredicates
      * @param string $contextAlias
+     *
      * @return mixed
      */
     abstract public function findImpactedComposites(array $resourcesAndPredicates, $contextAlias);
 
     /**
-     * Returns the specification config
+     * Returns the specification config.
+     *
      * @param string $storeName
-     * @param string $specId The specification id
+     * @param string $specId    The specification id
+     *
      * @return array|null
      */
     abstract public function getSpecification($storeName, $specId);
 
     /**
      * Test if the a particular type appears in the array of types associated with a particular spec and that the changeset
-     * includes rdf:type (or is empty, meaning addition or deletion vs. update)
+     * includes rdf:type (or is empty, meaning addition or deletion vs. update).
+     *
      * @param string $rdfType
-     * @param array $validTypes
-     * @param array $subjectPredicates
+     *
      * @return bool
      */
     protected function checkIfTypeShouldTriggerOperation($rdfType, array $validTypes, array $subjectPredicates)
     {
         // We don't know if this is an alias or a fqURI, nor what is in the valid types, necessarily
         $types = [$rdfType];
+
         try {
             $types[] = $this->labeller->qname_to_uri($rdfType);
-        } catch (\Tripod\Exceptions\LabellerException $e) {
+        } catch (LabellerException $e) {
             // Not a qname, apparently
         }
+
         try {
             $types[] = $this->labeller->uri_to_alias($rdfType);
-        } catch (\Tripod\Exceptions\LabellerException $e) {
+        } catch (LabellerException $e) {
             // Not a declared uri, apparently
         }
 
         $intersectingTypes = array_unique(array_intersect($types, $validTypes));
+
         // If views have a matching type *at all*, the operation is triggered
-        return (!empty($intersectingTypes));
+        return !empty($intersectingTypes);
     }
 
     /**
-     * For mocking
+     * For mocking.
      *
-     * @return \Tripod\Mongo\Jobs\ApplyOperation
+     * @return ApplyOperation
      */
     protected function getApplyOperation()
     {
         if (!isset($this->applyOperation)) {
-            $this->applyOperation = new \Tripod\Mongo\Jobs\ApplyOperation();
+            $this->applyOperation = new ApplyOperation();
         }
+
         return $this->applyOperation;
     }
 
     /**
-     * Queues a batch of ImpactedSubjects in a single ApplyOperation job
+     * Queues a batch of ImpactedSubjects in a single ApplyOperation job.
      *
-     * @param \Tripod\Mongo\ImpactedSubject[] $subjects   Array of ImpactedSubjects
-     * @param string                          $queueName  Queue name
-     * @param array                           $jobOptions Job options
-     * @return void
+     * @param ImpactedSubject[] $subjects   Array of ImpactedSubjects
+     * @param string            $queueName  Queue name
+     * @param array             $jobOptions Job options
      */
     protected function queueApplyJob(array $subjects, $queueName, array $jobOptions)
     {
@@ -190,9 +201,10 @@ abstract class CompositeBase extends \Tripod\Mongo\DriverBase implements \Tripod
     }
 
     /**
-     * For mocking
+     * For mocking.
      *
      * @param string $storeName
+     *
      * @return JobGroup
      */
     protected function getJobGroup($storeName)

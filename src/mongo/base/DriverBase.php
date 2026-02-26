@@ -2,24 +2,35 @@
 
 namespace Tripod\Mongo;
 
-require_once TRIPOD_DIR.'ITripodStat.php';
+require_once TRIPOD_DIR . 'ITripodStat.php';
 
+use MongoDB\Collection;
+use MongoDB\Database;
+use MongoDB\Driver\ReadPreference;
 use Monolog\Logger;
+use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Tripod\Exceptions\Exception;
 use Tripod\IEventHook;
-use \MongoDB\Driver\ReadPreference;
-use \MongoDB\Collection;
-use \MongoDB\Database;
+use Tripod\ITripodStat;
 use Tripod\Mongo\Composites\Views;
+use Tripod\StatsD;
+use Tripod\Timer;
+use Tripod\TripodStatFactory;
 
 abstract class DriverBase
 {
     /**
-     * constants for the supported hook functions that can be applied
+     * constants for the supported hook functions that can be applied.
      */
-    const HOOK_FN_PRE = "pre";
-    const HOOK_FN_SUCCESS = "success";
-    const HOOK_FN_FAILURE = "failure";
+    public const HOOK_FN_PRE = 'pre';
+    public const HOOK_FN_SUCCESS = 'success';
+    public const HOOK_FN_FAILURE = 'failure';
+
+    /**
+     * @var LoggerInterface
+     */
+    public static $logger;
 
     /**
      * @var Collection
@@ -36,81 +47,26 @@ abstract class DriverBase
      */
     protected $podName;
 
-    /**
-     * @var $podName
-     */
     protected $defaultContext;
 
     /**
-     * @var \Tripod\iTripodStat
+     * @var ITripodStat
      */
-    protected $stat = null;
+    protected $stat;
 
-    /** @var array  */
-    protected $statsConfig = array();
+    /** @var array */
+    protected $statsConfig = [];
 
     /**
      * @var Database
      */
-    protected $db = null;
+    protected $db;
 
     /**
      * @var string
      */
     protected $readPreference = ReadPreference::RP_PRIMARY_PREFERRED;
 
-    /**
-     * @return \Tripod\ITripodStat
-     */
-    public function getStat()
-    {
-        if ($this->stat==null)
-        {
-            $this->setStat($this->getStatFromStatFactory($this->statsConfig));
-        }
-        return $this->stat;
-    }
-
-    /**
-     * For mocking out the creation of stat objects
-     * @param array $config
-     * @return \Tripod\ITripodStat
-     */
-    protected function getStatFromStatFactory(array $config)
-    {
-        return \Tripod\TripodStatFactory::create($this->statsConfig);
-    }
-
-    /**
-     * @param \Tripod\ITripodStat $stat
-     */
-    public function setStat(\Tripod\ITripodStat $stat)
-    {
-        // TODO: how do we decouple this and still allow StatsD to know which db we're using?
-        if($stat instanceof \Tripod\StatsD)
-        {
-            $stat->setPivotValue($this->getStoreName());
-        }
-        $this->stat = $stat;
-    }
-
-    /**
-     * Returns stat object config
-     * @return array
-     */
-    public function getStatsConfig()
-    {
-        $stat = $this->getStat();
-        if($stat)
-        {
-            $statConfig = $stat->getConfig();
-        }
-        else
-        {
-            $statConfig = $this->statsConfig;
-        }
-        return $statConfig;
-    }
     /**
      * @var Labeller
      */
@@ -119,133 +75,44 @@ abstract class DriverBase
     /**
      * @var IConfigInstance
      */
-    protected $config = null;
+    protected $config;
 
     /**
-     * @param int $secs
-     * @return int
+     * @return ITripodStat
      */
-    protected function getExpirySecFromNow($secs)
+    public function getStat()
     {
-        return (time()+$secs);
+        if ($this->stat == null) {
+            $this->setStat($this->getStatFromStatFactory($this->statsConfig));
+        }
+
+        return $this->stat;
+    }
+
+    public function setStat(ITripodStat $stat)
+    {
+        // TODO: how do we decouple this and still allow StatsD to know which db we're using?
+        if ($stat instanceof StatsD) {
+            $stat->setPivotValue($this->getStoreName());
+        }
+        $this->stat = $stat;
     }
 
     /**
-     * @param string|null $context
-     * @return mixed
+     * Returns stat object config.
+     *
+     * @return array
      */
-    protected function getContextAlias($context = null)
+    public function getStatsConfig()
     {
-        $contextAlias = $this->labeller->uri_to_alias((empty($context)) ? $this->defaultContext : $context);
-        return (empty($contextAlias)) ? $this->getConfigInstance()->getDefaultContextAlias() : $contextAlias;
-    }
-
-    /**
-     * @param array $query
-     * @param string $type
-     * @param Collection|null $collection
-     * @param array $includeProperties
-     * @param int $cursorSize
-     * @return MongoGraph
-     */
-    protected function fetchGraph($query, $type, $collection=null,$includeProperties=array(), $cursorSize=101)
-    {
-        $graph = new MongoGraph();
-
-        $t = new \Tripod\Timer();
-        $t->start();
-
-        if ($collection==null)
-        {
-            $collection = $this->collection;
-            $collectionName = $collection->getCollectionName();
-        }
-        else
-        {
-            $collectionName = $collection->getCollectionName();
+        $stat = $this->getStat();
+        if ($stat) {
+            $statConfig = $stat->getConfig();
+        } else {
+            $statConfig = $this->statsConfig;
         }
 
-        if (empty($includeProperties))
-        {
-            $cursor = $collection->find($query);
-        }
-        else
-        {
-            $fields = array();
-            foreach ($includeProperties as $property)
-            {
-                $fields[$this->labeller->uri_to_alias($property)] = true;
-            }
-            $cursor = $collection->find($query, array(
-                'projection' => $fields,
-                'batchSize' => $cursorSize
-            ));
-        }
-
-        $ttlExpiredResources = false;
-
-        $retries = 1;
-        $exception = null;
-        $cursorSuccess = false;
-
-        do {
-            try {
-                foreach($cursor as $result)
-                {
-                    // handle MONGO_VIEWS that have expired due to ttl. These are expired
-                    // on read (lazily) rather than on write
-                    if ($this instanceof Views && $type==MONGO_VIEW && array_key_exists(_EXPIRES,$result['value']))
-                    {
-                        // if expires < current date, regenerate view..
-                        $currentDate = \Tripod\Mongo\DateUtil::getMongoDate();
-                        if ($result['value'][_EXPIRES]->__toString() < $currentDate)
-                        {
-                            // regenerate!
-                            $this->generateView($result['_id']['type'],$result['_id']['r']);
-                        }
-                    }
-                    $graph->add_tripod_array($result);
-                }
-                $cursorSuccess = true;
-            } catch (\Exception $e) {
-                self::getLogger()->error("CursorException attempt ".$retries.". Retrying...:" . $e->getMessage());
-                sleep(1);
-                $retries++;
-                $exception = $e;
-            }
-        } while ($retries <= Config::CONNECTION_RETRIES && $cursorSuccess === false);
-
-        if ($cursorSuccess === false) {
-            self::getLogger()->error("CursorException failed after " . $retries . " attempts (MAX:".Config::CONNECTION_RETRIES."): " . $e->getMessage());
-            throw new \Exception($exception);
-        }
-
-        if ($ttlExpiredResources)
-        {
-            // generate views and retry...
-            $this->debugLog("One or more view had exceeded TTL was regenerated - request again...");
-            $graph = $this->fetchGraph($query,$type,$collection);
-        }
-
-        $t->stop();
-        $this->timingLog($type, array('duration'=>$t->result(), 'query'=>$query, 'collection'=>$collectionName));
-        if ($type==MONGO_VIEW)
-        {
-            if (array_key_exists("_id.type",$query))
-            {
-                $this->getStat()->timer("$type.{$query["_id.type"]}",$t->result());
-            }
-            else if (array_key_exists("_id",$query) && array_key_exists("type",$query["_id"]))
-            {
-                $this->getStat()->timer("$type.{$query["_id"]["type"]}",$t->result());
-            }
-        }
-        else
-        {
-            $this->getStat()->timer("$type.$collectionName",$t->result());
-        }
-
-        return $graph;
+        return $statConfig;
     }
 
     /**
@@ -265,109 +132,224 @@ abstract class DriverBase
     }
 
     /**
-     * @param string $type
+     * @param string     $type
      * @param array|null $params
+     *
      * @codeCoverageIgnore
      */
-    public function timingLog($type, $params=null)
+    public function timingLog($type, $params = null)
     {
-        $type = "[PID " . getmypid() ."] " . $type;
-        $this->log(\Psr\Log\LogLevel::DEBUG,$type,$params);
+        $type = '[PID ' . getmypid() . '] ' . $type;
+        $this->log(LogLevel::DEBUG, $type, $params);
     }
 
     /**
-     * @param $message
      * @param array|null $params
+     *
      * @codeCoverageIgnore
      */
-    public function infoLog($message, $params=null)
+    public function infoLog($message, $params = null)
     {
-        $message = "[PID " . getmypid() ."] " . $message;
-        $this->log(\Psr\Log\LogLevel::INFO,$message,$params);
+        $message = '[PID ' . getmypid() . '] ' . $message;
+        $this->log(LogLevel::INFO, $message, $params);
     }
 
     /**
-     * @param $message
      * @param array|null $params
+     *
      * @codeCoverageIgnore
      */
-    public function debugLog($message, $params=null)
+    public function debugLog($message, $params = null)
     {
-        $message = "[PID " . getmypid() ."] " . $message;
-        $this->log(\Psr\Log\LogLevel::DEBUG,$message,$params);
+        $message = '[PID ' . getmypid() . '] ' . $message;
+        $this->log(LogLevel::DEBUG, $message, $params);
     }
 
     /**
-     * @param string $message
+     * @param string     $message
      * @param array|null $params
+     *
      * @codeCoverageIgnore
      */
-    public function errorLog($message, $params=null)
+    public function errorLog($message, $params = null)
     {
-        $message = "[PID " . getmypid() ."] " . $message;
-        $this->log(\Psr\Log\LogLevel::ERROR,$message,$params);
+        $message = '[PID ' . getmypid() . '] ' . $message;
+        $this->log(LogLevel::ERROR, $message, $params);
     }
 
     /**
-     * @param string $message
+     * @param string     $message
      * @param array|null $params
+     *
      * @codeCoverageIgnore
      */
-    public function warningLog($message, $params=null)
+    public function warningLog($message, $params = null)
     {
-        $message = "[PID " . getmypid() ."] " . $message;
-        $this->log(\Psr\Log\LogLevel::WARNING,$message,$params);
+        $message = '[PID ' . getmypid() . '] ' . $message;
+        $this->log(LogLevel::WARNING, $message, $params);
     }
-
-    /**
-     * @param string $level
-     * @param string $message
-     * @param array|null $params
-     * @codeCoverageIgnore
-     */
-    private function log($level, $message, $params)
-    {
-        ($params==null) ? self::getLogger()->log($level, $message) : self::getLogger()->log($level, $message, $params);
-    }
-
-    /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    public static $logger;
 
     /**
      * @static
-     * @return \Psr\Log\LoggerInterface
+     *
+     * @return LoggerInterface
+     *
      * @codeCoverageIgnore
      */
     public static function getLogger()
     {
-        if (self::$logger == null)
-        {
-            $log = new \Monolog\Logger('TRIPOD');
+        if (self::$logger == null) {
+            $log = new Logger('TRIPOD');
             self::$logger = $log;
         }
+
         return self::$logger;
     }
 
     /**
-     * Expands an RDF sequence into proper tripod join clauses
+     * For mocking out the creation of stat objects.
+     *
+     * @return ITripodStat
+     */
+    protected function getStatFromStatFactory(array $config)
+    {
+        return TripodStatFactory::create($this->statsConfig);
+    }
+
+    /**
+     * @param int $secs
+     *
+     * @return int
+     */
+    protected function getExpirySecFromNow($secs)
+    {
+        return time() + $secs;
+    }
+
+    /**
+     * @param string|null $context
+     *
+     * @return mixed
+     */
+    protected function getContextAlias($context = null)
+    {
+        $contextAlias = $this->labeller->uri_to_alias((empty($context)) ? $this->defaultContext : $context);
+
+        return (empty($contextAlias)) ? $this->getConfigInstance()->getDefaultContextAlias() : $contextAlias;
+    }
+
+    /**
+     * @param array           $query
+     * @param string          $type
+     * @param Collection|null $collection
+     * @param array           $includeProperties
+     * @param int             $cursorSize
+     *
+     * @return MongoGraph
+     */
+    protected function fetchGraph($query, $type, $collection = null, $includeProperties = [], $cursorSize = 101)
+    {
+        $graph = new MongoGraph();
+
+        $t = new Timer();
+        $t->start();
+
+        if ($collection == null) {
+            $collection = $this->collection;
+            $collectionName = $collection->getCollectionName();
+        } else {
+            $collectionName = $collection->getCollectionName();
+        }
+
+        if (empty($includeProperties)) {
+            $cursor = $collection->find($query);
+        } else {
+            $fields = [];
+            foreach ($includeProperties as $property) {
+                $fields[$this->labeller->uri_to_alias($property)] = true;
+            }
+            $cursor = $collection->find($query, [
+                'projection' => $fields,
+                'batchSize' => $cursorSize,
+            ]);
+        }
+
+        $ttlExpiredResources = false;
+
+        $retries = 1;
+        $exception = null;
+        $cursorSuccess = false;
+
+        do {
+            try {
+                foreach ($cursor as $result) {
+                    // handle MONGO_VIEWS that have expired due to ttl. These are expired
+                    // on read (lazily) rather than on write
+                    if ($this instanceof Views && $type == MONGO_VIEW && array_key_exists(_EXPIRES, $result['value'])) {
+                        // if expires < current date, regenerate view..
+                        $currentDate = DateUtil::getMongoDate();
+                        if ($result['value'][_EXPIRES]->__toString() < $currentDate) {
+                            // regenerate!
+                            $this->generateView($result['_id']['type'], $result['_id']['r']);
+                        }
+                    }
+                    $graph->add_tripod_array($result);
+                }
+                $cursorSuccess = true;
+            } catch (\Exception $e) {
+                self::getLogger()->error('CursorException attempt ' . $retries . '. Retrying...:' . $e->getMessage());
+                sleep(1);
+                $retries++;
+                $exception = $e;
+            }
+        } while ($retries <= Config::CONNECTION_RETRIES && $cursorSuccess === false);
+
+        if ($cursorSuccess === false) {
+            self::getLogger()->error('CursorException failed after ' . $retries . ' attempts (MAX:' . Config::CONNECTION_RETRIES . '): ' . $e->getMessage());
+
+            throw new \Exception($exception);
+        }
+
+        if ($ttlExpiredResources) {
+            // generate views and retry...
+            $this->debugLog('One or more view had exceeded TTL was regenerated - request again...');
+            $graph = $this->fetchGraph($query, $type, $collection);
+        }
+
+        $t->stop();
+        $this->timingLog($type, ['duration' => $t->result(), 'query' => $query, 'collection' => $collectionName]);
+        if ($type == MONGO_VIEW) {
+            if (array_key_exists('_id.type', $query)) {
+                $this->getStat()->timer("{$type}.{$query['_id.type']}", $t->result());
+            } elseif (array_key_exists('_id', $query) && array_key_exists('type', $query['_id'])) {
+                $this->getStat()->timer("{$type}.{$query['_id']['type']}", $t->result());
+            }
+        } else {
+            $this->getStat()->timer("{$type}.{$collectionName}", $t->result());
+        }
+
+        return $graph;
+    }
+
+    /**
+     * Expands an RDF sequence into proper tripod join clauses.
+     *
      * @param array $joins
      * @param array $source
      */
     protected function expandSequence(&$joins, $source)
     {
-        if(!empty($joins) && isset($joins['followSequence'])){
+        if (!empty($joins) && isset($joins['followSequence'])) {
             // add any rdf:_x style properties in the source to the joins array,
             // up to rdf:_1000 (unless a max is specified in the spec)
             $max = (isset($joins['followSequence']['maxJoins'])) ? $joins['followSequence']['maxJoins'] : 1000;
-            for($i=0; $i<$max; $i++) {
-                $r = 'rdf:_' . ($i+1);
+            for ($i = 0; $i < $max; $i++) {
+                $r = 'rdf:_' . ($i + 1);
 
-                if(isset($source[$r])){
-                    $joins[$r] = array();
-                    foreach($joins['followSequence'] as $k=>$v){
-                        if($k != 'maxJoins') {
+                if (isset($source[$r])) {
+                    $joins[$r] = [];
+                    foreach ($joins['followSequence'] as $k => $v) {
+                        if ($k != 'maxJoins') {
                             $joins[$r][$k] = $joins['followSequence'][$k];
                         } else {
                             continue;
@@ -380,36 +362,29 @@ abstract class DriverBase
     }
 
     /**
-     * Adds an _id object (or array of _id objects) to the target document's impact index
+     * Adds an _id object (or array of _id objects) to the target document's impact index.
      *
-     * @param array $id
      * @param array &$target
+     * @param mixed $buildImpactIndex
+     *
      * @throws \InvalidArgumentException
      */
-    protected function addIdToImpactIndex(array $id, &$target, $buildImpactIndex=true)
+    protected function addIdToImpactIndex(array $id, &$target, $buildImpactIndex = true)
     {
-        if ($buildImpactIndex)
-        {
-            if(isset($id[_ID_RESOURCE]))
-            {
+        if ($buildImpactIndex) {
+            if (isset($id[_ID_RESOURCE])) {
                 // Ensure that our id is curie'd
                 $id[_ID_RESOURCE] = $this->labeller->uri_to_alias($id[_ID_RESOURCE]);
-                if (!isset($target[_IMPACT_INDEX]))
-                {
-                    $target[_IMPACT_INDEX] = array();
+                if (!isset($target[_IMPACT_INDEX])) {
+                    $target[_IMPACT_INDEX] = [];
                 }
-                if(!in_array($id, $target[_IMPACT_INDEX]))
-                {
+                if (!in_array($id, $target[_IMPACT_INDEX])) {
                     $target[_IMPACT_INDEX][] = $id;
                 }
-            }
-            else // Assume this is an array of ids
-            {
-                foreach($id as $i)
-                {
-                    if(!isset($i[_ID_RESOURCE]))
-                    {
-                        throw new \InvalidArgumentException("Invalid id format");
+            } else { // Assume this is an array of ids
+                foreach ($id as $i) {
+                    if (!isset($i[_ID_RESOURCE])) {
+                        throw new \InvalidArgumentException('Invalid id format');
                     }
                     $this->addIdToImpactIndex($i, $target);
                 }
@@ -418,7 +393,8 @@ abstract class DriverBase
     }
 
     /**
-     * For mocking
+     * For mocking.
+     *
      * @return IConfigInstance
      */
     protected function getConfigInstance()
@@ -431,25 +407,26 @@ abstract class DriverBase
      */
     protected function getDatabase()
     {
-        if(!isset($this->db))
-        {
+        if (!isset($this->db)) {
             $this->db = $this->config->getDatabase(
                 $this->storeName,
                 $this->config->getDataSourceForPod($this->storeName, $this->podName),
                 $this->readPreference
             );
         }
+
         return $this->db;
     }
 
     /**
-     * Retrieve last error from database
-     * @param $db
+     * Retrieve last error from database.
+     *
      * @return array
      */
-    protected function getLastDBError(\MongoDB\Database $db) {
+    protected function getLastDBError(Database $db)
+    {
         return $db->command([
-            'getLastError' =>  1
+            'getLastError' => 1,
         ])->toArray()[0];
     }
 
@@ -458,52 +435,58 @@ abstract class DriverBase
      */
     protected function getCollection()
     {
-        if(!isset($this->collection))
-        {
+        if (!isset($this->collection)) {
             $this->collection = $this->getDatabase()->selectCollection($this->podName);
         }
 
         return $this->collection;
     }
 
-    protected function applyHooks($fn,$hooks,$args=array())
+    protected function applyHooks($fn, $hooks, $args = [])
     {
         switch ($fn) {
             case $this::HOOK_FN_PRE:
             case $this::HOOK_FN_SUCCESS:
             case $this::HOOK_FN_FAILURE:
                 break;
+
             default:
-                throw new Exception("Invalid hook function $fn requested");
+                throw new Exception("Invalid hook function {$fn} requested");
         }
-        foreach ($hooks as $hook)
-        {
-            try
-            {
-                /* @var $hook IEventHook */
-                $hook->$fn($args);
-            }
-            catch (\Exception $e)
-            {
+        foreach ($hooks as $hook) {
+            try {
+                // @var $hook IEventHook
+                $hook->{$fn}($args);
+            } catch (\Exception $e) {
                 // don't let rabid hooks stop tripod
-                $this->getLogger()->error("Hook ".get_class($hook)." threw exception {$e->getMessage()}, continuing");
+                $this->getLogger()->error('Hook ' . get_class($hook) . " threw exception {$e->getMessage()}, continuing");
             }
         }
     }
 
+    /**
+     * @param string     $level
+     * @param string     $message
+     * @param array|null $params
+     *
+     * @codeCoverageIgnore
+     */
+    private function log($level, $message, $params)
+    {
+        ($params == null) ? self::getLogger()->log($level, $message) : self::getLogger()->log($level, $message, $params);
+    }
 }
 
-final class NoStat implements \Tripod\ITripodStat
+final class NoStat implements ITripodStat
 {
     /**
      * @var self
      */
-    public static $instance = null;
+    public static $instance;
 
     /**
-     * @param string $operation
+     * @param string     $operation
      * @param int|number $inc
-     * @return void
      */
     public function increment($operation, $inc = 1)
     {
@@ -513,7 +496,6 @@ final class NoStat implements \Tripod\ITripodStat
     /**
      * @param string $operation
      * @param number $duration
-     * @return void
      */
     public function timer($operation, $duration)
     {
@@ -525,7 +507,7 @@ final class NoStat implements \Tripod\ITripodStat
      */
     public function getConfig()
     {
-        return array();
+        return [];
     }
 
     /**
@@ -533,20 +515,18 @@ final class NoStat implements \Tripod\ITripodStat
      */
     public static function getInstance()
     {
-        if (self::$instance == null)
-        {
+        if (self::$instance == null) {
             self::$instance = new NoStat();
         }
+
         return self::$instance;
     }
 
     /**
-     * @param array $config
      * @return NoStat
      */
-    public static function createFromConfig(array $config = array())
+    public static function createFromConfig(array $config = [])
     {
         return self::getInstance();
     }
 }
-
