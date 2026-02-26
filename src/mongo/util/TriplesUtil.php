@@ -31,6 +31,7 @@ class TriplesUtil
      * @param string $podName
      * @param null   $context
      * @param null   $allowableTypes
+     * @param mixed  $subject
      */
     public function loadTriplesAbout($subject, array $triples, $storeName, $podName, $context = null, $allowableTypes = null)
     {
@@ -45,7 +46,7 @@ class TriplesUtil
         foreach ($triples as $triple) {
             $triple = rtrim($triple);
 
-            $parts = preg_split('/\\s/', $triple);
+            $parts = preg_split('/\s/', $triple);
             $subject = trim($parts[0], '><');
             $predicate = trim($parts[1], '><');
             $object = $this->extract_object($parts);
@@ -91,7 +92,7 @@ class TriplesUtil
         foreach ($triples as $triple) {
             $triple = rtrim($triple);
 
-            $parts = preg_split('/\\s/', $triple);
+            $parts = preg_split('/\s/', $triple);
             $subject = trim($parts[0], '><');
             $predicate = trim($parts[1], '><');
             $object = $this->extract_object($parts);
@@ -116,7 +117,7 @@ class TriplesUtil
         foreach ($triples as $triple) {
             $triple = rtrim($triple);
 
-            $parts = preg_split('/\\s/', $triple);
+            $parts = preg_split('/\s/', $triple);
             $predicate = trim($parts[1], '><');
 
             try {
@@ -139,7 +140,7 @@ class TriplesUtil
         foreach ($triples as $triple) {
             $triple = rtrim($triple);
 
-            $parts = preg_split('/\\s/', $triple);
+            $parts = preg_split('/\s/', $triple);
             $object = $this->extract_object($parts);
 
             if ($this->isUri($object)) {
@@ -183,7 +184,7 @@ class TriplesUtil
         foreach ($triples as $triple) {
             $triple = rtrim($triple);
 
-            $parts = preg_split('/\\s/', $triple);
+            $parts = preg_split('/\s/', $triple);
             $subject = trim($parts[0], '><');
             $predicate = trim($parts[1], '><');
             $object = $this->extract_object($parts);
@@ -267,7 +268,7 @@ class TriplesUtil
 
         $str = substr($str, 1, strlen($str) - 1); // trim($str, "\"");
 
-        $json_string = '{"string":"' . str_replace('\\u', '\\u', $str) . '"}';
+        $json_string = '{"string":"' . str_replace('\u', '\u', $str) . '"}';
         $json = json_decode($json_string, true);
         if (!empty($json)) {
             $str = $json['string'];

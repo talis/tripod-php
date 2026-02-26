@@ -175,7 +175,8 @@ class StatsD implements ITripodStat
     /**
      * Sends the stat(s) using UDP protocol.
      *
-     * @param int $sampleRate
+     * @param int   $sampleRate
+     * @param mixed $data
      */
     protected function send($data, $sampleRate = 1)
     {
@@ -257,10 +258,12 @@ class StatsD implements ITripodStat
     /**
      * StatsD paths cannot start with, end with, or have more than one consecutive '.'.
      *
+     * @param mixed $value
+     *
      * @return bool
      */
     protected function isValidPathValue($value)
     {
-        return preg_match('/(^\\.)|(\\.\\.+)|(\\.$)/', $value) === 0;
+        return preg_match('/(^\.)|(\.\.+)|(\.$)/', $value) === 0;
     }
 }

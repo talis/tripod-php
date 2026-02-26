@@ -1,5 +1,7 @@
 <?php
 
+use Tripod\Mongo\MongoSearchProvider;
+
 // Collection names
 define('TTL_CACHE_COLLECTION', 'ttl_cache');
 define('TABLE_ROWS_COLLECTION', 'table_rows');
@@ -10,7 +12,7 @@ define('OPERATION_GROUPS_COLLECTION', 'job_groups');
 
 // search
 define('SEARCH_INDEX_COLLECTION', 'search');
-define('SEARCH_PROVIDER_MONGO', \Tripod\Mongo\MongoSearchProvider::class);
+define('SEARCH_PROVIDER_MONGO', MongoSearchProvider::class);
 define('SEARCH_PROVIDER_ELASTIC_SEARCH', 'es');
 
 // Tripod document properties
@@ -108,11 +110,11 @@ define('AUDIT_STATUS_ERROR', 'ERROR');
 define('DEFAULT_MONGO_CONNECT_TIMEOUT_MS', 20000);
 
 // queue constants
-define('RESQUE_SERVER','RESQUE_SERVER');
-define('MONGO_TRIPOD_RESQUE_SERVER','MONGO_TRIPOD_RESQUE_SERVER'); // deprecated, will be removed in future releases
-define('TRIPOD_DISCOVER_QUEUE','TRIPOD_DISCOVER_QUEUE');
-define('TRIPOD_APPLY_QUEUE','TRIPOD_APPLY_QUEUE');
-define('TRIPOD_ENSURE_INDEXES_QUEUE','TRIPOD_ENSURE_INDEXES_QUEUE');
+define('RESQUE_SERVER', 'RESQUE_SERVER');
+define('MONGO_TRIPOD_RESQUE_SERVER', 'MONGO_TRIPOD_RESQUE_SERVER'); // deprecated, will be removed in future releases
+define('TRIPOD_DISCOVER_QUEUE', 'TRIPOD_DISCOVER_QUEUE');
+define('TRIPOD_APPLY_QUEUE', 'TRIPOD_APPLY_QUEUE');
+define('TRIPOD_ENSURE_INDEXES_QUEUE', 'TRIPOD_ENSURE_INDEXES_QUEUE');
 
 // View functions
-define('INCLUDE_RDF_SEQUENCE','_seq_');
+define('INCLUDE_RDF_SEQUENCE', '_seq_');

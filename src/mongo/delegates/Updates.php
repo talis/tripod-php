@@ -1204,6 +1204,10 @@ class Updates extends DriverBase
     /**
      * This proxy method allows us to mock updates against $this->collection.
      *
+     * @param mixed $query
+     * @param mixed $update
+     * @param mixed $options
+     *
      * @return bool
      */
     protected function updateCollection($query, $update, $options)
@@ -1251,6 +1255,8 @@ class Updates extends DriverBase
 
     /**
      * Helper function to group the changes for $changeUri by namespaced predicate, then by additions and removals.
+     *
+     * @param mixed $changeUri
      *
      * @return array
      */
@@ -1317,6 +1323,10 @@ class Updates extends DriverBase
 
     /**
      * Helper method to add operator to a set of existing changes ready to be sent to Mongo.
+     *
+     * @param mixed $changes
+     * @param mixed $operator
+     * @param mixed $kvp
      */
     private function addOperatorToChange(&$changes, $operator, $kvp)
     {

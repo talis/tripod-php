@@ -26,7 +26,7 @@ $tu = new TriplesUtil();
 while (($line = fgets(STDIN)) !== false) {
     $line = rtrim($line);
 
-    $parts = preg_split('/\\s/', $line);
+    $parts = preg_split('/\s/', $line);
     $subject = trim($parts[0], '><');
 
     if (empty($currentSubject)) { // set for first iteration

@@ -2270,7 +2270,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
                 [
                     $this->logicalAnd(
                         $this->isType('array'),
-                        $this->containsOnlyInstancesOf(\Tripod\Mongo\ImpactedSubject::class),
+                        $this->containsOnlyInstancesOf(ImpactedSubject::class),
                         $this->countOf(25)
                     ),
                     'TESTQUEUE',
@@ -2279,7 +2279,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
                 [
                     $this->logicalAnd(
                         $this->isType('array'),
-                        $this->containsOnlyInstancesOf(\Tripod\Mongo\ImpactedSubject::class),
+                        $this->containsOnlyInstancesOf(ImpactedSubject::class),
                         $this->countOf(25)
                     ),
                     'TESTQUEUE',
@@ -2288,7 +2288,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
                 [
                     $this->logicalAnd(
                         $this->isType('array'),
-                        $this->containsOnlyInstancesOf(\Tripod\Mongo\ImpactedSubject::class),
+                        $this->containsOnlyInstancesOf(ImpactedSubject::class),
                         $this->countOf(25)
                     ),
                     'TESTQUEUE',
@@ -2297,7 +2297,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
                 [
                     $this->logicalAnd(
                         $this->isType('array'),
-                        $this->containsOnlyInstancesOf(\Tripod\Mongo\ImpactedSubject::class),
+                        $this->containsOnlyInstancesOf(ImpactedSubject::class),
                         $this->countOf(25)
                     ),
                     'TESTQUEUE',
@@ -2306,7 +2306,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
                 [
                     $this->logicalAnd(
                         $this->isType('array'),
-                        $this->containsOnlyInstancesOf(\Tripod\Mongo\ImpactedSubject::class),
+                        $this->containsOnlyInstancesOf(ImpactedSubject::class),
                         $this->countOf(25)
                     ),
                     'TESTQUEUE',
@@ -2315,7 +2315,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
                 [
                     $this->logicalAnd(
                         $this->isType('array'),
-                        $this->containsOnlyInstancesOf(\Tripod\Mongo\ImpactedSubject::class),
+                        $this->containsOnlyInstancesOf(ImpactedSubject::class),
                         $this->countOf(25)
                     ),
                     'TESTQUEUE',
@@ -2324,7 +2324,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
                 [
                     $this->logicalAnd(
                         $this->isType('array'),
-                        $this->containsOnlyInstancesOf(\Tripod\Mongo\ImpactedSubject::class),
+                        $this->containsOnlyInstancesOf(ImpactedSubject::class),
                         $this->countOf(25)
                     ),
                     'TESTQUEUE',
@@ -2333,7 +2333,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
                 [
                     $this->logicalAnd(
                         $this->isType('array'),
-                        $this->containsOnlyInstancesOf(\Tripod\Mongo\ImpactedSubject::class),
+                        $this->containsOnlyInstancesOf(ImpactedSubject::class),
                         $this->countOf(25)
                     ),
                     'TESTQUEUE',
@@ -2342,7 +2342,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
                 [
                     $this->logicalAnd(
                         $this->isType('array'),
-                        $this->containsOnlyInstancesOf(\Tripod\Mongo\ImpactedSubject::class),
+                        $this->containsOnlyInstancesOf(ImpactedSubject::class),
                         $this->countOf(25)
                     ),
                     'TESTQUEUE',
@@ -2351,7 +2351,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
                 [
                     $this->logicalAnd(
                         $this->isType('array'),
-                        $this->containsOnlyInstancesOf(\Tripod\Mongo\ImpactedSubject::class),
+                        $this->containsOnlyInstancesOf(ImpactedSubject::class),
                         $this->countOf(9)
                     ),
                     'TESTQUEUE',

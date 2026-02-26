@@ -171,7 +171,7 @@ class NQuadSerializer
     public function getEscapedChar($c, $no)
     { // see http://www.w3.org/TR/rdf-testcases/#ntrip_strings
         if ($no < 9) {
-            return '\\u' . sprintf('%04X', $no);
+            return '\u' . sprintf('%04X', $no);
         } // #x0-#x8 (0-8)
         if ($no == 9) {
             return '\t';
@@ -180,13 +180,13 @@ class NQuadSerializer
             return '\n';
         } // #xA (10)
         if ($no < 13) {
-            return '\\u' . sprintf('%04X', $no);
+            return '\u' . sprintf('%04X', $no);
         } // #xB-#xC (11-12)
         if ($no == 13) {
             return '\r';
         } // #xD (13)
         if ($no < 32) {
-            return '\\u' . sprintf('%04X', $no);
+            return '\u' . sprintf('%04X', $no);
         } // #xE-#x1F (14-31)
         if ($no < 34) {
             return $c;
@@ -204,10 +204,10 @@ class NQuadSerializer
             return $c;
         } // #x5D-#x7E (93-126)
         if ($no < 65536) {
-            return '\\u' . sprintf('%04X', $no);
+            return '\u' . sprintf('%04X', $no);
         } // #x7F-#xFFFF (128-65535)
         if ($no < 1114112) {
-            return '\\U' . sprintf('%08X', $no);
+            return '\U' . sprintf('%08X', $no);
         } // #x10000-#x10FFFF (65536-1114111)
 
         return ''; // not defined => ignore

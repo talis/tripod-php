@@ -48,7 +48,7 @@ while (($line = fgets(STDIN)) !== false) {
     $i++;
 
     $line = rtrim($line);
-    $parts = preg_split('/\\s/', $line);
+    $parts = preg_split('/\s/', $line);
     $subject = trim($parts[0], '><');
 
     if (($i % 2500) == 0) {

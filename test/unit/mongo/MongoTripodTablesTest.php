@@ -313,7 +313,7 @@ class MongoTripodTablesTest extends MongoTripodTestBase
                 [
                     $this->logicalAnd(
                         $this->isType('array'),
-                        $this->containsOnlyInstancesOf(\Tripod\Mongo\ImpactedSubject::class),
+                        $this->containsOnlyInstancesOf(ImpactedSubject::class),
                         $this->countOf(100)
                     ),
                     'TESTQUEUE',
@@ -322,7 +322,7 @@ class MongoTripodTablesTest extends MongoTripodTestBase
                 [
                     $this->logicalAnd(
                         $this->isType('array'),
-                        $this->containsOnlyInstancesOf(\Tripod\Mongo\ImpactedSubject::class),
+                        $this->containsOnlyInstancesOf(ImpactedSubject::class),
                         $this->countOf(100)
                     ),
                     'TESTQUEUE',
@@ -331,7 +331,7 @@ class MongoTripodTablesTest extends MongoTripodTestBase
                 [
                     $this->logicalAnd(
                         $this->isType('array'),
-                        $this->containsOnlyInstancesOf(\Tripod\Mongo\ImpactedSubject::class),
+                        $this->containsOnlyInstancesOf(ImpactedSubject::class),
                         $this->countOf(34)
                     ),
                     'TESTQUEUE',

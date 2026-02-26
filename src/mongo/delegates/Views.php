@@ -22,6 +22,7 @@ class Views extends CompositeBase
      * @param string $storeName
      * @param null   $stat
      * @param string $readPreference
+     * @param mixed  $defaultContext
      */
     public function __construct($storeName, Collection $collection, $defaultContext, $stat = null, $readPreference = ReadPreference::RP_PRIMARY)
     {
@@ -143,7 +144,8 @@ class Views extends CompositeBase
     /**
      * Return all views, restricted by $filter conditions, for given $viewType.
      *
-     * @param array $filter - an array, keyed by predicate, to filter by
+     * @param array $filter   - an array, keyed by predicate, to filter by
+     * @param mixed $viewType
      *
      * @return MongoGraph
      */
@@ -171,7 +173,9 @@ class Views extends CompositeBase
     /**
      * For given $resource, return the view of type $viewType.
      *
-     * @param null $context
+     * @param null  $context
+     * @param mixed $resource
+     * @param mixed $viewType
      *
      * @return MongoGraph
      */
@@ -217,7 +221,8 @@ class Views extends CompositeBase
     /**
      * For given $resources, return the views of type $viewType.
      *
-     * @param null $context
+     * @param null  $context
+     * @param mixed $viewType
      *
      * @return MongoGraph
      */
@@ -274,7 +279,8 @@ class Views extends CompositeBase
     /**
      * Autodiscovers the multiple view specification that may be applicable for a given resource, and submits each for generation.
      *
-     * @param null $context
+     * @param null  $context
+     * @param mixed $resources
      */
     public function generateViews($resources, $context = null)
     {
@@ -325,8 +331,9 @@ class Views extends CompositeBase
     /**
      * This method finds all the view specs for the given $rdfType and generates the views for the $resource one by one.
      *
-     * @param null $resource
-     * @param null $context
+     * @param null  $resource
+     * @param null  $context
+     * @param mixed $rdfType
      *
      * @return mixed
      *
@@ -537,7 +544,12 @@ class Views extends CompositeBase
     /**
      * Joins data to $dest from $source according to specification in $joins, or queries DB if data is not available in $source.
      *
-     * @param bool $buildImpactIndex
+     * @param bool  $buildImpactIndex
+     * @param mixed $source
+     * @param mixed $joins
+     * @param mixed $dest
+     * @param mixed $from
+     * @param mixed $contextAlias
      */
     protected function doJoins($source, $joins, &$dest, $from, $contextAlias, $buildImpactIndex = true)
     {
@@ -655,6 +667,10 @@ class Views extends CompositeBase
     /**
      * Returns a document with properties extracted from $source, according to $viewSpec. Useful for partial representations
      * of CBDs in a view.
+     *
+     * @param mixed $source
+     * @param mixed $viewSpec
+     * @param mixed $from
      *
      * @return array
      */

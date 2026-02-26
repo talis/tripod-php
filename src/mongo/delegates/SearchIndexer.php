@@ -22,7 +22,7 @@ class SearchIndexer extends CompositeBase
     private $tripod;
 
     /**
-     * @var \Tripod\ISearchProvider
+     * @var ISearchProvider
      */
     private $configuredProvider;
 

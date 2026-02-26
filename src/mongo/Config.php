@@ -453,6 +453,8 @@ class Config implements IConfigInstance
     /**
      * Returns a replica set name for the database, if one has been defined.
      *
+     * @param mixed $datasource
+     *
      * @return string|null
      */
     public function getReplicaSetName($datasource)
@@ -475,6 +477,8 @@ class Config implements IConfigInstance
 
     /**
      * Returns a boolean reflecting whether or not a replica set has been defined for the supplied database name.
+     *
+     * @param mixed $datasource
      *
      * @return bool
      */
@@ -1001,6 +1005,8 @@ class Config implements IConfigInstance
     }
 
     /**
+     * @param mixed $readPreference
+     *
      * @return Database
      *
      * @throws ConfigException
@@ -1752,12 +1758,14 @@ class Config implements IConfigInstance
     /**
      * Parses a specDocument's "filter" parameter for any predicates.
      *
+     * @param mixed $filter
+     *
      * @return array
      */
     protected function getPredicatesFromFilterCondition($filter)
     {
         $predicates = [];
-        $regex = '/(^|\\b)(\\w+\\:\\w+)\\.(l|u)(\\b|$)/';
+        $regex = '/(^|\b)(\w+\:\w+)\.(l|u)(\b|$)/';
         foreach ($filter as $key => $condition) {
             if (is_string($key)) {
                 $numMatches = preg_match_all($regex, $key, $matches);

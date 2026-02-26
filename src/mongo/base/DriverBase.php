@@ -145,6 +145,7 @@ abstract class DriverBase
 
     /**
      * @param array|null $params
+     * @param mixed      $message
      *
      * @codeCoverageIgnore
      */
@@ -156,6 +157,7 @@ abstract class DriverBase
 
     /**
      * @param array|null $params
+     * @param mixed      $message
      *
      * @codeCoverageIgnore
      */

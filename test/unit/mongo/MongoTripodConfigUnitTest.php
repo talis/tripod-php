@@ -9,6 +9,7 @@ use Tripod\ExtendedGraph;
 use Tripod\Mongo\Driver;
 use Tripod\Mongo\Labeller;
 use Tripod\Mongo\MongoGraph;
+use Tripod\Mongo\MongoSearchProvider;
 
 class MongoTripodConfigUnitTest extends MongoTripodTestBase
 {
@@ -119,7 +120,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
     public function testSearchConfig()
     {
         $config = Config::getInstance();
-        $this->assertEquals(\Tripod\Mongo\MongoSearchProvider::class, $config->getSearchProviderClassName('tripod_php_testing'));
+        $this->assertEquals(MongoSearchProvider::class, $config->getSearchProviderClassName('tripod_php_testing'));
 
         $this->assertEquals(3, count($config->getSearchDocumentSpecifications('tripod_php_testing')));
     }

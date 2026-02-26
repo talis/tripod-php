@@ -451,7 +451,8 @@ class Labeller
             }
 
             return $this->_labels[$uri][0];
-        } elseif (preg_match('~^http://www.w3.org/1999/02/22-rdf-syntax-ns#_(.+)$~', $uri, $m)) {
+        }
+        if (preg_match('~^http://www.w3.org/1999/02/22-rdf-syntax-ns#_(.+)$~', $uri, $m)) {
             if ($capitalize) {
                 return 'Item ' . $m[1];
             }
@@ -520,7 +521,8 @@ class Labeller
             }
 
             return $label;
-        } elseif ($use_qnames == false && preg_match('~^.*[\/\#]([a-z]+)$~', $uri, $m)) {
+        }
+        if ($use_qnames == false && preg_match('~^.*[\/\#]([a-z]+)$~', $uri, $m)) {
             return $m[1] . 's';
         }
 

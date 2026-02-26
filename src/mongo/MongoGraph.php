@@ -47,6 +47,8 @@ class MongoGraph extends ExtendedGraph
      * Adds the tripod array(s) to this graph.
      * This method is used to add individual tripod documents, or a series of tripod array documents that are embedded in a view.
      *
+     * @param mixed $tarray
+     *
      * @throws Exception
      */
     public function add_tripod_array($tarray)
@@ -67,6 +69,9 @@ class MongoGraph extends ExtendedGraph
 
     /**
      * Returns a mongo-ready doc for a single CBD.
+     *
+     * @param mixed $docId
+     * @param mixed $context
      *
      * @return array
      */
@@ -91,6 +96,9 @@ class MongoGraph extends ExtendedGraph
 
     /**
      * Returns a mongo-ready doc for views, which can have multiple graphs in the same doc.
+     *
+     * @param mixed $docId
+     * @param mixed $context
      *
      * @return array
      */

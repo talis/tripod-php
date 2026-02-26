@@ -916,7 +916,8 @@ class Tables extends CompositeBase
             }
 
             return $this->castValueType($value, $setType);
-        } elseif (is_array($value)) {
+        }
+        if (is_array($value)) {
             if ($this->isFunction($value)) {
                 $function = array_keys($value);
 
@@ -1257,6 +1258,10 @@ class Tables extends CompositeBase
 
     /**
      * Add counts to $dest by counting what is in $source according to $countSpec.
+     *
+     * @param mixed $source
+     * @param mixed $countSpec
+     * @param mixed $dest
      */
     protected function doCounts($source, $countSpec, &$dest)
     {
@@ -1413,6 +1418,9 @@ class Tables extends CompositeBase
     /**
      * Apply a regex to the RDF property value defined in $value.
      *
+     * @param mixed $regex
+     * @param mixed $value
+     *
      * @return int
      *
      * @throws \Tripod\Exceptions\Exception
@@ -1425,6 +1433,6 @@ class Tables extends CompositeBase
             return preg_match($regex, $v);
         }
 
-        throw new \Tripod\Exceptions\Exception('Was expecting either VALUE_URI or VALUE_LITERAL when applying regex to value - possible data corruption with: ' . var_export($value,true));
+        throw new \Tripod\Exceptions\Exception('Was expecting either VALUE_URI or VALUE_LITERAL when applying regex to value - possible data corruption with: ' . var_export($value, true));
     }
 }

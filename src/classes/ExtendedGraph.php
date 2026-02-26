@@ -1014,7 +1014,7 @@ class ExtendedGraph
      */
     public function is_empty()
     {
-        return  count($this->_index) == 0;
+        return count($this->_index) == 0;
     }
 
     /**

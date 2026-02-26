@@ -278,6 +278,8 @@ class SearchDocuments extends DriverBase
     }
 
     /**
+     * @param mixed $specId
+     *
      * @return array|null
      */
     protected function getSearchDocumentSpecification($specId)

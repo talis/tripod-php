@@ -414,6 +414,10 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
      * returns an empty array. Have to do this because I want to mock the behavour of lockSingleDocument so I can throw an error for one subject
      * but allow it go through normally for another which you cant do with a mock, hence this hack!
      *
+     * @param mixed $s
+     * @param mixed $transactionId
+     * @param mixed $context
+     *
      * @return array
      */
     public function lockSingleDocumentCauseFailureCallback($s, $transactionId, $context)
@@ -428,6 +432,10 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
     /**
      * This is a private method that performs exactly the same operation as Driver::lockSingleDocument, the reason this is duplicated here
      * is so that we can simulate the correct locking of documents as part of mocking a workflow that will lock a document correctly but not another.
+     *
+     * @param mixed $s
+     * @param mixed $transaction_id
+     * @param mixed $contextAlias
      *
      * @return array
      */

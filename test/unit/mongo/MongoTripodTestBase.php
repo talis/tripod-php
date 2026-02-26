@@ -376,7 +376,7 @@ abstract class MongoTripodTestBase extends TestCase
     {
         $mockedMethods = array_merge(['send'], $mockedMethods);
 
-        return $this->getMockBuilder(\Tripod\StatsD::class)
+        return $this->getMockBuilder(StatsD::class)
             ->onlyMethods($mockedMethods)
             ->setConstructorArgs([$host, $port, $prefix])
             ->getMock();
@@ -388,7 +388,7 @@ abstract class MongoTripodTestBase extends TestCase
     protected function getStatsDConfig()
     {
         return [
-            'class' => \Tripod\StatsD::class,
+            'class' => StatsD::class,
             'config' => [
                 'host' => 'example.com',
                 'port' => 1234,

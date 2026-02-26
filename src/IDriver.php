@@ -84,6 +84,7 @@ interface IDriver
      * @param null  $sortBy
      * @param null  $limit
      * @param null  $context
+     * @param mixed $fields
      *
      * @return array
      */
@@ -92,8 +93,9 @@ interface IDriver
     /**
      * Select data from a table.
      *
-     * @param int $offset
-     * @param int $limit
+     * @param int   $offset
+     * @param int   $limit
+     * @param mixed $tableType
      *
      * @return array
      */
@@ -107,6 +109,9 @@ interface IDriver
     );
 
     /**
+     * @param mixed $tableType
+     * @param mixed $fieldName
+     *
      * @return array
      */
     public function getDistinctTableColumnValues($tableType, $fieldName, array $filter = []);
@@ -115,6 +120,7 @@ interface IDriver
      * Get a count of resources matching the pattern in $query. Optionally group counts by specifying a $groupBy predicate.
      *
      * @param string|null $groupBy
+     * @param mixed       $query
      *
      * @return array|int multidimensional array with int values if grouped by, otherwise int
      */
@@ -132,6 +138,8 @@ interface IDriver
 
     /**
      * Register an event hook, which will be executed when the event fires.
+     *
+     * @param mixed $eventType
      */
     public function registerHook($eventType, IEventHook $hook);
 
@@ -155,6 +163,7 @@ interface IDriver
      *
      * @param string|null $resource
      * @param string|null $context
+     * @param mixed       $tableType
      */
     public function generateTableRows($tableType, $resource = null, $context = null);
 

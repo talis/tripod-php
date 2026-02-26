@@ -120,6 +120,9 @@ class Driver extends DriverBase implements IDriver
     /**
      * Pass a subject to $resource and have mongo return a DESCRIBE <?resource>.
      *
+     * @param mixed      $resource
+     * @param mixed|null $context
+     *
      * @return MongoGraph
      */
     public function describeResource($resource, $context = null)
@@ -518,6 +521,7 @@ class Driver extends DriverBase implements IDriver
      * todo: unit test.
      *
      * @param array $includeProperties
+     * @param mixed $query
      *
      * @return MongoGraph
      */
@@ -529,7 +533,8 @@ class Driver extends DriverBase implements IDriver
     /**
      * Retuns the eTag of the $resource, useful for cache control or optimistic concurrency control.
      *
-     * @param null $context
+     * @param null  $context
+     * @param mixed $resource
      *
      * @return string
      */
@@ -631,6 +636,7 @@ class Driver extends DriverBase implements IDriver
      * Register an event hook, which.
      *
      * @param IEventHook $
+     * @param mixed $eventType
      *
      * @return mixed
      */
