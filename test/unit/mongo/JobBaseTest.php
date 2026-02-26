@@ -1,5 +1,8 @@
 <?php
 
+use Tripod\Config;
+use Tripod\Mongo\IConfigInstance;
+
 class JobBaseTest extends MongoTripodTestBase
 {
     public function testGetTripodConfig()
@@ -8,13 +11,13 @@ class JobBaseTest extends MongoTripodTestBase
         $job->args = $this->getArgs();
         $job->job = new Resque_Job('queue', ['id' => uniqid()]);
 
-        $this->assertInstanceOf(Tripod\Mongo\IConfigInstance::class, $job->getTripodConfig());
+        $this->assertInstanceOf(IConfigInstance::class, $job->getTripodConfig());
     }
 
     protected function getArgs()
     {
         return [
-            'tripodConfig' => Tripod\Config::getConfig(),
+            'tripodConfig' => Config::getConfig(),
             'storeName' => 'tripod_php_testing',
             'podName' => 'CBD_testing',
             'changes' => ['http://example.com/resources/foo' => ['rdf:type', 'dct:title']],

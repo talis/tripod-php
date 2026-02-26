@@ -1,0 +1,226 @@
+<?php
+
+namespace Tripod\Mongo;
+
+use MongoDB\Driver\Cursor;
+use MongoDB\InsertOneResult;
+use MongoDB\UpdateOneResult;
+use Tripod\Config;
+
+class TransactionLog
+{
+    protected $config;
+    private $transaction_db;
+    private $transaction_collection;
+
+    /**
+     * Constructor.
+     */
+    public function __construct()
+    {
+        $config = Config::getInstance();
+        $this->config = $config->getTransactionLogConfig();
+        $this->transaction_db = $config->getTransactionLogDatabase();
+        $this->transaction_collection = $this->transaction_db->selectCollection($this->config['collection']);
+    }
+
+    /**
+     * @param string $transaction_id - the id you wish to assign to the new transaction
+     * @param array  $changes        - an array serialization of the changeset to be applied
+     * @param array  $originalCBDs   - an array of the serialized CBDs
+     * @param string $storeName      - the name of the database the changes are being applied to
+     * @param string $podName        - the name of the collection, in the database, the changes are being applied to
+     *
+     * @throws \Tripod\Exceptions\Exception
+     */
+    public function createNewTransaction($transaction_id, $changes, $originalCBDs, $storeName, $podName)
+    {
+        $transaction = [
+            '_id' => $transaction_id,
+            'dbName' => $storeName,
+            'collectionName' => $podName,
+            'changes' => $changes,
+            'status' => 'in_progress',
+            'startTime' => DateUtil::getMongoDate(),
+            'originalCBDs' => $originalCBDs,
+            'sessionId' => ((session_id() != '') ? session_id() : ''),
+        ];
+
+        try {
+            $result = $this->insertTransaction($transaction);
+            if (!$result->isAcknowledged()) {
+                throw new \Exception('Error creating new transaction');
+            }
+        } catch (\Exception $e) {
+            throw new \Tripod\Exceptions\Exception('Error creating new transaction: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Updates the status of a transaction to cancelling.
+     * If you passed in an Exception, the exception is logged in the transaction log.
+     *
+     * @param string     $transaction_id the id of the transaction you wish to cancel
+     * @param \Exception $error          pass in the exception you wish to log
+     */
+    public function cancelTransaction($transaction_id, ?\Exception $error = null)
+    {
+        $params = ['status' => 'cancelling'];
+        if ($error != null) {
+            $params['error'] = ['reason' => $error->getMessage(), 'trace' => $error->getTraceAsString()];
+        }
+
+        $this->updateTransaction(
+            ['_id' => $transaction_id],
+            ['$set' => $params],
+            ['w' => 1, 'upsert' => true]
+        );
+    }
+
+    /**
+     * Updates the status of a transaction to failed, and adds a fail time.
+     * If you passed in an Exception, the exception is logged in the transaction log.
+     *
+     * @param string     $transaction_id the id of the transaction you wish to set as failed
+     * @param \Exception $error          exception you wish to log
+     */
+    public function failTransaction($transaction_id, ?\Exception $error = null)
+    {
+        $params = ['status' => 'failed', 'failedTime' => DateUtil::getMongoDate()];
+        if ($error != null) {
+            $params['error'] = ['reason' => $error->getMessage(), 'trace' => $error->getTraceAsString()];
+        }
+
+        $this->updateTransaction(
+            ['_id' => $transaction_id],
+            ['$set' => $params],
+            ['w' => 1, 'upsert' => true]
+        );
+    }
+
+    /**
+     * Update the status of a transaction to completed, and adds an end time.
+     *
+     * @param string $transaction_id - the id of the transaction you want to mark as completed
+     * @param array  $newCBDs        array of CBD's that represent the after state for each modified entity
+     */
+    public function completeTransaction($transaction_id, array $newCBDs)
+    {
+        $this->updateTransaction(
+            ['_id' => $transaction_id],
+            ['$set' => ['status' => 'completed', 'endTime' => DateUtil::getMongoDate(), 'newCBDs' => $newCBDs]],
+            ['w' => 1]
+        );
+    }
+
+    /**
+     * Retrieves a transaction from the transaction based on its id.  The transaction is returned as an array.
+     *
+     * @param string $transaction_id - the id of the transaction you wish to retrieve from the transaction log
+     *
+     * @return array representing the transaction document
+     */
+    public function getTransaction($transaction_id)
+    {
+        return $this->transaction_collection->findOne(['_id' => $transaction_id]);
+    }
+
+    /**
+     * Purges all transactions from the transaction log.
+     */
+    public function purgeAllTransactions()
+    {
+        $this->transaction_collection->drop();
+    }
+
+    /**
+     * @param string      $storeName
+     * @param string      $podName
+     * @param string|null $fromDate  only transactions after this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
+     * @param string|null $toDate    only transactions before this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
+     *
+     * @return Cursor
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function getCompletedTransactions($storeName = null, $podName = null, $fromDate = null, $toDate = null)
+    {
+        $query = [];
+        $query['status'] = 'completed';
+
+        if (!empty($storeName) && !empty($podName)) {
+            $query['dbName'] = $storeName;
+            $query['collectionName'] = $podName;
+        }
+
+        if (!empty($fromDate)) {
+            $q = [];
+            $q['$gte'] = DateUtil::getMongoDate(strtotime($fromDate) * 1000);
+
+            if (!empty($toDate)) {
+                $q['$lte'] = DateUtil::getMongoDate(strtotime($toDate) * 1000);
+            }
+
+            $query['endTime'] = $q;
+        }
+
+        return $this->transaction_collection->find($query, ['sort' => ['endTime' => 1]]);
+    }
+
+    /**
+     * @return int Total number of transactions in the transaction log
+     */
+    public function getTotalTransactionCount()
+    {
+        return $this->transaction_collection->count([]);
+    }
+
+    /**
+     * @param string $storeName database name to filter on (optional)
+     * @param string $podName   collectionName to filter on (optional)
+     *
+     * @return int Total number of completed transactions in the transaction log
+     *
+     * @codeCoverageIgnore
+     */
+    public function getCompletedTransactionCount($storeName = null, $podName = null)
+    {
+        if (!empty($storeName) && !empty($podName)) {
+            return $this->transaction_collection->count(['status' => 'completed', 'dbName' => $storeName, 'collectionName' => $podName]);
+        }
+
+        return $this->transaction_collection->count(['status' => 'completed']);
+    }
+
+    // PROTECTED Functions
+
+    /**
+     * Proxy method to help with test mocking.
+     *
+     * @param array $transaction
+     *
+     * @return InsertOneResult
+     *
+     * @codeCoverageIgnore
+     */
+    protected function insertTransaction($transaction)
+    {
+        return $this->transaction_collection->insertOne($transaction, ['w' => 1]);
+    }
+
+    /**
+     * Proxy method to help with test mocking.
+     *
+     * @param array $query
+     * @param array $update
+     * @param array $options
+     *
+     * @return UpdateOneResult
+     *
+     * @codeCoverageIgnore
+     */
+    protected function updateTransaction($query, $update, $options)
+    {
+        return $this->transaction_collection->updateOne($query, $update, $options);
+    }
+}

@@ -1,5 +1,6 @@
 <?php
 
+use Tripod\Config;
 use Tripod\Mongo\MongoGraph;
 use Tripod\Mongo\NQuadSerializer;
 
@@ -20,7 +21,7 @@ class MongoTripodNQuadSerializerTest extends MongoTripodTestBase
 <http://example.com/1> <http://purl.org/dc/terms/source> <http://www.google.com> <http://talisaspire.com/> .\n";
 
         $serializer = new NQuadSerializer();
-        $actual = $serializer->getSerializedIndex($g->_index, Tripod\Config::getInstance()->getDefaultContextAlias());
+        $actual = $serializer->getSerializedIndex($g->_index, Config::getInstance()->getDefaultContextAlias());
 
         $this->assertEquals($expected, $actual);
     }
@@ -28,7 +29,7 @@ class MongoTripodNQuadSerializerTest extends MongoTripodTestBase
     public function testSerializerWithMultipleSubjects()
     {
         $g = new MongoGraph();
-        $docs = json_decode(file_get_contents(dirname(__FILE__) . '/data/resources.json'), true);
+        $docs = json_decode(file_get_contents(__DIR__ . '/data/resources.json'), true);
         foreach ($docs as $d) {
             $g->add_tripod_array($d);
         }
@@ -162,7 +163,7 @@ class MongoTripodNQuadSerializerTest extends MongoTripodTestBase
 <http://basedata.com/b/docWithEmptySeq123> <http://purl.org/dc/terms/title> \"Doc with sequence\" <http://talisaspire.com/> .";
 
         $serializer = new NQuadSerializer();
-        $actual = $serializer->getSerializedIndex($g->_index, Tripod\Config::getInstance()->getDefaultContextAlias());
+        $actual = $serializer->getSerializedIndex($g->_index, Config::getInstance()->getDefaultContextAlias());
 
         // This test initially asserted that $expected was equal to $actual
         //   $this->assertEquals($expected, $actual);
@@ -173,6 +174,5 @@ class MongoTripodNQuadSerializerTest extends MongoTripodTestBase
         foreach (preg_split("/((\r?\n)|(\r\n?))/", $expected) as $expectedLine) {
             $this->assertTrue(strpos($actual, rtrim($expectedLine)) !== false, 'Failed checking for line: ' . rtrim($expectedLine));
         }
-
     }
 }

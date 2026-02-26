@@ -1,6 +1,9 @@
 <?php
 
 use PHPUnit\Framework\MockObject\MockObject;
+use Tripod\Config;
+use Tripod\Exceptions\JobException;
+use Tripod\Mongo\IndexUtils;
 use Tripod\Mongo\Jobs\EnsureIndexes;
 
 class EnsureIndexesTest extends ResqueJobTestBase
@@ -22,10 +25,15 @@ class EnsureIndexesTest extends ResqueJobTestBase
     }
 
     /**
-     * Test exception is thrown if mandatory arguments are not set
+     * Test exception is thrown if mandatory arguments are not set.
      *
      * @dataProvider mandatoryArgDataProvider
+     *
      * @group ensure-indexes
+     *
+     * @param mixed      $argument
+     * @param mixed|null $argumentName
+     *
      * @throws Exception
      */
     public function testMandatoryArgs($argument, $argumentName = null)
@@ -44,7 +52,7 @@ class EnsureIndexesTest extends ResqueJobTestBase
     }
 
     /**
-     * Data provider for testMandatoryArgs
+     * Data provider for testMandatoryArgs.
      *
      * @return array
      */
@@ -59,7 +67,8 @@ class EnsureIndexesTest extends ResqueJobTestBase
     }
 
     /**
-     * Test the job behaves as expected
+     * Test the job behaves as expected.
+     *
      * @group ensure-indexes
      */
     public function testSuccessfullyEnsureIndexesJob()
@@ -72,7 +81,8 @@ class EnsureIndexesTest extends ResqueJobTestBase
     }
 
     /**
-     * Test that the job fails by throwing an exception
+     * Test that the job fails by throwing an exception.
+     *
      * @group ensure-indexes
      */
     public function testEnsureIndexesJobThrowsErrorWhenCreatingIndexes()
@@ -88,13 +98,13 @@ class EnsureIndexesTest extends ResqueJobTestBase
 
     /**
      * test that calling the create job method on the ensureindexes job class
-     * will use the default queue name
+     * will use the default queue name.
      */
     public function testEnsureIndexesCreateJobDefaultQueue()
     {
         $jobData = [
             'storeName' => 'tripod_php_testing',
-            'tripodConfig' => Tripod\Config::getConfig(),
+            'tripodConfig' => Config::getConfig(),
             'reindex' => false,
             'background' => true,
         ];
@@ -114,13 +124,13 @@ class EnsureIndexesTest extends ResqueJobTestBase
 
     /**
      * test that calling the create job method on the ensureindexes job class
-     * will throw the expected exception if redis is unreachable
+     * will throw the expected exception if redis is unreachable.
      */
     public function testEnsureIndexesCreateJobUnreachableRedis()
     {
         $jobData = [
             'storeName' => 'tripod_php_testing',
-            'tripodConfig' => Tripod\Config::getConfig(),
+            'tripodConfig' => Config::getConfig(),
             'reindex' => false,
             'background' => true,
         ];
@@ -139,21 +149,20 @@ class EnsureIndexesTest extends ResqueJobTestBase
         // expect 5 retries. Catch this with call to warning log
         $job->expects($this->exactly(5))->method('warningLog');
 
-        $this->expectException(Tripod\Exceptions\JobException::class);
+        $this->expectException(JobException::class);
         $this->expectExceptionMessage('Exception queuing job  - Connection to Redis failed after 1 failures.Last Error : (0) php_network_getaddresses: getaddrinfo failed: nodename nor servname provided, or not known');
         $job->createJob('tripod_php_testing', false, true);
-
     }
 
     /**
      * test that calling the create job method on the ensureindexes job class
-     * will throw the expected exception if the job fails
+     * will throw the expected exception if the job fails.
      */
     public function testEnsureIndexesCreateJobStatusFalse()
     {
         $jobData = [
             'storeName' => 'tripod_php_testing',
-            'tripodConfig' => Tripod\Config::getConfig(),
+            'tripodConfig' => Config::getConfig(),
             'reindex' => false,
             'background' => true,
         ];
@@ -169,20 +178,20 @@ class EnsureIndexesTest extends ResqueJobTestBase
 
         // expect 5 retries. Catch this with call to warning log
         $job->expects($this->exactly(5))->method('warningLog');
-        $this->expectException(Tripod\Exceptions\JobException::class);
+        $this->expectException(JobException::class);
         $this->expectExceptionMessage('Exception queuing job  - Could not retrieve status for queued job - job sometoken failed to tripod::ensureindexes');
         $job->createJob('tripod_php_testing', false, true);
     }
 
     /**
      * test that calling the create job method on the ensureindexes job class
-     * will use the queue name specified
+     * will use the queue name specified.
      */
     public function testEnsureIndexesCreateJobSpecifyQueue()
     {
         $jobData = [
             'storeName' => 'tripod_php_testing',
-            'tripodConfig' => Tripod\Config::getConfig(),
+            'tripodConfig' => Config::getConfig(),
             'reindex' => false,
             'background' => true,
         ];
@@ -204,10 +213,12 @@ class EnsureIndexesTest extends ResqueJobTestBase
     // HELPER METHODS BELOW HERE
 
     /**
-     *  Creates a simple mock EnsureIndexes Job
+     *  Creates a simple mock EnsureIndexes Job.
      *
      *  @param  array list of methods to stub
-     *  @return MockObject&\Tripod\Mongo\Jobs\EnsureIndexes
+     * @param mixed $methods
+     *
+     * @return EnsureIndexes&MockObject
      */
     protected function createMockJob($methods = [])
     {
@@ -222,17 +233,19 @@ class EnsureIndexesTest extends ResqueJobTestBase
             ->setMockClassName('MockEnsureIndexes')
             ->getMock();
         $mockEnsureIndexesJob->job = new Resque_Job('queue', ['id' => uniqid()]);
+
         return $mockEnsureIndexesJob;
     }
 
     /**
-     * Returns default arguments for a EnsureIndexes Job
+     * Returns default arguments for a EnsureIndexes Job.
+     *
      * @return array
      */
     protected function createDefaultArguments()
     {
         return [
-            'tripodConfig' => Tripod\Config::getConfig(),
+            'tripodConfig' => Config::getConfig(),
             'storeName' => 'tripod_php_testing',
             'reindex' => false,
             'background' => true,
@@ -240,11 +253,11 @@ class EnsureIndexesTest extends ResqueJobTestBase
     }
 
     /**
-     * @param MockObject&EnsureIndexes $job EnsureIndexes Job
+     * @param EnsureIndexes&MockObject $job EnsureIndexes Job
      */
     protected function jobSuccessfullyEnsuresIndexes($job)
     {
-        $mockIndexUtils = $this->getMockBuilder(Tripod\Mongo\IndexUtils::class)
+        $mockIndexUtils = $this->getMockBuilder(IndexUtils::class)
             ->onlyMethods(['ensureIndexes'])
             ->getMock();
 
@@ -258,11 +271,11 @@ class EnsureIndexesTest extends ResqueJobTestBase
     }
 
     /**
-     * @param MockObject&EnsureIndexes $job EnsureIndexes Job
+     * @param EnsureIndexes&MockObject $job EnsureIndexes Job
      */
     protected function jobThrowsExceptionWhenEnsuringIndexes($job)
     {
-        $mockIndexUtils = $this->getMockBuilder(Tripod\Mongo\IndexUtils::class)
+        $mockIndexUtils = $this->getMockBuilder(IndexUtils::class)
             ->onlyMethods(['ensureIndexes'])
             ->getMock();
 
@@ -274,6 +287,5 @@ class EnsureIndexesTest extends ResqueJobTestBase
         $job->expects($this->once())
             ->method('getIndexUtils')
             ->will($this->returnValue($mockIndexUtils));
-
     }
 }

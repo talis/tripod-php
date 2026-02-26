@@ -2,26 +2,22 @@
 
 namespace Tripod;
 
+use Tripod\Mongo\IConfigInstance;
+
 interface ITripodConfig
 {
     /**
      * Tripod Config instances are singletons, this method gets the existing or instantiates a new one.
-     *
-     * @return \Tripod\Mongo\IConfigInstance
      */
-    public static function getInstance();
+    public static function getInstance(): IConfigInstance;
 
     /**
-     * Loads the Tripod config into the instance
-     *
-     * @return void
+     * Loads the Tripod config into the instance.
      */
-    public static function setConfig(array $config);
+    public static function setConfig(array $config): void;
 
     /**
-     * Returns the Tripod config array
-     *
-     * @return array
+     * Returns the Tripod config array.
      */
-    public static function getConfig();
+    public static function getConfig(): array;
 }

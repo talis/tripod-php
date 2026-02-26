@@ -17,15 +17,15 @@
         "foaf": "http://xmlns.com/foaf/0.1/",
         "baseData": "http://basedata.com/b/"
     },
-    "defaultContext":"http://talisaspire.com/",
-    "data_sources" : {
-        "rs1" : {
-            "type" : "mongo",
+    "defaultContext": "http://talisaspire.com/",
+    "data_sources": {
+        "rs1": {
+            "type": "mongo",
             "connection": "mongodb:\/\/mongodb:27017/",
             "replicaSet": ""
         },
-        "rs2" : {
-            "type" : "mongo",
+        "rs2": {
+            "type": "mongo",
             "connection": "mongodb:\/\/mongodb:27017/",
             "replicaSet": ""
         }
@@ -52,7 +52,7 @@
                     }
                 },
                 "CBD_testing_2": {
-                    "data_source" : "rs2",
+                    "data_source": "rs2",
                     "cardinality": {
                         "dct:created.l": 1
                     },
@@ -63,7 +63,7 @@
                     }
                 }
             },
-            "data_source" : "rs1",
+            "data_source": "rs1",
             "view_specifications": [
                 {
                     "_id": "v_resource_full",
@@ -83,9 +83,7 @@
                         },
                         "_id": {
                             "from": "CBD_test_related_content",
-                            "include": [
-                                "dct:title"
-                            ]
+                            "include": ["dct:title"]
                         }
                     }
                 },
@@ -182,11 +180,10 @@
                     "type": ["baseData:DocWithSequence"],
                     "from": "CBD_testing",
                     "joins": {
-                        "dct:creator" : {},
+                        "dct:creator": {},
                         "baseData:hasSequence": {
-                            "joins":{
-                                "followSequence":{
-                                }
+                            "joins": {
+                                "followSequence": {}
                             }
                         }
                     }
@@ -199,8 +196,8 @@
                     "include": ["rdf:type", "searchterms:topic"],
                     "joins": {
                         "dct:isVersionOf": {
-                            "filter" : {
-                                "rdf:type" : {"u" : "bibo:Chapter"}
+                            "filter": {
+                                "rdf:type": { "u": "bibo:Chapter" }
                             },
                             "include": ["dct:subject", "rdf:type"]
                         }
@@ -214,8 +211,8 @@
                     "include": ["rdf:type", "searchterms:topic"],
                     "joins": {
                         "dct:isVersionOf": {
-                            "filter" : {
-                                "bibo:isbn13" : {"l" : "1234567890123"}
+                            "filter": {
+                                "bibo:isbn13": { "l": "1234567890123" }
                             },
                             "include": ["dct:subject", "rdf:type"]
                         }
@@ -238,16 +235,21 @@
                     "from": "CBD_testing",
                     "type": "dctype:Event",
                     "ttl": -1,
-                    "include": ["rdf:type", "dct:created", "dct:title", "dct:references"],
+                    "include": [
+                        "rdf:type",
+                        "dct:created",
+                        "dct:title",
+                        "dct:references"
+                    ],
                     "joins": {
-                        "dct:references" : {
+                        "dct:references": {
                             "include": ["dct:title", "dct:creator"]
                         }
                     }
                 }
             ],
             "search_config": {
-                "search_provider": "\\Tripod\\Mongo\\MongoSearchProvider",
+                "search_provider": "Tripod\\Mongo\\MongoSearchProvider",
                 "search_specifications": [
                     {
                         "_id": "i_search_list",
@@ -265,7 +267,10 @@
                         "indices": [
                             {
                                 "fieldName": "search_terms",
-                                "predicates": ["spec:name", "resourcelist:description"]
+                                "predicates": [
+                                    "spec:name",
+                                    "resourcelist:description"
+                                ]
                             }
                         ],
                         "fields": [
@@ -284,7 +289,10 @@
                                 "indices": [
                                     {
                                         "fieldName": "search_terms",
-                                        "predicates": ["aiiso:name", "aiiso:code"]
+                                        "predicates": [
+                                            "aiiso:name",
+                                            "aiiso:code"
+                                        ]
                                     }
                                 ]
                             }
@@ -312,7 +320,6 @@
                                 "fieldName": "other_terms",
                                 "predicates": ["rdf:type"]
                             }
-
                         ],
                         "fields": [
                             {
@@ -376,7 +383,6 @@
                                 "fieldName": "other_terms",
                                 "predicates": ["rdf:type"]
                             }
-
                         ],
                         "fields": [
                             {
@@ -393,7 +399,7 @@
                     }
                 ]
             },
-            "table_specifications" : [
+            "table_specifications": [
                 {
                     "_id": "t_resource",
                     "type": "acorn:Resource",
@@ -594,7 +600,10 @@
                                 {
                                     "join": {
                                         "glue": " ",
-                                        "predicates": ["foaf:firstName", "foaf:surname"]
+                                        "predicates": [
+                                            "foaf:firstName",
+                                            "foaf:surname"
+                                        ]
                                     }
                                 }
                             ]
@@ -617,7 +626,10 @@
                                     "lowercase": {
                                         "join": {
                                             "glue": " ",
-                                            "predicates": ["foaf:firstName", "foaf:surname"]
+                                            "predicates": [
+                                                "foaf:firstName",
+                                                "foaf:surname"
+                                            ]
                                         }
                                     }
                                 }
@@ -630,10 +642,12 @@
                                     "lowercase": {
                                         "join": {
                                             "glue": " ",
-                                            "predicates": ["foaf:firstName", "foaf:surname"]
+                                            "predicates": [
+                                                "foaf:firstName",
+                                                "foaf:surname"
+                                            ]
                                         }
                                     }
-
                                 },
                                 "foaf:firstName"
                             ]
@@ -653,7 +667,9 @@
                             "predicates": [
                                 {
                                     "date": {
-                                        "predicates": ["temp:last_login_invalid"]
+                                        "predicates": [
+                                            "temp:last_login_invalid"
+                                        ]
                                     }
                                 }
                             ]
@@ -663,7 +679,9 @@
                             "predicates": [
                                 {
                                     "date": {
-                                        "predicates": ["temp:last_login_DOES_NOT_EXIST"]
+                                        "predicates": [
+                                            "temp:last_login_DOES_NOT_EXIST"
+                                        ]
                                     }
                                 }
                             ]
@@ -679,7 +697,7 @@
                     "type": "bibo:Document",
                     "from": "CBD_testing",
                     "to_data_source": "rs2",
-                    "ensureIndexes" : [
+                    "ensureIndexes": [
                         {
                             "value.bookLink": 1
                         }
@@ -753,7 +771,8 @@
                     "fields": [
                         {
                             "fieldName": "title",
-                            "predicates": ["dct:title",
+                            "predicates": [
+                                "dct:title",
                                 {
                                     "join": {
                                         "glue": ": ",
@@ -783,13 +802,13 @@
                     }
                 }
             },
-            "database" : "tripod_php_testing_2",
-            "data_source" : "rs1"
+            "database": "tripod_php_testing_2",
+            "data_source": "rs1"
         }
     },
     "transaction_log": {
         "database": "tripod_php_testing",
-        "collection" : "transaction_log",
-        "data_source" : "rs2"
+        "collection": "transaction_log",
+        "data_source": "rs2"
     }
 }

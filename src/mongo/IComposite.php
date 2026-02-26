@@ -2,30 +2,28 @@
 
 namespace Tripod\Mongo\Composites;
 
-/**
- * Class IComposite
- * @package Tripod\Mongo\Composites
- */
+use Tripod\Mongo\ImpactedSubject;
+
 interface IComposite
 {
     /**
-     * Returns the operation this composite can satisfy
+     * Returns the operation this composite can satisfy.
+     *
      * @return string
      */
     public function getOperationType();
 
     /**
-     * Returns the subjects that this composite will need to regenerate given changes made to the underlying dataset
-     * @param array $subjectsAndPredicatesOfChange
+     * Returns the subjects that this composite will need to regenerate given changes made to the underlying dataset.
+     *
      * @param string $contextAlias
+     *
      * @return mixed
      */
-    public function getImpactedSubjects(Array $subjectsAndPredicatesOfChange,$contextAlias);
+    public function getImpactedSubjects(array $subjectsAndPredicatesOfChange, $contextAlias);
 
     /**
-     * Invalidate/regenerate the composite based on the impacted subject
-     * @param \Tripod\Mongo\ImpactedSubject $subject
-     * @return void
+     * Invalidate/regenerate the composite based on the impacted subject.
      */
-    public function update(\Tripod\Mongo\ImpactedSubject $subject);
+    public function update(ImpactedSubject $subject);
 }

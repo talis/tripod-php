@@ -1,9 +1,10 @@
 <?php
 
+use Tripod\ExtendedGraph;
+use Tripod\Mongo\Driver;
+
 /**
- * A quick performance test to see what amount of time in consumed in specific methods of Config class
- *
- * Class MongoTripodConfigTest
+ * A quick performance test to see what amount of time in consumed in specific methods of Config class.
  */
 class LargeGraphTest extends MongoTripodPerformanceTestBase
 {
@@ -18,27 +19,14 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
     private const BENCHMARK_DESCRIBE_TIME = 5000;
 
     /**
-     * Do some setup before each test start
+     * Do some setup before each test start.
      */
     protected function setUp(): void
     {
         parent::setup();
-        $this->tripod = new Tripod\Mongo\Driver('CBD_testing', 'tripod_php_testing', ['defaultContext' => 'http://talisaspire.com/']);
+        $this->tripod = new Driver('CBD_testing', 'tripod_php_testing', ['defaultContext' => 'http://talisaspire.com/']);
 
         $this->loadLargeGraphData();
-    }
-
-    protected function loadLargeGraphData()
-    {
-        $docs = json_decode(file_get_contents(dirname(__FILE__) . '/data/largeGraph.json'), true);
-        foreach ($docs as $d) {
-            $this->addDocument($d);
-        }
-    }
-
-    protected function getConfigLocation()
-    {
-        return dirname(__FILE__) . '/../../unit/mongo/data/config.json';
     }
 
     public function testUpdateSingleTripleOfLargeGraph()
@@ -47,9 +35,9 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
 
         $testStartTime = microtime();
 
-        $graph = new Tripod\ExtendedGraph();
+        $graph = new ExtendedGraph();
         $graph->add_literal_triple($uri, 'http://rdfs.org/sioc/spec/name', 'new name');
-        $this->tripod->saveChanges(new Tripod\ExtendedGraph(), $graph);
+        $this->tripod->saveChanges(new ExtendedGraph(), $graph);
 
         $testEndTime = microtime();
 
@@ -66,7 +54,7 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
 
         $testStartTime = microtime();
 
-        $graph = new Tripod\ExtendedGraph();
+        $graph = new ExtendedGraph();
         $graph->add_literal_triple($uri, 'http://rdfs.org/sioc/spec/name', 'new name');
         $this->tripod->describeResource($uri);
 
@@ -77,5 +65,18 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
             $this->getTimeDifference($testStartTime, $testEndTime),
             'It should always take less than ' . self::BENCHMARK_DESCRIBE_TIME . 'ms to describe large graph'
         );
+    }
+
+    protected function loadLargeGraphData()
+    {
+        $docs = json_decode(file_get_contents(__DIR__ . '/data/largeGraph.json'), true);
+        foreach ($docs as $d) {
+            $this->addDocument($d);
+        }
+    }
+
+    protected function getConfigLocation()
+    {
+        return __DIR__ . '/../../unit/mongo/data/config.json';
     }
 }

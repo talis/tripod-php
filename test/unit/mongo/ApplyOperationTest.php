@@ -1,6 +1,17 @@
 <?php
 
+use MongoDB\BSON\ObjectId;
+use MongoDB\BSON\UTCDateTime;
+use Tripod\Config;
+use Tripod\Exceptions\JobException;
+use Tripod\Mongo\Composites\SearchIndexer;
+use Tripod\Mongo\Composites\Tables;
+use Tripod\Mongo\Composites\Views;
+use Tripod\Mongo\Driver;
+use Tripod\Mongo\ImpactedSubject;
+use Tripod\Mongo\JobGroup;
 use Tripod\Mongo\Jobs\ApplyOperation;
+use Tripod\Mongo\MongoSearchProvider;
 
 class ApplyOperationTest extends ResqueJobTestBase
 {
@@ -26,7 +37,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $job->args = $this->args;
         $job->job = new Resque_Job('queue', ['id' => uniqid()]);
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Argument subjects was not present in supplied job args for job Tripod\\Mongo\\Jobs\\ApplyOperation');
+        $this->expectExceptionMessage('Argument subjects was not present in supplied job args for job Tripod\Mongo\Jobs\ApplyOperation');
         $this->performJob($job);
     }
 
@@ -47,7 +58,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ['timer', 'increment']
         );
 
-        $subject = $this->getMockBuilder(Tripod\Mongo\ImpactedSubject::class)
+        $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
             ->setConstructorArgs(
                 [
@@ -61,16 +72,16 @@ class ApplyOperationTest extends ResqueJobTestBase
                 ]
             )->getMock();
 
-        $tripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getComposite'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
 
-        $views = $this->getMockBuilder(Tripod\Mongo\Composites\Views::class)
+        $views = $this->getMockBuilder(Views::class)
             ->onlyMethods(['update'])
             ->setConstructorArgs([
                 'tripod_php_testing',
-                Tripod\Config::getInstance()->getCollectionForCBD('tripod_php_testing', 'CBD_testing'),
+                Config::getInstance()->getCollectionForCBD('tripod_php_testing', 'CBD_testing'),
                 'http://talisapire.com/',
             ])->getMock();
 
@@ -117,10 +128,10 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $applyOperation->args = $this->args;
         $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
-        $jobTrackerId = new MongoDB\BSON\ObjectId();
+        $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
 
-        $jobGroup = $this->getMockBuilder(Tripod\Mongo\JobGroup::class)
+        $jobGroup = $this->getMockBuilder(JobGroup::class)
             ->onlyMethods(['incrementJobCount'])
             ->setConstructorArgs(['tripod_php_testing', $jobTrackerId])
             ->getMock();
@@ -137,7 +148,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ['timer', 'increment']
         );
 
-        $subject = $this->getMockBuilder(Tripod\Mongo\ImpactedSubject::class)
+        $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
             ->setConstructorArgs(
                 [
@@ -151,17 +162,17 @@ class ApplyOperationTest extends ResqueJobTestBase
                 ]
             )->getMock();
 
-        $tripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getComposite'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
 
-        $views = $this->getMockBuilder(Tripod\Mongo\Composites\Views::class)
+        $views = $this->getMockBuilder(Views::class)
             ->onlyMethods(['update', 'deleteViewsByViewId'])
             ->setConstructorArgs(
                 [
                     'tripod_php_testing',
-                    Tripod\Config::getInstance()->getCollectionForCBD('tripod_php_testing', 'CBD_testing'),
+                    Config::getInstance()->getCollectionForCBD('tripod_php_testing', 'CBD_testing'),
                     'http://talisapire.com/',
                 ]
             )->getMock();
@@ -218,11 +229,11 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $applyOperation->args = $this->args;
         $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
-        $jobTrackerId = new MongoDB\BSON\ObjectId();
+        $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
-        $timestamp = new MongoDB\BSON\UTCDateTime(hexdec(substr($jobTrackerId, 0, 8)) * 1000);
+        $timestamp = new UTCDateTime(hexdec(substr($jobTrackerId, 0, 8)) * 1000);
 
-        $jobGroup = $this->getMockBuilder(Tripod\Mongo\JobGroup::class)
+        $jobGroup = $this->getMockBuilder(JobGroup::class)
             ->onlyMethods(['incrementJobCount'])
             ->setConstructorArgs(['tripod_php_testing', $jobTrackerId])
             ->getMock();
@@ -239,7 +250,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ['timer', 'increment']
         );
 
-        $subject = $this->getMockBuilder(Tripod\Mongo\ImpactedSubject::class)
+        $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
             ->setConstructorArgs(
                 [
@@ -253,17 +264,17 @@ class ApplyOperationTest extends ResqueJobTestBase
                 ]
             )->getMock();
 
-        $tripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
-            ->onlyMethods(['getComposite'])
+        $tripod = $this->getMockBuilder(Driver::class)
+            ->onlyMethods(['getTripodViews'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
 
-        $views = $this->getMockBuilder(Tripod\Mongo\Composites\Views::class)
+        $views = $this->getMockBuilder(Views::class)
             ->onlyMethods(['update', 'deleteViewsByViewId'])
             ->setConstructorArgs(
                 [
                     'tripod_php_testing',
-                    Tripod\Config::getInstance()->getCollectionForCBD('tripod_php_testing', 'CBD_testing'),
+                    Config::getInstance()->getCollectionForCBD('tripod_php_testing', 'CBD_testing'),
                     'http://talisapire.com/',
                 ]
             )->getMock();
@@ -301,8 +312,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ->will($this->returnValue($tripod));
 
         $tripod->expects($this->exactly(2))
-            ->method('getComposite')
-            ->with(OP_VIEWS)
+            ->method('getTripodViews')
             ->will($this->returnValue($views));
 
         $views->expects($this->once())
@@ -331,7 +341,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ['timer', 'increment']
         );
 
-        $impactedSubject = new Tripod\Mongo\ImpactedSubject(
+        $impactedSubject = new ImpactedSubject(
             [
                 _ID_RESOURCE => 'http://example.com/resources/foo',
                 _ID_CONTEXT => 'http://talisaspire.com/',
@@ -346,7 +356,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $applyOperation->args = $this->args;
         $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
 
-        $subject = $this->getMockBuilder(Tripod\Mongo\ImpactedSubject::class)
+        $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
             ->setConstructorArgs(
                 [
@@ -360,16 +370,16 @@ class ApplyOperationTest extends ResqueJobTestBase
                 ]
             )->getMock();
 
-        $tripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getComposite'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
 
-        $tables = $this->getMockBuilder(Tripod\Mongo\Composites\Tables::class)
+        $tables = $this->getMockBuilder(Tables::class)
             ->onlyMethods(['update'])
             ->setConstructorArgs([
                 'tripod_php_testing',
-                Tripod\Config::getInstance()->getCollectionForCBD('tripod_php_testing', 'CBD_testing'),
+                Config::getInstance()->getCollectionForCBD('tripod_php_testing', 'CBD_testing'),
                 'http://talisapire.com/',
             ])->getMock();
 
@@ -424,10 +434,10 @@ class ApplyOperationTest extends ResqueJobTestBase
         $applyOperation->args = $this->args;
         $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
 
-        $jobTrackerId = new MongoDB\BSON\ObjectId();
+        $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
 
-        $jobGroup = $this->getMockBuilder(Tripod\Mongo\JobGroup::class)
+        $jobGroup = $this->getMockBuilder(JobGroup::class)
             ->onlyMethods(['incrementJobCount'])
             ->setConstructorArgs(['tripod_php_testing', $jobTrackerId])
             ->getMock();
@@ -437,7 +447,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ->with(-1)
             ->will($this->returnValue(2));
 
-        $subject = $this->getMockBuilder(Tripod\Mongo\ImpactedSubject::class)
+        $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
             ->setConstructorArgs(
                 [
@@ -451,17 +461,17 @@ class ApplyOperationTest extends ResqueJobTestBase
                 ]
             )->getMock();
 
-        $tripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getComposite'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
 
-        $tables = $this->getMockBuilder(Tripod\Mongo\Composites\Tables::class)
+        $tables = $this->getMockBuilder(Tables::class)
             ->onlyMethods(['update', 'deleteTableRowsByTableId'])
             ->setConstructorArgs(
                 [
                     'tripod_php_testing',
-                    Tripod\Config::getInstance()->getCollectionForCBD('tripod_php_testing', 'CBD_testing'),
+                    Config::getInstance()->getCollectionForCBD('tripod_php_testing', 'CBD_testing'),
                     'http://talisapire.com/',
                 ]
             )->getMock();
@@ -527,11 +537,11 @@ class ApplyOperationTest extends ResqueJobTestBase
         $applyOperation->args = $this->args;
         $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
 
-        $jobTrackerId = new MongoDB\BSON\ObjectId();
+        $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
-        $timestamp = new MongoDB\BSON\UTCDateTime(hexdec(substr($jobTrackerId, 0, 8)) * 1000);
+        $timestamp = new UTCDateTime(hexdec(substr($jobTrackerId, 0, 8)) * 1000);
 
-        $jobGroup = $this->getMockBuilder(Tripod\Mongo\JobGroup::class)
+        $jobGroup = $this->getMockBuilder(JobGroup::class)
             ->onlyMethods(['incrementJobCount'])
             ->setConstructorArgs(['tripod_php_testing', $jobTrackerId])
             ->getMock();
@@ -541,7 +551,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ->with(-1)
             ->will($this->returnValue(0));
 
-        $subject = $this->getMockBuilder(Tripod\Mongo\ImpactedSubject::class)
+        $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
             ->setConstructorArgs(
                 [
@@ -555,17 +565,17 @@ class ApplyOperationTest extends ResqueJobTestBase
                 ]
             )->getMock();
 
-        $tripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
-            ->onlyMethods(['getComposite'])
+        $tripod = $this->getMockBuilder(Driver::class)
+            ->onlyMethods(['getTripodTables'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
 
-        $tables = $this->getMockBuilder(Tripod\Mongo\Composites\Tables::class)
+        $tables = $this->getMockBuilder(Tables::class)
             ->onlyMethods(['update', 'deleteTableRowsByTableId'])
             ->setConstructorArgs(
                 [
                     'tripod_php_testing',
-                    Tripod\Config::getInstance()->getCollectionForCBD('tripod_php_testing', 'CBD_testing'),
+                    Config::getInstance()->getCollectionForCBD('tripod_php_testing', 'CBD_testing'),
                     'http://talisapire.com/',
                 ]
             )->getMock();
@@ -603,8 +613,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ->will($this->returnValue($tripod));
 
         $tripod->expects($this->exactly(2))
-            ->method('getComposite')
-            ->with(OP_TABLES)
+            ->method('getTripodTables')
             ->will($this->returnValue($tables));
 
         $tables->expects($this->once())
@@ -635,7 +644,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $applyOperation->args = $this->args;
         $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
 
-        $subject = $this->getMockBuilder(Tripod\Mongo\ImpactedSubject::class)
+        $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
             ->setConstructorArgs(
                 [
@@ -649,12 +658,12 @@ class ApplyOperationTest extends ResqueJobTestBase
                 ]
             )->getMock();
 
-        $tripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getComposite'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
 
-        $search = $this->getMockBuilder(Tripod\Mongo\Composites\SearchIndexer::class)
+        $search = $this->getMockBuilder(SearchIndexer::class)
             ->onlyMethods(['update'])
             ->setConstructorArgs([$tripod])
             ->getMock();
@@ -710,10 +719,10 @@ class ApplyOperationTest extends ResqueJobTestBase
         $applyOperation->args = $this->args;
         $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
 
-        $jobTrackerId = new MongoDB\BSON\ObjectId();
+        $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
 
-        $jobGroup = $this->getMockBuilder(Tripod\Mongo\JobGroup::class)
+        $jobGroup = $this->getMockBuilder(JobGroup::class)
             ->onlyMethods(['incrementJobCount'])
             ->setConstructorArgs(['tripod_php_testing', $jobTrackerId])
             ->getMock();
@@ -723,7 +732,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ->with(-1)
             ->will($this->returnValue(2));
 
-        $subject = $this->getMockBuilder(Tripod\Mongo\ImpactedSubject::class)
+        $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
             ->setConstructorArgs(
                 [
@@ -737,12 +746,12 @@ class ApplyOperationTest extends ResqueJobTestBase
                 ]
             )->getMock();
 
-        $tripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getComposite'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
 
-        $search = $this->getMockBuilder(Tripod\Mongo\Composites\SearchIndexer::class)
+        $search = $this->getMockBuilder(SearchIndexer::class)
             ->onlyMethods(['update'])
             ->setConstructorArgs([$tripod])
             ->getMock();
@@ -806,11 +815,11 @@ class ApplyOperationTest extends ResqueJobTestBase
         $applyOperation->args = $this->args;
         $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
 
-        $jobTrackerId = new MongoDB\BSON\ObjectId();
+        $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
-        $timestamp = new MongoDB\BSON\UTCDateTime(hexdec(substr($jobTrackerId, 0, 8)) * 1000);
+        $timestamp = new UTCDateTime(hexdec(substr($jobTrackerId, 0, 8)) * 1000);
 
-        $jobGroup = $this->getMockBuilder(Tripod\Mongo\JobGroup::class)
+        $jobGroup = $this->getMockBuilder(JobGroup::class)
             ->onlyMethods(['incrementJobCount'])
             ->setConstructorArgs(['tripod_php_testing', $jobTrackerId])
             ->getMock();
@@ -820,7 +829,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ->with(-1)
             ->will($this->returnValue(0));
 
-        $subject = $this->getMockBuilder(Tripod\Mongo\ImpactedSubject::class)
+        $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
             ->setConstructorArgs(
                 [
@@ -834,17 +843,17 @@ class ApplyOperationTest extends ResqueJobTestBase
                 ]
             )->getMock();
 
-        $tripod = $this->getMockBuilder(Tripod\Mongo\Driver::class)
+        $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getComposite'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
 
-        $searchProvider = $this->getMockBuilder(Tripod\Mongo\MongoSearchProvider::class)
+        $searchProvider = $this->getMockBuilder(MongoSearchProvider::class)
             ->onlyMethods(['deleteSearchDocumentsByTypeId'])
             ->setConstructorArgs([$tripod])
             ->getMock();
 
-        $search = $this->getMockBuilder(Tripod\Mongo\Composites\SearchIndexer::class)
+        $search = $this->getMockBuilder(SearchIndexer::class)
             ->onlyMethods(['update'])
             ->setConstructorArgs([$tripod])
             ->getMock();
@@ -906,7 +915,7 @@ class ApplyOperationTest extends ResqueJobTestBase
 
     public function testCreateJobDefaultQueue()
     {
-        $impactedSubject = new Tripod\Mongo\ImpactedSubject(
+        $impactedSubject = new ImpactedSubject(
             [_ID_RESOURCE => 'http://example.com/1', _ID_CONTEXT => 'http://talisaspire.com/'],
             OP_TABLES,
             'tripod_php_testing',
@@ -916,7 +925,7 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $jobData = [
             'subjects' => [$impactedSubject->toArray()],
-            'tripodConfig' => Tripod\Config::getConfig(),
+            'tripodConfig' => Config::getConfig(),
         ];
 
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
@@ -937,7 +946,7 @@ class ApplyOperationTest extends ResqueJobTestBase
 
     public function testCreateJobUnreachableRedis()
     {
-        $impactedSubject = new Tripod\Mongo\ImpactedSubject(
+        $impactedSubject = new ImpactedSubject(
             [_ID_RESOURCE => 'http://example.com/1', _ID_CONTEXT => 'http://talisaspire.com/'],
             OP_TABLES,
             'tripod_php_testing',
@@ -956,9 +965,10 @@ class ApplyOperationTest extends ResqueJobTestBase
         $applyOperation->expects($this->exactly(5))->method('warningLog');
 
         $exceptionThrown = false;
+
         try {
             $applyOperation->createJob([$impactedSubject]);
-        } catch (Tripod\Exceptions\JobException $e) {
+        } catch (JobException $e) {
             $this->assertEquals('Exception queuing job  - Connection to Redis failed after 1 failures.Last Error : (0) php_network_getaddresses: getaddrinfo failed: nodename nor servname provided, or not known', $e->getMessage());
             $exceptionThrown = true;
         }
@@ -969,7 +979,7 @@ class ApplyOperationTest extends ResqueJobTestBase
 
     public function testCreateJobStatusFalse()
     {
-        $impactedSubject = new Tripod\Mongo\ImpactedSubject(
+        $impactedSubject = new ImpactedSubject(
             [_ID_RESOURCE => 'http://example.com/1', _ID_CONTEXT => 'http://talisaspire.com/'],
             OP_TABLES,
             'tripod_php_testing',
@@ -988,9 +998,10 @@ class ApplyOperationTest extends ResqueJobTestBase
         $applyOperation->expects($this->exactly(5))->method('warningLog');
 
         $exceptionThrown = false;
+
         try {
             $applyOperation->createJob([$impactedSubject]);
-        } catch (Tripod\Exceptions\JobException $e) {
+        } catch (JobException $e) {
             $this->assertEquals('Exception queuing job  - Could not retrieve status for queued job - job sometoken failed to tripod::apply', $e->getMessage());
             $exceptionThrown = true;
         }
@@ -1001,7 +1012,7 @@ class ApplyOperationTest extends ResqueJobTestBase
 
     public function testCreateJobSpecifyQueue()
     {
-        $impactedSubject = new Tripod\Mongo\ImpactedSubject(
+        $impactedSubject = new ImpactedSubject(
             [_ID_RESOURCE => 'http://example.com/1', _ID_CONTEXT => 'http://talisaspire.com/'],
             OP_VIEWS,
             'tripod_php_testing',
@@ -1011,7 +1022,7 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $jobData = [
             'subjects' => [$impactedSubject->toArray()],
-            'tripodConfig' => Tripod\Config::getConfig(),
+            'tripodConfig' => Config::getConfig(),
         ];
 
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
@@ -1033,11 +1044,13 @@ class ApplyOperationTest extends ResqueJobTestBase
     }
 
     /**
-     * Sets job arguments
+     * Sets job arguments.
+     *
+     * @param mixed $operation
      */
     protected function setArgs($operation = OP_VIEWS, array $specTypes = [])
     {
-        $subject = new Tripod\Mongo\ImpactedSubject(
+        $subject = new ImpactedSubject(
             [
                 _ID_RESOURCE => 'http://example.com/resources/foo',
                 _ID_CONTEXT => 'http://talisaspire.com/',
@@ -1049,7 +1062,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         );
 
         $this->args = [
-            'tripodConfig' => Tripod\Config::getConfig(),
+            'tripodConfig' => Config::getConfig(),
             'subjects' => [$subject->toArray()],
             'statsConfig' => $this->getStatsDConfig(),
         ];

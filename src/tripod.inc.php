@@ -1,14 +1,14 @@
 <?php
 
-//todo: this file is mis-named. It has mongo specifics
+use Tripod\Mongo\Config;
 
 if (!defined('TRIPOD_DIR')) {
-    define('TRIPOD_DIR', dirname(__FILE__) . '/' );
+    define('TRIPOD_DIR', __DIR__ . '/');
 }
 
 require_once TRIPOD_DIR . '/mongo/MongoTripodConstants.php';
 
-\Resque::setBackend(\Tripod\Mongo\Config::getResqueServer());
+Resque::setBackend(Config::getResqueServer());
 
 define('RDF_TYPE', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
 define('RDF_SUBJECT', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#subject');
@@ -61,9 +61,9 @@ define('DC_DATE', 'http://purl.org/dc/elements/1.1/date');
 define('DCT_ABSTRACT', 'http://purl.org/dc/terms/abstract');
 define('DCT_PROVENANCE', 'http://purl.org/dc/terms/provenance');
 
-define('OS_STARTINDEX','http://a9.com/-/spec/opensearch/1.1/startIndex');
-define('OS_ITEMSPERPAGE','http://a9.com/-/spec/opensearch/1.1/itemsPerPage');
-define('OS_TOTALRESULTS','http://a9.com/-/spec/opensearch/1.1/totalResults');
+define('OS_STARTINDEX', 'http://a9.com/-/spec/opensearch/1.1/startIndex');
+define('OS_ITEMSPERPAGE', 'http://a9.com/-/spec/opensearch/1.1/itemsPerPage');
+define('OS_TOTALRESULTS', 'http://a9.com/-/spec/opensearch/1.1/totalResults');
 
 define('MIME_RDFXML', 'application/rdf+xml');
 define('MIME_RSS', 'application/rss+xml');

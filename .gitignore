@@ -10,6 +10,7 @@ atlassian-ide-plugin.xml
 composer.lock
 test-results
 .phpunit.result.cache
+.php-cs-fixer.cache
 
 test/performance/rest-interface/.vagrant/
 test/performance/rest-interface/config/tripod-config-*.json

@@ -1,9 +1,9 @@
 <?php
 
+use Tripod\Config;
+
 /**
- * A quick performance test to see what amount of time in consumed in specific methods of Config class
- *
- * Class MongoTripodConfigTest
+ * A quick performance test to see what amount of time in consumed in specific methods of Config class.
  */
 class MongoTripodConfigTest extends MongoTripodPerformanceTestBase
 {
@@ -13,24 +13,25 @@ class MongoTripodConfigTest extends MongoTripodPerformanceTestBase
     private const BENCHMARK_OBJECT_CREATE_TIME = 6000;
 
     /**
-     * Number of iterations should to be ran to test
+     * Number of iterations should to be ran to test.
      */
     private const BENCHMARK_OBJECT_CREATE_ITERATIONS = 1000;
 
     /**
-     * Holds tripod config
+     * Holds tripod config.
+     *
      * @var array
      */
     private $config = [];
 
     /**
-     * Do some setup before each test start
+     * Do some setup before each test start.
      */
     protected function setUp(): void
     {
         parent::setup();
 
-        $this->config = json_decode(file_get_contents(dirname(__FILE__) . '/../../unit/mongo/data/config.json'), true);
+        $this->config = json_decode(file_get_contents(__DIR__ . '/../../unit/mongo/data/config.json'), true);
     }
 
     /**
@@ -54,8 +55,8 @@ class MongoTripodConfigTest extends MongoTripodPerformanceTestBase
 
         // Let's try to create 1000 objects to see how much time they take.
         for ($i = 0; $i < self::BENCHMARK_OBJECT_CREATE_ITERATIONS; $i++) {
-            Tripod\Config::setConfig($this->config);
-            $instance = Tripod\Config::getInstance();
+            Config::setConfig($this->config);
+            $instance = Config::getInstance();
         }
 
         $testEndTime = microtime();

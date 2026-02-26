@@ -1,11 +1,15 @@
 <?php
 
+use MongoDB\BSON\UTCDateTime;
+use Tripod\Config;
+use Tripod\Mongo\DateUtil;
+
 class DateUtilTest extends MongoTripodTestBase
 {
     public function testGetMongoDateWithNoParam()
     {
-        $config = Tripod\Config::getInstance();
-        $updatedAt = (new Tripod\Mongo\DateUtil())->getMongoDate();
+        $config = Config::getInstance();
+        $updatedAt = (new DateUtil())->getMongoDate();
 
         $_id = [
             'r' => 'http://talisaspire.com/resources/testEtag' . microtime(false),
@@ -22,16 +26,16 @@ class DateUtilTest extends MongoTripodTestBase
             'CBD_testing'
         )->insertOne($doc, ['w' => 1]);
 
-        $date = Tripod\Mongo\DateUtil::getMongoDate();
+        $date = DateUtil::getMongoDate();
 
-        $this->assertInstanceOf(MongoDB\BSON\UTCDateTime::class, $date);
+        $this->assertInstanceOf(UTCDateTime::class, $date);
         $this->assertEquals(13, strlen($date->__toString()));
     }
 
     public function testGetMongoDateWithParam()
     {
-        $config = Tripod\Config::getInstance();
-        $updatedAt = (new Tripod\Mongo\DateUtil())->getMongoDate();
+        $config = Config::getInstance();
+        $updatedAt = (new DateUtil())->getMongoDate();
 
         $_id = [
             'r' => 'http://talisaspire.com/resources/testEtag' . microtime(false),
@@ -49,9 +53,9 @@ class DateUtilTest extends MongoTripodTestBase
         )->insertOne($doc, ['w' => 1]);
 
         $time = floor(microtime(true) * 1000);
-        $date = Tripod\Mongo\DateUtil::getMongoDate($time);
+        $date = DateUtil::getMongoDate($time);
 
-        $this->assertInstanceOf(MongoDB\BSON\UTCDateTime::class, $date);
+        $this->assertInstanceOf(UTCDateTime::class, $date);
         $this->assertEquals(13, strlen($date->__toString()));
         $this->assertEquals($time, $date->__toString());
     }

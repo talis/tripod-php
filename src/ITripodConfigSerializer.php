@@ -2,21 +2,19 @@
 
 namespace Tripod;
 
+use Tripod\Mongo\IConfigInstance;
+
 interface ITripodConfigSerializer
 {
-
     /**
-     * This should return an array that self::deserialize() can roundtrip into an Tripod Config object
-     *
-     * @return void
+     * This should return an array that self::deserialize() can roundtrip into an Tripod Config object.
      */
     public function serialize();
 
     /**
-     * When given a valid config, returns a Tripod Config object
+     * When given a valid config, returns a Tripod Config object.
      *
-     * @param array $config
-     * @return \Tripod\Mongo\IConfigInstance
+     * @return IConfigInstance
      */
     public static function deserialize(array $config);
 }

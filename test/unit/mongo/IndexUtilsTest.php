@@ -1,6 +1,8 @@
 <?php
 
+use MongoDB\Driver\Manager;
 use PHPUnit\Framework\MockObject\MockObject;
+use Tripod\Mongo\IndexUtils;
 
 class IndexUtilsTest extends MongoTripodTestBase
 {
@@ -39,7 +41,6 @@ class IndexUtilsTest extends MongoTripodTestBase
 
         $indexUtils->ensureIndexes(false, 'tripod_php_testing', true);
     }
-
 
     public function testCBDCollectionIndexesAreCreatedInForeground()
     {
@@ -285,14 +286,15 @@ class IndexUtilsTest extends MongoTripodTestBase
     // HELPER METHODS
 
     /**
-     * creates a mock IndexUtils object which will use the specified config
+     * creates a mock IndexUtils object which will use the specified config.
      *
-     * @param MockObject&\TripodTestConfig $mockConfig mock config object
-     * @return MockObject&\Tripod\Mongo\IndexUtils mocked IndexUtil object
+     * @param MockObject&TripodTestConfig $mockConfig mock config object
+     *
+     * @return IndexUtils&MockObject mocked IndexUtil object
      */
     protected function createMockIndexUtils($mockConfig)
     {
-        $mockIndexUtils = $this->getMockBuilder(Tripod\Mongo\IndexUtils::class)
+        $mockIndexUtils = $this->getMockBuilder(IndexUtils::class)
             ->onlyMethods(['getConfig'])
             ->getMock();
 
@@ -304,16 +306,16 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * creates a mock mongo collection object
+     * creates a mock mongo collection object.
      *
-     * @return MockObject&Collection mock Collection object
+     * @return Collection&MockObject mock Collection object
      */
     protected function createMockCollection()
     {
         return $this->getMockBuilder(MongoDB\Collection::class)
             ->onlyMethods(['createIndex', 'dropIndexes'])
             ->setConstructorArgs([
-                new MongoDB\Driver\Manager('mongodb://fake:27017'),
+                new Manager('mongodb://fake:27017'),
                 'tripod_php_testing',
                 'CBD_testing',
             ])
@@ -321,9 +323,9 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * creates a mock config object
+     * creates a mock config object.
      *
-     * @return MockObject&\TripodTestConfig mock Config object
+     * @return MockObject&TripodTestConfig mock Config object
      */
     protected function createMockConfig()
     {
@@ -338,10 +340,9 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param int $callCount number of times Config->getCollectionForCBD should be called
-     * @param MockObject&\TripodTestConfig $mockConfig mock Config object
-     * @param MockObject&Collection $mockCollection mock Collection object
-     * @return void
+     * @param int                         $callCount      number of times Config->getCollectionForCBD should be called
+     * @param MockObject&TripodTestConfig $mockConfig     mock Config object
+     * @param Collection&MockObject       $mockCollection mock Collection object
      */
     protected function getCollectionForCBDShouldBeCalled_n_Times($callCount, $mockConfig, $mockCollection)
     {
@@ -352,10 +353,9 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param int $callCount number of times Config->getCollectionForView should be called
-     * @param MockObject&\TripodTestConfig $mockConfig mock Config object
-     * @param MockObject&Collection $mockCollection mock Collection object
-     * @return void
+     * @param int                         $callCount      number of times Config->getCollectionForView should be called
+     * @param MockObject&TripodTestConfig $mockConfig     mock Config object
+     * @param Collection&MockObject       $mockCollection mock Collection object
      */
     protected function getCollectionForViewShouldBeCalled_n_Times($callCount, $mockConfig, $mockCollection)
     {
@@ -366,10 +366,9 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param int $callCount number of times Config->getCollectionForTable should be called
-     * @param MockObject&\TripodTestConfig $mockConfig mock Config object
-     * @param MockObject&Collection $mockCollection mock Collection object
-     * @return void
+     * @param int                         $callCount      number of times Config->getCollectionForTable should be called
+     * @param MockObject&TripodTestConfig $mockConfig     mock Config object
+     * @param Collection&MockObject       $mockCollection mock Collection object
      */
     protected function getCollectionForTableShouldBeCalled_n_Times($callCount, $mockConfig, $mockCollection)
     {
@@ -380,10 +379,9 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param int $callCount number of times Config->getCollectionForSearchDocument should be called
-     * @param MockObject&\TripodTestConfig $mockConfig mock Config object
-     * @param MockObject&Collection $mockCollection mock Collection object
-     * @return void
+     * @param int                         $callCount      number of times Config->getCollectionForSearchDocument should be called
+     * @param MockObject&TripodTestConfig $mockConfig     mock Config object
+     * @param Collection&MockObject       $mockCollection mock Collection object
      */
     protected function getCollectionForSearchDocShouldBeCalled_n_Times($callCount, $mockConfig, $mockCollection)
     {
@@ -394,8 +392,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param MockObject&Collection $mockCollection mock Collection object
-     * @return void
+     * @param Collection&MockObject $mockCollection mock Collection object
      */
     protected function dropIndexesShouldNeverBeCalled($mockCollection)
     {
@@ -404,8 +401,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param MockObject&Collection $mockCollection mock Collection object
-     * @return void
+     * @param Collection&MockObject $mockCollection mock Collection object
      */
     protected function dropIndexesShouldBeCalled($mockCollection)
     {
@@ -414,8 +410,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param MockObject&\TripodTestConfig $mockConfig mock Config object
-     * @return void
+     * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
     protected function getCollectionForViewShouldNeverBeCalled($mockConfig)
     {
@@ -424,8 +419,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param MockObject&\TripodTestConfig $mockConfig mock Config object
-     * @return void
+     * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
     protected function getCollectionForTableShouldNeverBeCalled($mockConfig)
     {
@@ -434,8 +428,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param MockObject&\TripodTestConfig $mockConfig mock Config object
-     * @return void
+     * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
     protected function getCollectionForSearchDocumentShouldNeverBeCalled($mockConfig)
     {
@@ -444,8 +437,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param MockObject&\TripodTestConfig $mockConfig mock Config object
-     * @return void
+     * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
     protected function getCollectionForCBDShouldNeverBeCalled($mockConfig)
     {
@@ -455,15 +447,14 @@ class IndexUtilsTest extends MongoTripodTestBase
 
     /**
      * Expectations one custom and three internal tripod indexes should be
-     * created
+     * created.
      *
      * createIndex is called 4 times, each time with a different set of params
      * a) one custom index is created based on the collection specification
      * b) three internal indexes are always created
      *
-     * @param MockObject&Collection $mockCollection mock Collection object
-     * @param bool $background create indexes in the background
-     * @return void
+     * @param Collection&MockObject $mockCollection mock Collection object
+     * @param bool                  $background     create indexes in the background
      */
     protected function oneCustomAndThreeInternalTripodCBDIndexesShouldBeCreated($mockCollection, $background = true, array $indexOptions = [])
     {
@@ -482,9 +473,8 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param MockObject&Collection $mockCollection mock Collection object
-     * @param bool $background create indexes in the background
-     * @return void
+     * @param Collection&MockObject $mockCollection mock Collection object
+     * @param bool                  $background     create indexes in the background
      */
     protected function oneCustomAndThreeInternalTripodViewIndexesShouldBeCreated($mockCollection, $background = true)
     {
@@ -504,9 +494,8 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param MockObject&Collection $mockCollection mock Collection object
-     * @param bool $background create indexes in the background
-     * @return void
+     * @param Collection&MockObject $mockCollection mock Collection object
+     * @param bool                  $background     create indexes in the background
      */
     protected function oneCustomAndThreeInternalTripodTableIndexesShouldBeCreated($mockCollection, $background = true)
     {
@@ -526,9 +515,8 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param MockObject&Collection $mockCollection mock Collection object
-     * @param bool $background create indexes in the background
-     * @return void
+     * @param Collection&MockObject $mockCollection mock Collection object
+     * @param bool                  $background     create indexes in the background
      */
     protected function threeInternalTripodSearchDocIndexesShouldBeCreated($mockCollection, $background = true)
     {
@@ -543,16 +531,14 @@ class IndexUtilsTest extends MongoTripodTestBase
                 [[_IMPACT_INDEX => 1], ['background' => $background]],
                 [['_cts' => 1], ['background' => $background]]
             );
-
     }
 
     /**
      * Returns tripod config to use on with the IndexUtils object
      * This is a minimal config used to assert what should happen when ensuring
-     * indexes for a CBD collection
+     * indexes for a CBD collection.
      *
-     * @param MockObject&\TripodTestConfig $mockConfig mock Config object
-     * @return void
+     * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
     protected function setConfigForCBDIndexes($mockConfig, array $indexOptions = [])
     {
@@ -573,7 +559,7 @@ class IndexUtilsTest extends MongoTripodTestBase
                 'type' => 'mongo',
                 'data_source' => 'mongo',
                 'pods' => [
-                    'CBD_testing' => []
+                    'CBD_testing' => [],
                 ],
             ],
         ];
@@ -590,7 +576,7 @@ class IndexUtilsTest extends MongoTripodTestBase
                     [
                         'rdf:type.u' => 1,
                     ],
-                    $indexOptions
+                    $indexOptions,
                 ],
             ];
         }
@@ -605,8 +591,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param MockObject&\TripodTestConfig $mockConfig mock Config object
-     * @return void
+     * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
     protected function setConfigForViewIndexes($mockConfig)
     {
@@ -652,8 +637,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param MockObject&\TripodTestConfig $mockConfig mock Config object
-     * @return void
+     * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
     protected function setConfigForTableIndexes($mockConfig)
     {
@@ -702,8 +686,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param MockObject&\TripodTestConfig $mockConfig mock Config object
-     * @return void
+     * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
     protected function setConfigForSearchDocIndexes($mockConfig)
     {
@@ -761,7 +744,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     }
 
     /**
-     * @param MockObject&\TripodTestConfig $mockConfig mock Config object
+     * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
     protected function setConfigForCBDViewTableAndSearchDocIndexes($mockConfig)
     {

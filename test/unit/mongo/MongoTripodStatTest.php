@@ -1,38 +1,42 @@
 <?php
 
+use Tripod\Mongo\NoStat;
+use Tripod\StatsD;
+use Tripod\TripodStatFactory;
+
 class MongoTripodStatTest extends MongoTripodTestBase
 {
     public function testStatFactory()
     {
         $statConfig = $this->getStatsDConfig();
 
-        /** @var Tripod\StatsD */
-        $stat = Tripod\TripodStatFactory::create($statConfig);
-        $this->assertInstanceOf(Tripod\StatsD::class, $stat);
+        /** @var StatsD */
+        $stat = TripodStatFactory::create($statConfig);
+        $this->assertInstanceOf(StatsD::class, $stat);
         $this->assertEquals('example.com', $stat->getHost());
         $this->assertEquals(1234, $stat->getPort());
         $this->assertEquals('somePrefix', $stat->getPrefix());
 
-        $noStat = Tripod\TripodStatFactory::create();
-        $this->assertInstanceOf(Tripod\Mongo\NoStat::class, $noStat);
+        $noStat = TripodStatFactory::create();
+        $this->assertInstanceOf(NoStat::class, $noStat);
     }
 
     public function testStatsDSettersAndGetters()
     {
-        $stat = Tripod\StatsD::createFromConfig($this->getStatsDConfig());
+        $stat = StatsD::createFromConfig($this->getStatsDConfig());
 
-        $this->assertInstanceOf(Tripod\StatsD::class, $stat);
+        $this->assertInstanceOf(StatsD::class, $stat);
         $this->assertEquals('example.com', $stat->getHost());
         $this->assertEquals(1234, $stat->getPort());
         $this->assertEquals('somePrefix', $stat->getPrefix());
 
         $this->assertEquals($this->getStatsDConfig(), $stat->getConfig());
 
-        $stat = new Tripod\StatsD('foo.bar', 9876);
+        $stat = new StatsD('foo.bar', 9876);
         $this->assertEquals('foo.bar', $stat->getHost());
         $this->assertEquals(9876, $stat->getPort());
         $this->assertEquals('', $stat->getPrefix());
-        $this->assertEquals(['class' => 'Tripod\StatsD', 'config' => ['host' => 'foo.bar', 'port' => 9876, 'prefix' => '']], $stat->getConfig());
+        $this->assertEquals(['class' => StatsD::class, 'config' => ['host' => 'foo.bar', 'port' => 9876, 'prefix' => '']], $stat->getConfig());
 
         $stat->setHost('bar.baz');
         $this->assertEquals('bar.baz', $stat->getHost());
@@ -42,7 +46,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->setPrefix('FOO_BAR');
         $this->assertEquals('FOO_BAR', $stat->getPrefix());
 
-        $this->assertEquals(['class' => 'Tripod\StatsD', 'config' => ['host' => 'bar.baz', 'port' => 4567, 'prefix' => 'FOO_BAR']], $stat->getConfig());
+        $this->assertEquals(['class' => StatsD::class, 'config' => ['host' => 'bar.baz', 'port' => 4567, 'prefix' => 'FOO_BAR']], $stat->getConfig());
     }
 
     public function testStatsDIncrementNoPrefix()
@@ -250,7 +254,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid prefix supplied');
 
-        $stat = new Tripod\StatsD('foo.bar', 4567, '.some_prefix');
+        $stat = new StatsD('foo.bar', 4567, '.some_prefix');
     }
 
     public function testPrefixCannotEndWithDot()
@@ -258,7 +262,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid prefix supplied');
 
-        $stat = new Tripod\StatsD('foo.bar', 4567, 'some_prefix.');
+        $stat = new StatsD('foo.bar', 4567, 'some_prefix.');
     }
 
     public function testPrefixCannotContainConsecutiveDot()
@@ -266,7 +270,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid prefix supplied');
 
-        $stat = new Tripod\StatsD('foo.bar', 4567, 'some..prefix');
+        $stat = new StatsD('foo.bar', 4567, 'some..prefix');
     }
 
     public function testPivotValueCannotStartWithDot()
@@ -274,7 +278,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid pivot value supplied');
 
-        $stat = new Tripod\StatsD('foo.bar', 4567);
+        $stat = new StatsD('foo.bar', 4567);
         $stat->setPivotValue('.someValue');
     }
 
@@ -283,7 +287,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid pivot value supplied');
 
-        $stat = new Tripod\StatsD('foo.bar', 4567);
+        $stat = new StatsD('foo.bar', 4567);
         $stat->setPivotValue('someValue.');
     }
 
@@ -292,7 +296,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid pivot value supplied');
 
-        $stat = new Tripod\StatsD('foo.bar', 4567);
+        $stat = new StatsD('foo.bar', 4567);
         $stat->setPivotValue('some..value');
     }
 }
