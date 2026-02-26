@@ -301,9 +301,7 @@ class Updates extends DriverBase
                 ]
             );
             if (!$result->isAcknowledged()) {
-                $error = $this->getLastDBError($this->getDatabase());
-
-                throw new \Exception('Failed to create audit entry with error message- ' . $error['err']);
+                throw new \Exception('Failed to create audit entry: write not acknowledged');
             }
         } catch (\Exception $e) { // simply send false as status as we are unable to create audit entry
             $this->errorLog(
@@ -329,9 +327,7 @@ class Updates extends DriverBase
             $result = $auditCollection->updateOne([_ID_KEY => $auditDocumentId], [MONGO_OPERATION_SET => ['status' => AUDIT_STATUS_COMPLETED, _UPDATED_TS => $this->getMongoDate()]]);
 
             if (!$result->isAcknowledged()) {
-                $error = $this->getLastDBError($this->getDatabase());
-
-                throw new \Exception('Failed to update audit entry with error message- ' . $error['err']);
+                throw new \Exception('Failed to update audit entry: write not acknowledged');
             }
         } catch (\Exception $e) {
             $logInfo = [
@@ -344,8 +340,7 @@ class Updates extends DriverBase
             $result = $auditCollection->updateOne([_ID_KEY => $auditDocumentId], [MONGO_OPERATION_SET => ['status' => AUDIT_STATUS_ERROR, _UPDATED_TS => $this->getMongoDate(), 'error' => $e->getMessage()]]);
 
             if (!$result->isAcknowledged()) {
-                $error = $this->getLastDBError($this->getDatabase());
-                $logInfo['additional-error'] = 'Failed to update audit entry with error message- ' . $error['err'];
+                $logInfo['additional-error'] = 'Failed to update audit entry: write not acknowledged';
             }
 
             $this->errorLog(MONGO_LOCK, $logInfo);
@@ -568,7 +563,6 @@ class Updates extends DriverBase
                     'description' => 'Save Failed Rolling back transaction:' . $e->getMessage(),
                     'transaction_id' => $transaction_id,
                     'subjectsOfChange' => implode(',', $subjectsOfChange),
-                    'mongoDriverError' => $this->getLastDBError($this->getDatabase()),
                     'exceptionMessage' => $e->getMessage(),
                 ]
             );
@@ -604,7 +598,6 @@ class Updates extends DriverBase
                             'description' => 'Driver::rollbackTransaction - Error updating transaction',
                             'exception_message' => $exception->getMessage(),
                             'transaction_id' => $transaction_id,
-                            'mongoDriverError' => $this->getLastDBError($this->getDatabase()),
                         ]
                     );
 
@@ -618,7 +611,6 @@ class Updates extends DriverBase
                     'description' => 'Driver::rollbackTransaction - Unlocking documents',
                     'exception_message' => $exception->getMessage(),
                     'transaction_id' => $transaction_id,
-                    'mongoDriverError' => $this->getLastDBError($this->getDatabase()),
                 ]
             );
         }
@@ -789,7 +781,6 @@ class Updates extends DriverBase
                         [
                             'description' => 'Error with Mongo DB findOneAndUpdate:' . $e->getMessage(),
                             'transaction_id' => $transaction_id,
-                            'mongoDriverError' => $this->getLastDBError($this->getDatabase()),
                         ]
                     );
 
@@ -1003,7 +994,6 @@ class Updates extends DriverBase
                 'retries' => $this->retriesToGetLock,
                 'transaction_id' => $transaction_id,
                 'subjectsOfChange' => implode(', ', $subjectsOfChange),
-                'mongoDriverError' => $this->getLastDBError($this->getDatabase()),
             ]
         );
 
@@ -1028,7 +1018,6 @@ class Updates extends DriverBase
                 MONGO_LOCK,
                 [
                     'description' => 'Driver::unlockAllDocuments - Failed to unlock documents (transaction_id - ' . $transaction_id . ')',
-                    'mongoDriverError' => $this->getLastDBError($this->getLocksDatabase()),
                     $result,
                 ]
             );
@@ -1074,9 +1063,7 @@ class Updates extends DriverBase
             );
 
             if (!$result->isAcknowledged()) {
-                $error = $this->getLastDBError($this->getDatabase());
-
-                throw new \Exception('Failed to lock document with error message- ' . $error['err']);
+                throw new \Exception('Failed to lock document: write not acknowledged');
             }
         } catch (\Exception $e) { // Subject is already locked or unable to lock
             $this->debugLog(
@@ -1104,9 +1091,7 @@ class Updates extends DriverBase
                 );
 
                 if (!$result->isAcknowledged()) {
-                    $error = $this->getLastDBError($this->getDatabase());
-
-                    throw new \Exception('Failed to create new document with error message- ' . $error['err']);
+                    throw new \Exception('Failed to create new document: write not acknowledged');
                 }
                 $document = $this->getCollection()->findOne([_ID_KEY => [_ID_RESOURCE => $this->labeller->uri_to_alias($s), _ID_CONTEXT => $contextAlias]]);
             } catch (\Exception $e) {
@@ -1117,7 +1102,6 @@ class Updates extends DriverBase
                         'transaction_id' => $transaction_id,
                         'subject' => $s,
                         'exception-message' => $e->getMessage(),
-                        'mongoDriverError' => $this->getDatabase()->lastError(),
                     ]
                 );
 

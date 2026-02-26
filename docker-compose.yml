@@ -26,4 +26,4 @@ services:
     image: mongo:3.6.23
 
   redis:
-    image: redis:6.2.6
+    image: valkey/valkey:8-alpine
