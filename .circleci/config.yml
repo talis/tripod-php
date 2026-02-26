@@ -122,12 +122,13 @@ jobs:
       - check_mongodb_lib_version
       - run_test
 
-  test-replica-set-wiredtiger:
+  test-replica-set:
+    parameters:
+      mongo_version: { type: string }
     docker:
       - image: talis/tripod-php:php74-latest
-      - { name: mongo1, image: mongo:5.0.28, command: mongod --replSet=tripod-rs }
-      - { name: mongo2, image: mongo:5.0.28, command: mongod --replSet=tripod-rs }
-      - { name: redis, image: redis:6.2.6 }
+      - { name: mongo1, image: mongo:<< parameters.mongo_version >>, command: mongod --replSet=tripod-rs }
+      - { name: mongo2, image: mongo:<< parameters.mongo_version >>, command: mongod --replSet=tripod-rs }
       - { name: redis, image: valkey/valkey:8-alpine }
     environment:
       RESQUE_SERVER: redis
@@ -158,4 +159,11 @@ workflows:
           mongo_version: 4.0.28
       - test-multiple-stores
       - test-replica-set-mmap
-      - test-replica-set-wiredtiger
+      - test-replica-set:
+          matrix:
+            parameters:
+              mongo_version:
+                - "5.0"
+                - "6.0"
+                - "7.0"
+                - "8.0"
