@@ -74,7 +74,7 @@ jobs:
     docker:
       - image: talis/tripod-php:<< parameters.php_version >>-latest
       - { name: mongodb, image: mongo:<< parameters.mongo_version >> }
-      - { name: redis, image: redis:6.2.6 }
+      - { name: redis, image: valkey/valkey:8-alpine }
     environment:
       RESQUE_SERVER: redis
     steps:
@@ -88,7 +88,7 @@ jobs:
       - image: talis/tripod-php:php74-latest
       - { name: mongo1, image: mongo:4.4.29 }
       - { name: mongo2, image: mongo:5.0.28 }
-      - { name: redis, image: redis:6.2.6 }
+      - { name: redis, image: valkey/valkey:8-alpine }
     environment:
       RESQUE_SERVER: redis
       TRIPOD_DATASOURCE_RS1_CONFIG: |
@@ -106,7 +106,7 @@ jobs:
       - image: talis/tripod-php:php74-latest
       - { name: mongo1, image: mongo:3.6.23, command: mongod --storageEngine mmapv1 --smallfiles --replSet=tripod-rs }
       - { name: mongo2, image: mongo:3.6.23, command: mongod --storageEngine mmapv1 --smallfiles --replSet=tripod-rs }
-      - { name: redis, image: redis:6.2.6 }
+      - { name: redis, image: valkey/valkey:8-alpine }
     environment:
       RESQUE_SERVER: redis
       TRIPOD_DATASOURCE_RS1_CONFIG: |
@@ -128,6 +128,7 @@ jobs:
       - { name: mongo1, image: mongo:5.0.28, command: mongod --replSet=tripod-rs }
       - { name: mongo2, image: mongo:5.0.28, command: mongod --replSet=tripod-rs }
       - { name: redis, image: redis:6.2.6 }
+      - { name: redis, image: valkey/valkey:8-alpine }
     environment:
       RESQUE_SERVER: redis
       TRIPOD_DATASOURCE_RS1_CONFIG: |
