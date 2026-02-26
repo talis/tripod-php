@@ -9,11 +9,12 @@ require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 ini_set('memory_limit', '32M');
 
-if ($argc != 1) {
+if ($argc !== 1) {
     echo "usage: php detectNamespaces.php < triples\n";
 
     exit;
 }
+
 array_shift($argv);
 
 $dummyDbConfig = [
@@ -51,16 +52,18 @@ while (($line = fgets(STDIN)) !== false) {
     $parts = preg_split('/\s/', $line);
     $subject = trim($parts[0], '><');
 
-    if (($i % 2500) == 0) {
+    if ($i % 2500 === 0) {
         echo '.';
     }
-    if (($i % 50000) == 0) {
+
+    if ($i % 50000 === 0) {
         foreach ($objectNs as $key => $val) {
             if ($val < 5) {
                 // flush
                 unset($objectNs[$key]);
             }
         }
+
         gc_collect_cycles();
         echo 'F';
     }
@@ -76,12 +79,14 @@ while (($line = fgets(STDIN)) !== false) {
                 if (array_key_exists($prefix, $config['namespaces'])) {
                     $prefix .= uniqid();
                 }
+
                 $newNsConfig[$prefix] = $n;
                 echo "\nFound ns {$n} suggest prefix {$prefix}";
                 $config['namespaces'] = array_merge($config['namespaces'], $newNsConfig);
                 Config::setConfig($config);
             }
         }
+
         $ns = $util->extractMissingObjectNs($triples);
         if (count($ns) > 0) {
             $newNsConfig = [];
@@ -91,11 +96,13 @@ while (($line = fgets(STDIN)) !== false) {
                 } else {
                     $objectNs[$n] = 1;
                 }
+
                 if ($objectNs[$n] > 500) {
                     $prefix = $util->suggestPrefix($n);
                     if (array_key_exists($prefix, $config['namespaces'])) {
                         $prefix .= uniqid();
                     }
+
                     $newNsConfig[$prefix] = $n;
                     echo "\nFound object ns {$n} occurs > 500 times, suggest prefix {$prefix}";
                     $config['namespaces'] = array_merge($config['namespaces'], $newNsConfig);
@@ -107,6 +114,7 @@ while (($line = fgets(STDIN)) !== false) {
         $currentSubject = $subject; // reset current subject to next subject
         $triples = []; // reset triples
     }
+
     $triples[] = $line;
 }
 
@@ -114,10 +122,8 @@ echo "Suggested namespace configuration:\n\n";
 
 /**
  * @param string $json
- *
- * @return string
  */
-function indent($json)
+function indent($json): string
 {
     $result = '';
     $pos = 0;
@@ -132,12 +138,12 @@ function indent($json)
         $char = substr($json, $i, 1);
 
         // Are we inside a quoted string?
-        if ($char == '"' && $prevChar != '\\') {
+        if ($char === '"' && $prevChar !== '\\') {
             $outOfQuotes = !$outOfQuotes;
 
         // If this character is the end of an element,
         // output a new line and indent the next line.
-        } elseif (($char == '}' || $char == ']') && $outOfQuotes) {
+        } elseif (($char === '}' || $char === ']') && $outOfQuotes) {
             $result .= $newLine;
             $pos--;
             for ($j = 0; $j < $pos; $j++) {
@@ -150,9 +156,9 @@ function indent($json)
 
         // If the last character was the beginning of an element,
         // output a new line and indent the next line.
-        if (($char == ',' || $char == '{' || $char == '[') && $outOfQuotes) {
+        if ((in_array($char, [',', '{', '['])) && $outOfQuotes) {
             $result .= $newLine;
-            if ($char == '{' || $char == '[') {
+            if ($char === '{' || $char === '[') {
                 $pos++;
             }
 

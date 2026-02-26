@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use Tripod\Config;
@@ -87,7 +89,7 @@ class Labeller extends \Tripod\Labeller
      */
     public function get_prefix($ns)
     {
-        $prefix = array_search($ns, $this->_ns);
+        $prefix = array_search($ns, $this->_ns, true);
         if ($prefix != null && $prefix !== false) {
             return $prefix;
         }

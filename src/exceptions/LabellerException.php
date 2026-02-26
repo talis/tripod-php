@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Exceptions;
 
 /**
@@ -15,7 +17,7 @@ class LabellerException extends Exception
     public function __construct($target)
     {
         $this->target = $target;
-        parent::__construct("Could not label: {$target}");
+        parent::__construct('Could not label: ' . $target);
     }
 
     /**

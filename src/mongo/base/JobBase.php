@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo\Jobs;
 
 use MongoDB\Driver\ReadPreference;
@@ -16,7 +18,9 @@ use Tripod\Timer;
 abstract class JobBase extends DriverBase
 {
     public const TRIPOD_CONFIG_KEY = 'tripodConfig';
+
     public const TRIPOD_CONFIG_GENERATOR = 'tripodConfigGenerator';
+
     public const QUEUE_KEY = 'queue';
 
     /**
@@ -41,6 +45,7 @@ abstract class JobBase extends DriverBase
     public $job;
 
     protected $mandatoryArgs = [];
+
     protected $configRequired = false;
 
     /** @var IConfigInstance */
@@ -51,7 +56,7 @@ abstract class JobBase extends DriverBase
 
     private $tripod;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->debugLog(
             '[JOBID ' . $this->job->payload['id'] . '] ' . get_class($this) . '::perform() start'
@@ -67,13 +72,13 @@ abstract class JobBase extends DriverBase
         }
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         // stat time taken to process item, from time it was created (queued)
         $this->timer->stop();
         $this->debugLog(
             '[JOBID ' . $this->job->payload['id'] . '] ' . get_class($this)
-            . "::perform() done in {$this->timer->result()}ms"
+            . sprintf('::perform() done in %sms', $this->timer->result())
         );
         $this->getStat()->timer($this->getStatTimerSuccessKey(), $this->timer->result());
     }
@@ -88,7 +93,7 @@ abstract class JobBase extends DriverBase
      *
      * @param \Resque_Job The queued job
      */
-    public static function beforePerform(\Resque_Job $job)
+    public static function beforePerform(\Resque_Job $job): void
     {
         $instance = $job->getInstance();
         if (!$instance instanceof self) {
@@ -104,7 +109,7 @@ abstract class JobBase extends DriverBase
      * @param \Exception|\Throwable $e   Exception or Error
      * @param \Resque_Job           $job The failed job
      */
-    public static function onFailure($e, \Resque_Job $job)
+    public static function onFailure($e, \Resque_Job $job): void
     {
         $failedJob = $job->getInstance();
         if (!$failedJob instanceof self) {
@@ -119,7 +124,7 @@ abstract class JobBase extends DriverBase
      * @param string $message Log message
      * @param mixed  $params  Log params
      */
-    public function debugLog($message, $params = null)
+    public function debugLog($message, $params = null): void
     {
         parent::debugLog($message, $params);
     }
@@ -128,7 +133,7 @@ abstract class JobBase extends DriverBase
      * @param string $message Log message
      * @param mixed  $params  Log params
      */
-    public function errorLog($message, $params = null)
+    public function errorLog($message, $params = null): void
     {
         parent::errorLog($message, $params);
     }
@@ -138,7 +143,7 @@ abstract class JobBase extends DriverBase
      */
     public function getStat()
     {
-        if (!isset($this->statsConfig)) {
+        if ($this->statsConfig === null) {
             $this->getStatsConfig();
         }
 
@@ -152,7 +157,7 @@ abstract class JobBase extends DriverBase
      */
     public function getStatsConfig()
     {
-        if (empty($this->statsConfig)) {
+        if ($this->statsConfig === []) {
             $this->setStatsConfig();
         }
 
@@ -224,12 +229,13 @@ abstract class JobBase extends DriverBase
         $message = null;
         foreach ($this->getMandatoryArgs() as $arg) {
             if (!isset($this->args[$arg])) {
-                $message = "Argument {$arg} was not present in supplied job args for job " . get_class($this);
+                $message = sprintf('Argument %s was not present in supplied job args for job ', $arg) . get_class($this);
                 $this->errorLog($message);
 
                 throw new \Exception($message);
             }
         }
+
         if ($this->configRequired) {
             $this->ensureConfig();
         }
@@ -249,7 +255,7 @@ abstract class JobBase extends DriverBase
     /**
      * @param string $queueName     Queue name
      * @param string $class         Class name
-     * @param array  $data          Job arguments
+     * @param array<string, mixed> $data Job arguments
      * @param int    $retryAttempts If queue fails, retry x times before throwing an exception
      *
      * @return string A tracking token for the submitted job
@@ -263,25 +269,28 @@ abstract class JobBase extends DriverBase
             if (isset($data[self::TRIPOD_CONFIG_GENERATOR]) && $data[self::TRIPOD_CONFIG_GENERATOR]) {
                 $data[self::TRIPOD_CONFIG_GENERATOR] = $this->serializeConfig($data[self::TRIPOD_CONFIG_GENERATOR]);
             }
+
             $token = $this->enqueue($queueName, $class, $data);
             if (!$this->getJobStatus($token)) {
-                $this->errorLog("Could not retrieve status for queued {$class} job - job {$token} failed to {$queueName}");
+                $this->errorLog(sprintf('Could not retrieve status for queued %s job - job %s failed to %s', $class, $token, $queueName));
 
-                throw new \Exception("Could not retrieve status for queued job - job {$token} failed to {$queueName}");
+                throw new \Exception(sprintf('Could not retrieve status for queued job - job %s failed to %s', $token, $queueName));
             }
-            $this->debugLog("Queued {$class} job with {$token} to {$queueName}");
+
+            $this->debugLog(sprintf('Queued %s job with %s to %s', $class, $token, $queueName));
 
             return $token;
         } catch (\Exception $e) {
             if ($retryAttempts > 0) {
                 sleep(1); // back off for 1 sec
-                $this->warningLog("Exception queuing {$class} job - {$e->getMessage()}, retrying {$retryAttempts} times");
+                $this->warningLog(sprintf('Exception queuing %s job - %s, retrying %d times', $class, $e->getMessage(), $retryAttempts));
 
                 return $this->submitJob($queueName, $class, $data, --$retryAttempts);
             }
-            $this->errorLog("Exception queuing {$class} job - {$e->getMessage()}");
 
-            throw new JobException("Exception queuing job  - {$e->getMessage()}", $e->getCode(), $e);
+            $this->errorLog(sprintf('Exception queuing %s job - %s', $class, $e->getMessage()));
+
+            throw new JobException('Exception queuing job  - ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -327,6 +336,7 @@ abstract class JobBase extends DriverBase
         if ($configSerializer instanceof ITripodConfigSerializer) {
             return $configSerializer->serialize();
         }
+
         if (is_array($configSerializer)) {
             return $configSerializer;
         }
@@ -360,6 +370,7 @@ abstract class JobBase extends DriverBase
         } else {
             $config = $this->args[self::TRIPOD_CONFIG_KEY];
         }
+
         $this->tripodConfig = $this->deserializeConfig($config);
     }
 
@@ -370,7 +381,7 @@ abstract class JobBase extends DriverBase
      */
     protected function getTripodConfig()
     {
-        if (!isset($this->tripodConfig)) {
+        if ($this->tripodConfig === null) {
             $this->ensureConfig();
             $this->setTripodConfig();
         }
@@ -391,7 +402,7 @@ abstract class JobBase extends DriverBase
     /**
      * Tripod options to pass between jobs.
      *
-     * @return array
+     * @return array<string, non-empty-array>
      */
     protected function getTripodOptions()
     {
@@ -407,7 +418,7 @@ abstract class JobBase extends DriverBase
     /**
      * Convenience method to pass config to job data.
      *
-     * @return array
+     * @return array<string, mixed>
      */
     protected function generateConfigJobArgs()
     {
@@ -418,6 +429,7 @@ abstract class JobBase extends DriverBase
         } else {
             $config = Config::getConfig();
         }
+
         if (isset($config['class'])) {
             $args[self::TRIPOD_CONFIG_GENERATOR] = $config;
         } else {

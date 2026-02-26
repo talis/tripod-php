@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 use Tripod\Mongo\TriplesUtil;
 
 class TriplesUtilTest extends MongoTripodTestBase
 {
-    public function testGetTArrayAbout()
+    public function testGetTArrayAbout(): void
     {
         $tu = new TriplesUtil();
         $triples = [];

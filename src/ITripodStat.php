@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod;
 
 interface ITripodStat
@@ -8,7 +10,7 @@ interface ITripodStat
      * @param string     $operation
      * @param int|number $inc       Amount to increment by
      *
-     * @return mixed
+     * @return void
      */
     public function increment($operation, $inc = 1);
 
@@ -16,7 +18,7 @@ interface ITripodStat
      * @param string $operation
      * @param number $duration
      *
-     * @return mixed
+     * @return void
      */
     public function timer($operation, $duration);
 
