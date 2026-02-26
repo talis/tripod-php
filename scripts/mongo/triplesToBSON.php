@@ -7,7 +7,7 @@ require_once __DIR__ . '/common.inc.php';
 
 require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
-if ($argc != 2) {
+if ($argc !== 2) {
     echo "usage: ./triplesToBSON.php tripodconfig.json < ntriplesdata\n";
 
     exit;
@@ -29,11 +29,11 @@ while (($line = fgets(STDIN)) !== false) {
     $parts = preg_split('/\s/', $line);
     $subject = trim($parts[0], '><');
 
-    if (empty($currentSubject)) { // set for first iteration
+    if ($currentSubject === '' || $currentSubject === '0') { // set for first iteration
         $currentSubject = $subject;
     }
 
-    if ($currentSubject != $subject) { // once subject changes, we have all triples for that subject, flush to Mongo
+    if ($currentSubject !== $subject) { // once subject changes, we have all triples for that subject, flush to Mongo
         echo json_encode($tu->getTArrayAbout($currentSubject, $triples, Config::getInstance()->getDefaultContextAlias())) . "\n";
         $currentSubject = $subject; // reset current subject to next subject
         $triples = []; // reset triples

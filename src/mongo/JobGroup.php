@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use MongoDB\BSON\ObjectId;
@@ -10,7 +12,9 @@ use Tripod\Config;
 class JobGroup
 {
     private $id;
+
     private $collection;
+
     private $storeName;
 
     /**
@@ -27,6 +31,7 @@ class JobGroup
         } elseif (!$groupId instanceof ObjectId) {
             $groupId = new ObjectId($groupId);
         }
+
         $this->id = $groupId;
     }
 
@@ -35,7 +40,7 @@ class JobGroup
      *
      * @param int $count Number of jobs in group
      */
-    public function setJobCount($count)
+    public function setJobCount($count): void
     {
         $this->getMongoCollection()->updateOne(
             ['_id' => $this->getId()],
@@ -61,6 +66,7 @@ class JobGroup
         if (\is_array($updateResult)) {
             return $updateResult['count'];
         }
+
         if (isset($updateResult->count)) {
             return $updateResult->count;
         }
@@ -81,7 +87,7 @@ class JobGroup
      */
     protected function getMongoCollection()
     {
-        if (!isset($this->collection)) {
+        if ($this->collection === null) {
             $config = Config::getInstance();
 
             $this->collection = $config->getCollectionForJobGroups($this->storeName);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
 use MongoDB\DeleteResult;
@@ -15,10 +17,10 @@ use Tripod\Mongo\TransactionLog;
 class MongoSearchProviderTest extends MongoTripodTestBase
 {
     /** @var SearchIndexer */
-    private $indexer;
+    private $searchIndexer;
 
     /** @var MongoSearchProvider */
-    private $searchProvider;
+    private $mongoSearchProvider;
 
     protected function setUp(): void
     {
@@ -28,8 +30,8 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $this->tripodTransactionLog->purgeAllTransactions();
 
         $this->tripod = new Driver('CBD_testing', 'tripod_php_testing');
-        $this->indexer = new SearchIndexer($this->tripod);
-        $this->searchProvider = new MongoSearchProvider($this->tripod);
+        $this->searchIndexer = new SearchIndexer($this->tripod);
+        $this->mongoSearchProvider = new MongoSearchProvider($this->tripod);
         $this->getTripodCollection($this->tripod)->drop();
 
         $this->loadBaseSearchDataViaTripod();
@@ -52,11 +54,12 @@ class MongoSearchProviderTest extends MongoTripodTestBase
                     }
                 }
             }
-            $this->indexer->generateAndIndexSearchDocuments($result['_id']['r'], $result['_id']['c'], $this->tripod->getPodName());
+
+            $this->searchIndexer->generateAndIndexSearchDocuments($result['_id']['r'], $result['_id']['c'], $this->tripod->getPodName());
         }
     }
 
-    public function testSearchIndexing()
+    public function testSearchIndexing(): void
     {
         // assert that there are only 12 based on the data we loaded into tripod
         $actualSearchDocumentCount = $this->getCountForSearchSpecs($this->tripod);
@@ -185,7 +188,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         }
     }
 
-    public function testSearchIndexingRemovesDocWhenTypeHasNoCorrespondingSearchdocSpec()
+    public function testSearchIndexingRemovesDocWhenTypeHasNoCorrespondingSearchdocSpec(): void
     {
         // update a document
         $id = ['_id.r' => 'http://talisaspire.com/resources/doc1'];
@@ -193,7 +196,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
             ->updateOne($id, ['$set' => ['rdf:type' => ['u' => 'bibo:Article']]]);
 
         // reindex
-        $this->indexer->generateAndIndexSearchDocuments('http://talisaspire.com/resources/doc1', 'http://talisaspire.com/', $this->tripod->getPodName());
+        $this->searchIndexer->generateAndIndexSearchDocuments('http://talisaspire.com/resources/doc1', 'http://talisaspire.com/', $this->tripod->getPodName());
 
         $actualSearchDocumentCount = $this->getCountForSearchSpecs($this->tripod);
 
@@ -207,7 +210,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         }
     }
 
-    public function testSearchIndexingGeneratesNewDocForChangedTypeThatHasACorrespondingSearchdocSpec()
+    public function testSearchIndexingGeneratesNewDocForChangedTypeThatHasACorrespondingSearchdocSpec(): void
     {
         // update a document
         $id = ['_id.r' => 'http://talisaspire.com/resources/doc1'];
@@ -220,7 +223,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $this->getTripodCollection($this->tripod)->updateOne($id, ['$set' => $newData]);
 
         // reindex
-        $this->indexer->generateAndIndexSearchDocuments('http://talisaspire.com/resources/doc1', 'http://talisaspire.com/', $this->tripod->getPodName());
+        $this->searchIndexer->generateAndIndexSearchDocuments('http://talisaspire.com/resources/doc1', 'http://talisaspire.com/', $this->tripod->getPodName());
 
         $actualSearchDocumentCount = $this->getCountForSearchSpecs($this->tripod);
 
@@ -233,6 +236,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
                 break;
             }
         }
+
         $this->assertEquals($result['_id'], [
             'r' => 'http://talisaspire.com/resources/doc1',
             'c' => 'http://talisaspire.com/',
@@ -240,7 +244,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         ]);
     }
 
-    public function testSearchIndexingGeneratesTwoDocumentsForGivenResourceTheDeletesOneAfterFurtherUpdate()
+    public function testSearchIndexingGeneratesTwoDocumentsForGivenResourceTheDeletesOneAfterFurtherUpdate(): void
     {
         // update a document
         $id = ['_id.r' => 'http://talisaspire.com/resources/doc1'];
@@ -253,7 +257,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $this->getTripodCollection($this->tripod)->updateOne($id, ['$set' => $newData]);
 
         // reindex
-        $this->indexer->generateAndIndexSearchDocuments('http://talisaspire.com/resources/doc1', 'http://talisaspire.com/', $this->tripod->getPodName());
+        $this->searchIndexer->generateAndIndexSearchDocuments('http://talisaspire.com/resources/doc1', 'http://talisaspire.com/', $this->tripod->getPodName());
 
         $actualSearchDocumentCount = $this->getCountForSearchSpecs($this->tripod);
 
@@ -269,7 +273,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
             }
         }
 
-        $this->assertEquals(2, count($results));
+        $this->assertCount(2, $results);
         $expected = [
             [
                 'r' => 'http://talisaspire.com/resources/doc1',
@@ -283,10 +287,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
             ],
         ];
         foreach ($results as $result) {
-            $this->assertTrue(in_array(
-                $result['_id'],
-                $expected
-            ));
+            $this->assertContains($result['_id'], $expected);
         }
 
         // now update it again removing the resourcelist:List type
@@ -296,7 +297,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $this->getTripodCollection($this->tripod)->updateOne($id, ['$set' => $newData]);
 
         // reindex
-        $this->indexer->generateAndIndexSearchDocuments('http://talisaspire.com/resources/doc1', 'http://talisaspire.com/', $this->tripod->getPodName());
+        $this->searchIndexer->generateAndIndexSearchDocuments('http://talisaspire.com/resources/doc1', 'http://talisaspire.com/', $this->tripod->getPodName());
 
         $actualSearchDocumentCount = $this->getCountForSearchSpecs($this->tripod);
 
@@ -312,7 +313,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
             }
         }
 
-        $this->assertEquals(1, count($results));
+        $this->assertCount(1, $results);
 
         $result = array_pop($results);
         $this->assertEquals($result['_id'], [
@@ -322,51 +323,51 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         ]);
     }
 
-    public function testSearchThrowsExceptionIfNoQuery()
+    public function testSearchThrowsExceptionIfNoQuery(): void
     {
         $this->expectException(SearchException::class);
         $this->expectExceptionMessage('You must specify a query');
-        $this->searchProvider->search('', 'i_search_resource', ['search_terms'], ['result'], 3, 0);
+        $this->mongoSearchProvider->search('', 'i_search_resource', ['search_terms'], ['result'], 3, 0);
     }
 
-    public function testSearchThrowsExceptionIfNoType()
+    public function testSearchThrowsExceptionIfNoType(): void
     {
         $this->expectException(SearchException::class);
         $this->expectExceptionMessage('You must specify the search document type to restrict the query to');
-        $this->searchProvider->search('poetry', '', ['search_terms'], ['result'], 3, 0);
+        $this->mongoSearchProvider->search('poetry', '', ['search_terms'], ['result'], 3, 0);
     }
 
-    public function testSearchThrowsExceptionIfSearchIndicesEmpty()
+    public function testSearchThrowsExceptionIfSearchIndicesEmpty(): void
     {
         $this->expectException(SearchException::class);
         $this->expectExceptionMessage('You must specify at least one index from the search document specification to query against');
-        $this->searchProvider->search('poetry', 'i_search_resource', [], ['result'], 3, 0);
+        $this->mongoSearchProvider->search('poetry', 'i_search_resource', [], ['result'], 3, 0);
     }
 
-    public function testSearchThrowsExceptionIfFieldsToReturnEmpty()
+    public function testSearchThrowsExceptionIfFieldsToReturnEmpty(): void
     {
         $this->expectException(SearchException::class);
         $this->expectExceptionMessage('You must specify at least one field from the search document specification to return');
-        $this->searchProvider->search('poetry', 'i_search_resource', ['search_terms'], [], 3, 0);
+        $this->mongoSearchProvider->search('poetry', 'i_search_resource', ['search_terms'], [], 3, 0);
     }
 
-    public function testSearchThrowsExceptionIfLimitIsNegative()
+    public function testSearchThrowsExceptionIfLimitIsNegative(): void
     {
         $this->expectException(SearchException::class);
         $this->expectExceptionMessage('Value for limit must be a positive number');
-        $this->searchProvider->search('poetry', 'i_search_resource', ['search_terms'], ['result'], -3, 0);
+        $this->mongoSearchProvider->search('poetry', 'i_search_resource', ['search_terms'], ['result'], -3, 0);
     }
 
-    public function testSearchThrowsExceptionIfOffsetIsNegative()
+    public function testSearchThrowsExceptionIfOffsetIsNegative(): void
     {
         $this->expectException(SearchException::class);
         $this->expectExceptionMessage('Value for offset must be a positive number');
-        $this->searchProvider->search('poetry', 'i_search_resource', ['search_terms'], ['result'], 3, -1);
+        $this->mongoSearchProvider->search('poetry', 'i_search_resource', ['search_terms'], ['result'], 3, -1);
     }
 
-    public function testSearchLimitAndOffset()
+    public function testSearchLimitAndOffset(): void
     {
-        $results = $this->searchProvider->search('poetry', 'i_search_resource', ['search_terms'], ['result'], 3, 0);
+        $results = $this->mongoSearchProvider->search('poetry', 'i_search_resource', ['search_terms'], ['result'], 3, 0);
         $this->assertEquals(3, $results['head']['limit']);
         $this->assertEquals(0, $results['head']['offset']);
 
@@ -374,23 +375,23 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $secondResult = $results['results'][1];
         $thirdResult = $results['results'][2];
 
-        $results2 = $this->searchProvider->search('poetry', 'i_search_resource', ['search_terms'], ['result'], 3, 1);
+        $results2 = $this->mongoSearchProvider->search('poetry', 'i_search_resource', ['search_terms'], ['result'], 3, 1);
         $this->assertEquals(9, $results2['head']['count']);
         $this->assertEquals(3, $results2['head']['limit']);
         $this->assertEquals(1, $results2['head']['offset']);
 
-        $this->assertFalse(in_array($firstResult, $results2['results']));
+        $this->assertNotContains($firstResult, $results2['results']);
         $this->assertEquals($secondResult, $results2['results'][0]);
         $this->assertEquals($thirdResult, $results2['results'][1]);
     }
 
-    public function testSearchSingleIndex()
+    public function testSearchSingleIndex(): void
     {
         // simple search
-        $results = $this->searchProvider->search('john locke poetry', 'i_search_resource', ['search_terms'], ['result'], 4, 0);
+        $results = $this->mongoSearchProvider->search('john locke poetry', 'i_search_resource', ['search_terms'], ['result'], 4, 0);
         $this->assertEquals(6, $results['head']['count']);
         $this->assertEquals(4, $results['head']['limit']);
-        $this->assertEquals(4, count($results['results']));
+        $this->assertCount(4, $results['results']);
         $this->assertEquals(0, $results['head']['offset']);
         $this->assertEquals('john locke poetry', $results['head']['query']);
         $this->assertEquals(['john', 'locke', 'poetry'], $results['head']['query_terms_used']);
@@ -406,20 +407,20 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $this->assertEquals($expectedResults, $results['results']);
 
         // search with some stop words
-        $results = $this->searchProvider->search('the owl and the pussycat', 'i_search_resource', ['search_terms'], ['result'], 3, 0);
+        $results = $this->mongoSearchProvider->search('the owl and the pussycat', 'i_search_resource', ['search_terms'], ['result'], 3, 0);
         $this->assertEquals(1, $results['head']['count']);
         $this->assertEquals(3, $results['head']['limit']);
-        $this->assertEquals(1, count($results['results']));
+        $this->assertCount(1, $results['results']);
         $this->assertEquals(0, $results['head']['offset']);
         $this->assertEquals('the owl and the pussycat', $results['head']['query']);
         $this->assertEquals(['owl', 'pussycat'], $results['head']['query_terms_used']);
         $this->assertArrayHasKey('duration', $results['head']);
 
         // search returns no results
-        $results = $this->searchProvider->search('october', 'i_search_resource', ['search_terms'], ['result'], 3, 0);
+        $results = $this->mongoSearchProvider->search('october', 'i_search_resource', ['search_terms'], ['result'], 3, 0);
         $this->assertEquals(0, $results['head']['count']);
         $this->assertEquals(3, $results['head']['limit']);
-        $this->assertEquals(0, count($results['results']));
+        $this->assertCount(0, $results['results']);
         $this->assertEquals(0, $results['head']['offset']);
         $this->assertEquals('october', $results['head']['query']);
         $this->assertEquals(['october'], $results['head']['query_terms_used']);
@@ -427,10 +428,10 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $this->assertEquals([], $results['results']);
 
         // search single index but return multiple fields
-        $results = $this->searchProvider->search('john locke poetry', 'i_search_resource', ['search_terms'], ['result', 'rdftype'], 3, 0);
+        $results = $this->mongoSearchProvider->search('john locke poetry', 'i_search_resource', ['search_terms'], ['result', 'rdftype'], 3, 0);
         $this->assertEquals(6, $results['head']['count']);
         $this->assertEquals(3, $results['head']['limit']);
-        $this->assertEquals(3, count($results['results']));
+        $this->assertCount(3, $results['results']);
         $this->assertEquals(0, $results['head']['offset']);
         $this->assertEquals('john locke poetry', $results['head']['query']);
         $this->assertEquals(['john', 'locke', 'poetry'], $results['head']['query_terms_used']);
@@ -444,12 +445,12 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $this->assertEquals($expectedResults, $results['results']);
     }
 
-    public function testSearchMultipleIndices()
+    public function testSearchMultipleIndices(): void
     {
-        $results = $this->searchProvider->search('bibo:Book', 'i_search_resource', ['search_terms', 'other_terms'], ['result', 'rdftype'], 3, 0);
+        $results = $this->mongoSearchProvider->search('bibo:Book', 'i_search_resource', ['search_terms', 'other_terms'], ['result', 'rdftype'], 3, 0);
         $this->assertEquals(13, $results['head']['count']);
         $this->assertEquals(3, $results['head']['limit']);
-        $this->assertEquals(3, count($results['results']));
+        $this->assertCount(3, $results['results']);
         $this->assertEquals(0, $results['head']['offset']);
         $this->assertEquals('bibo:Book', $results['head']['query']);
         $this->assertEquals(['bibo:book'], $results['head']['query_terms_used']);
@@ -464,7 +465,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $this->assertEquals($expectedResults, $results['results']);
     }
 
-    public function testSearchWorksDirectlyFromTripod()
+    public function testSearchWorksDirectlyFromTripod(): void
     {
         $results = $this->tripod->search([
             'q' => 'john locke poetry',
@@ -477,7 +478,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
 
         $this->assertEquals(6, $results['head']['count']);
         $this->assertEquals(3, $results['head']['limit']);
-        $this->assertEquals(3, count($results['results']));
+        $this->assertCount(3, $results['results']);
         $this->assertEquals(0, $results['head']['offset']);
         $this->assertEquals('john locke poetry', $results['head']['query']);
         $this->assertEquals(['john', 'locke', 'poetry'], $results['head']['query_terms_used']);
@@ -492,7 +493,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $this->assertEquals($expectedResults, $results['results']);
     }
 
-    public function testDeleteSearchDocumentsByTypeIdThrowsExceptionForInvalidType()
+    public function testDeleteSearchDocumentsByTypeIdThrowsExceptionForInvalidType(): void
     {
         $mockSearchProvider = $this->getMockBuilder(MongoSearchProvider::class)
             ->onlyMethods(['getSearchDocumentSpecification'])
@@ -501,14 +502,14 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $mockSearchProvider->expects($this->once())
             ->method('getSearchDocumentSpecification')
             ->with('i_some_type')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
 
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a search specification for i_some_type');
         $mockSearchProvider->deleteSearchDocumentsByTypeId('i_some_type');
     }
 
-    public function testDeleteSearchDocumentsByTypeIdDeletesNothingWhenNoMatchFound()
+    public function testDeleteSearchDocumentsByTypeIdDeletesNothingWhenNoMatchFound(): void
     {
         // first, assert that there are only 12 based on the data we loaded into tripod
         $actualSearchDocumentCount = $this->getCountForSearchSpecs($this->tripod);
@@ -522,12 +523,12 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $mockSearchProvider->expects($this->once())
             ->method('getSearchDocumentSpecification')
             ->with('i_some_type')
-            ->will($this->returnValue(['i_some_type' => []]));
+            ->willReturn(['i_some_type' => []]);
 
         try {
             $mockSearchProvider->deleteSearchDocumentsByTypeId('i_some_type');
         } catch (ConfigException $e) {
-            $this->assertEquals("Search document id 'i_some_type' not in configuration for store 'tripod_php_testing'", $e->getMessage());
+            $this->assertSame("Search document id 'i_some_type' not in configuration for store 'tripod_php_testing'", $e->getMessage());
         }
 
         // search document count should remain same, because we expect that there was nothing to delete
@@ -536,7 +537,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $this->assertEquals(13, $newSearchDocumentCount, 'Should have generated 12 search documents, because there was no match to remove');
     }
 
-    public function testDeleteSearchDocumentsByTypeIdDeleteAllMatchingDocuments()
+    public function testDeleteSearchDocumentsByTypeIdDeleteAllMatchingDocuments(): void
     {
         // first, assert that there are only 12 based on the data we loaded into tripod
         $actualSearchDocumentCount = $this->getCountForSearchSpecs($this->tripod);
@@ -550,7 +551,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $mockSearchProvider->expects($this->once())
             ->method('getSearchDocumentSpecification')
             ->with('i_search_resource')
-            ->will($this->returnValue(['i_search_resource' => []]));
+            ->willReturn(['i_search_resource' => []]);
 
         $mockSearchProvider->deleteSearchDocumentsByTypeId('i_search_resource');
 
@@ -560,7 +561,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $this->assertEquals(0, $newSearchDocumentCount, 'Should have 0 search documents after removing all matching documents');
     }
 
-    public function testDeleteSearchDocumentsByTypeIdDoNotDeleteNonMatchingDocuments()
+    public function testDeleteSearchDocumentsByTypeIdDoNotDeleteNonMatchingDocuments(): void
     {
         // first, assert that there are only 12 based on the data we loaded into tripod
         $actualSearchDocumentCount = $this->getCountForSearchSpecs($this->tripod);
@@ -577,7 +578,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $this->getTripodCollection($this->tripod)->updateOne($id, ['$set' => $newData]);
 
         // reindex
-        $this->indexer->generateAndIndexSearchDocuments('http://talisaspire.com/resources/doc1', 'http://talisaspire.com/', $this->tripod->getPodName());
+        $this->searchIndexer->generateAndIndexSearchDocuments('http://talisaspire.com/resources/doc1', 'http://talisaspire.com/', $this->tripod->getPodName());
 
         // assert that there are now 13 documents after adding new document to collection
         $updatedSearchDocumentCount = $this->getCountForSearchSpecs($this->tripod);
@@ -591,7 +592,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $mockSearchProvider->expects($this->once())
             ->method('getSearchDocumentSpecification')
             ->with('i_search_resource')
-            ->will($this->returnValue(['i_search_resource' => []]));
+            ->willReturn(['i_search_resource' => []]);
 
         $mockSearchProvider->deleteSearchDocumentsByTypeId('i_search_resource');
 
@@ -601,7 +602,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $this->assertEquals(1, $newSearchDocumentCount, "Should have 1 search documents since there is one search document with 'i_search_list' type that does not match delete type.");
     }
 
-    public function testCountSearchDocuments()
+    public function testCountSearchDocuments(): void
     {
         $tripod = $this->getMockBuilder(Driver::class)
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
@@ -619,23 +620,23 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $search->expects($this->once())
             ->method('getCollectionForSearchSpec')
             ->with('i_search_list')
-            ->will($this->returnValue($collection));
+            ->willReturn($collection);
 
         $collection->expects($this->once())
             ->method('count')
             ->with(['_id.type' => 'i_search_list'])
-            ->will($this->returnValue(21));
+            ->willReturn(21);
 
         $this->assertEquals(21, $search->count('i_search_list'));
     }
 
-    public function testCountSearchDocumentsWithFilters()
+    public function testCountSearchDocumentsWithFilters(): void
     {
         $tripod = $this->getMockBuilder(Driver::class)
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->getMock();
 
-        $filters = ['_cts' => ['$lte' => new UTCDateTime(null)]];
+        $filters = ['_cts' => ['$lte' => new UTCDateTime()]];
         $query = array_merge(['_id.type' => 'i_search_list'], $filters);
         $collection = $this->getMockBuilder(Collection::class)
             ->setConstructorArgs([new Manager(), 'db', 'coll'])
@@ -649,17 +650,17 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $search->expects($this->once())
             ->method('getCollectionForSearchSpec')
             ->with('i_search_list')
-            ->will($this->returnValue($collection));
+            ->willReturn($collection);
 
         $collection->expects($this->once())
             ->method('count')
             ->with($query)
-            ->will($this->returnValue(89));
+            ->willReturn(89);
 
         $this->assertEquals(89, $search->count('i_search_list', $filters));
     }
 
-    public function testDeleteSearchDocumentsBySearchId()
+    public function testDeleteSearchDocumentsBySearchId(): void
     {
         $tripod = $this->getMockBuilder(Driver::class)
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
@@ -677,7 +678,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
 
         $deleteResult->expects($this->once())
             ->method('getDeletedCount')
-            ->will($this->returnValue(9));
+            ->willReturn(9);
 
         $search = $this->getMockBuilder(MongoSearchProvider::class)
             ->onlyMethods(['getCollectionForSearchSpec', 'getSearchDocumentSpecification'])
@@ -687,24 +688,24 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $search->expects($this->once())
             ->method('getSearchDocumentSpecification')
             ->with('i_search_list')
-            ->will($this->returnValue(['_id' => 'i_search_list']));
+            ->willReturn(['_id' => 'i_search_list']);
 
         $search->expects($this->once())
             ->method('getCollectionForSearchSpec')
             ->with('i_search_list')
-            ->will($this->returnValue($collection));
+            ->willReturn($collection);
 
         $collection->expects($this->once())
             ->method('deleteMany')
             ->with(['_id.type' => 'i_search_list'])
-            ->will($this->returnValue($deleteResult));
+            ->willReturn($deleteResult);
 
         $this->assertEquals(9, $search->deleteSearchDocumentsByTypeId('i_search_list'));
     }
 
-    public function testDeleteSearchDocumentsBySearchIdWithTimestamp()
+    public function testDeleteSearchDocumentsBySearchIdWithTimestamp(): void
     {
-        $timestamp = new UTCDateTime(null);
+        $timestamp = new UTCDateTime();
 
         $query = [
             '_id.type' => 'i_search_list',
@@ -730,7 +731,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
 
         $deleteResult->expects($this->once())
             ->method('getDeletedCount')
-            ->will($this->returnValue(9));
+            ->willReturn(9);
 
         $search = $this->getMockBuilder(MongoSearchProvider::class)
             ->onlyMethods(['getCollectionForSearchSpec', 'getSearchDocumentSpecification'])
@@ -740,17 +741,17 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $search->expects($this->once())
             ->method('getSearchDocumentSpecification')
             ->with('i_search_list')
-            ->will($this->returnValue(['_id' => 'i_search_list']));
+            ->willReturn(['_id' => 'i_search_list']);
 
         $search->expects($this->once())
             ->method('getCollectionForSearchSpec')
             ->with('i_search_list')
-            ->will($this->returnValue($collection));
+            ->willReturn($collection);
 
         $collection->expects($this->once())
             ->method('deleteMany')
             ->with($query)
-            ->will($this->returnValue($deleteResult));
+            ->willReturn($deleteResult);
 
         $this->assertEquals(9, $search->deleteSearchDocumentsByTypeId('i_search_list', $timestamp));
     }

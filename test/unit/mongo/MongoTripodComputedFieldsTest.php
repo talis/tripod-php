@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Tripod\Config;
 use Tripod\Mongo\Driver;
 
@@ -21,7 +23,7 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         parent::tearDown();
     }
 
-    public function testConditionalComputedFieldWithDates()
+    public function testConditionalComputedFieldWithDates(): void
     {
         $tableSpec = [
             '_id' => 't_conditional_creators',
@@ -81,7 +83,7 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         $collection->drop();
     }
 
-    public function testConditionalComputedField()
+    public function testConditionalComputedField(): void
     {
         $tableSpec = [
             '_id' => 't_conditional_creators',
@@ -145,7 +147,7 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         $collection->drop();
     }
 
-    public function testNestedConditionalComputedField()
+    public function testNestedConditionalComputedField(): void
     {
         $tableSpec = [
             '_id' => 't_conditional_creators',
@@ -229,7 +231,7 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         $collection->drop();
     }
 
-    public function testReplaceComputedField()
+    public function testReplaceComputedField(): void
     {
         $tableSpec = [
             '_id' => 't_replace_type',
@@ -308,7 +310,7 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         $collection->drop();
     }
 
-    public function testArithmeticComputedField()
+    public function testArithmeticComputedField(): void
     {
         $tableSpec = [
             '_id' => 't_creator_count',
@@ -404,7 +406,7 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         $collection->drop();
     }
 
-    public function testNestArithmeticInConditionalIf()
+    public function testNestArithmeticInConditionalIf(): void
     {
         $tableSpec = [
             '_id' => 't_conditional_with_nested_arithmetic',
@@ -444,7 +446,7 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         $collection->drop();
     }
 
-    public function testNestConditionalInArithmeticFunction()
+    public function testNestConditionalInArithmeticFunction(): void
     {
         $tableSpec = [
             '_id' => 't_arithmetic_with_nested_conditional',
@@ -492,7 +494,7 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         $collection->drop();
     }
 
-    protected function generateUniqueTableId($prefix)
+    protected function generateUniqueTableId($prefix): string
     {
         return uniqid($prefix);
     }

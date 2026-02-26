@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo\Composites;
 
 use MongoDB\BSON\UTCDateTime;
@@ -36,10 +38,7 @@ class Views extends CompositeBase
         $this->readPreference = $readPreference;
     }
 
-    /**
-     * @return string
-     */
-    public function getOperationType()
+    public function getOperationType(): string
     {
         return OP_VIEWS;
     }
@@ -49,7 +48,7 @@ class Views extends CompositeBase
      *
      * @param ImpactedSubject
      */
-    public function update(ImpactedSubject $subject)
+    public function update(ImpactedSubject $subject): void
     {
         $resource = $subject->getResourceId();
         $resourceUri = $resource[_ID_RESOURCE];
@@ -69,12 +68,12 @@ class Views extends CompositeBase
     /**
      * @param string $contextAlias
      *
-     * @return array|mixed
+     * @return mixed[]
      */
-    public function findImpactedComposites(array $resourcesAndPredicates, $contextAlias)
+    public function findImpactedComposites(array $resourcesAndPredicates, $contextAlias): array
     {
         // This should never happen, but in the event that we have been passed an empty array or something
-        if (empty($resourcesAndPredicates)) {
+        if ($resourcesAndPredicates === []) {
             return [];
         }
 
@@ -89,7 +88,7 @@ class Views extends CompositeBase
             // build $filter for queries to impact index
             $filter[] = [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias];
             $rdfTypePredicates = array_intersect($predicates, $typeKeys);
-            if (!empty($rdfTypePredicates)) {
+            if ($rdfTypePredicates !== []) {
                 $changedTypes[] = $resourceAlias;
             }
         }
@@ -97,7 +96,7 @@ class Views extends CompositeBase
         // first re-gen views where resources appear in the impact index
         $query = ['value.' . _IMPACT_INDEX => ['$in' => $filter]];
 
-        if (!empty($changedTypes)) {
+        if ($changedTypes !== []) {
             $query = ['$or' => [$query]];
             foreach ($changedTypes as $resourceAlias) {
                 $query['$or'][] = [
@@ -160,11 +159,13 @@ class Views extends CompositeBase
                         $values[] = ['value.' . _GRAPHS . '.' . $p => $o];
                     }
                 }
+
                 $query[$predicate] = $values;
             } else {
                 $query['value.' . _GRAPHS . '.' . $predicate] = $object;
             }
         }
+
         $viewCollection = $this->getConfigInstance()->getCollectionForView($this->storeName, $viewType, $this->readPreference);
 
         return $this->fetchGraph($query, MONGO_VIEW, $viewCollection);
@@ -174,12 +175,10 @@ class Views extends CompositeBase
      * For given $resource, return the view of type $viewType.
      *
      * @param string|null $resource
-     * @param string      $viewType
      * @param string|null $context
-     *
      * @return MongoGraph
      */
-    public function getViewForResource($resource, $viewType, $context = null)
+    public function getViewForResource($resource, string $viewType, $context = null)
     {
         if (empty($resource)) {
             return new MongoGraph();
@@ -192,7 +191,7 @@ class Views extends CompositeBase
         $viewCollection = $this->config->getCollectionForView($this->storeName, $viewType, $this->readPreference);
         $graph = $this->fetchGraph($query, MONGO_VIEW, $viewCollection);
         if ($graph->is_empty()) {
-            $this->getStat()->increment(MONGO_VIEW_CACHE_MISS . ".{$viewType}");
+            $this->getStat()->increment(MONGO_VIEW_CACHE_MISS . ('.' . $viewType));
             $viewSpec = $this->getConfigInstance()->getViewSpecification($this->storeName, $viewType);
             if ($viewSpec == null) {
                 return new MongoGraph();
@@ -241,7 +240,7 @@ class Views extends CompositeBase
         // account for missing subjects
         $returnedSubjects = $g->get_subjects();
         $missingSubjects = array_diff($resources, $returnedSubjects);
-        if (!empty($missingSubjects)) {
+        if ($missingSubjects !== []) {
             $regrabResources = [];
             foreach ($missingSubjects as $missingSubject) {
                 $viewSpec = $this->getConfigInstance()->getViewSpecification($this->storeName, $viewType);
@@ -261,7 +260,7 @@ class Views extends CompositeBase
                 $regrabResources[] = $missingSubject;
             }
 
-            if (!empty($regrabResources)) {
+            if ($regrabResources !== []) {
                 // only try to regrab resources if there are any to regrab
                 $cursorSize = 101;
                 if (count($regrabResources) > 101) {
@@ -282,7 +281,7 @@ class Views extends CompositeBase
      * @param array       $resources
      * @param string|null $context
      */
-    public function generateViews($resources, $context = null)
+    public function generateViews($resources, $context = null): void
     {
         $contextAlias = $this->getContextAlias($context);
 
@@ -335,11 +334,10 @@ class Views extends CompositeBase
      * @param string|null $resource
      * @param string|null $context
      *
-     * @return mixed
      *
      * @throws \Exception
      */
-    public function generateViewsForResourcesOfType($rdfType, $resource = null, $context = null)
+    public function generateViewsForResourcesOfType($rdfType, $resource = null, $context = null): void
     {
         $rdfType = $this->labeller->qname_to_alias($rdfType);
         $rdfTypeAlias = $this->labeller->uri_to_alias($rdfType);
@@ -351,12 +349,13 @@ class Views extends CompositeBase
                 ($viewSpec['type'] == $rdfType || (is_array($viewSpec['type']) && in_array($rdfType, $viewSpec['type'])))
                 || ($viewSpec['type'] == $rdfTypeAlias || (is_array($viewSpec['type']) && in_array($rdfTypeAlias, $viewSpec['type'])))) {
                 $foundSpec = true;
-                $this->debugLog("Processing {$viewSpec['_id']}");
+                $this->debugLog('Processing ' . $viewSpec['_id']);
                 $this->generateView($key, $resource, $context);
             }
         }
+
         if (!$foundSpec) {
-            $this->debugLog("Could not find any view specifications for {$resource} with resource type '{$rdfType}'");
+            $this->debugLog(sprintf("Could not find any view specifications for %s with resource type '%s'", $resource, $rdfType));
 
             return;
         }
@@ -370,24 +369,27 @@ class Views extends CompositeBase
      *
      * @return int The number of views deleted
      */
-    public function deleteViewsByViewId($viewId, $timestamp = null)
+    public function deleteViewsByViewId(string $viewId, $timestamp = null)
     {
         $viewSpec = $this->getConfigInstance()->getViewSpecification($this->storeName, $viewId);
         if ($viewSpec == null) {
-            $this->debugLog("Could not find a view specification with viewId '{$viewId}'");
+            $this->debugLog(sprintf("Could not find a view specification with viewId '%s'", $viewId));
 
             return;
         }
+
         $query = ['_id.type' => $viewId];
         if ($timestamp) {
             if (!$timestamp instanceof UTCDateTime) {
                 $timestamp = DateUtil::getMongoDate($timestamp);
             }
+
             $query['$or'] = [
                 [\_CREATED_TS => ['$lt' => $timestamp]],
                 [\_CREATED_TS => ['$exists' => false]],
             ];
         }
+
         $deleteResult = $this->getCollectionForViewSpec($viewId)
             ->deleteMany($query);
 
@@ -397,24 +399,23 @@ class Views extends CompositeBase
     /**
      * Given a specific $viewId, generates a single view for the $resource.
      *
-     * @param string      $viewId
      * @param string|null $resource
      * @param string|null $context
      * @param string|null $queueName Queue for background bulk generation
      *
      * @return array
-     *
      * @throws ViewException
      */
-    public function generateView($viewId, $resource = null, $context = null, $queueName = null)
+    public function generateView(string $viewId, $resource = null, $context = null, $queueName = null): ?array
     {
         $contextAlias = $this->getContextAlias($context);
         $viewSpec = $this->getConfigInstance()->getViewSpecification($this->storeName, $viewId);
         if ($viewSpec == null) {
-            $this->debugLog("Could not find a view specification for {$resource} with viewId '{$viewId}'");
+            $this->debugLog(sprintf("Could not find a view specification for %s with viewId '%s'", $resource, $viewId));
 
             return null;
         }
+
         $t = new Timer();
         $t->start();
 
@@ -435,6 +436,7 @@ class Views extends CompositeBase
             $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($viewSpec['type'])];
             $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($viewSpec['type'])];
         }
+
         $filter = ['$or' => $types];
         if (isset($resource)) {
             $resourceAlias = $this->labeller->uri_to_alias($resource);
@@ -455,6 +457,7 @@ class Views extends CompositeBase
             $jobOptions[ApplyOperation::TRACKING_KEY] = $jobGroup->getId()->__toString();
             $jobGroup->setJobCount($count);
         }
+
         foreach ($docs as $doc) {
             if ($queueName && !$resource) {
                 $subject = new ImpactedSubject(
@@ -506,7 +509,7 @@ class Views extends CompositeBase
             }
         }
 
-        if (!empty($subjects)) {
+        if ($subjects !== []) {
             $this->queueApplyJob($subjects, $queueName, $jobOptions);
         }
 
@@ -516,7 +519,7 @@ class Views extends CompositeBase
             'duration' => $t->result(),
             'filter' => $filter,
             'from' => $from]);
-        $this->getStat()->timer(MONGO_CREATE_VIEW . ".{$viewId}", $t->result());
+        $this->getStat()->timer(MONGO_CREATE_VIEW . ('.' . $viewId), $t->result());
 
         $stat = ['count' => $count];
         if (isset($jobOptions[ApplyOperation::TRACKING_KEY])) {
@@ -530,7 +533,7 @@ class Views extends CompositeBase
      * Count the number of documents in the spec that match $filters.
      *
      * @param string $viewSpec View spec ID
-     * @param array  $filters  Query filters to get count on
+     * @param array<string, mixed> $filters Query filters to get count on
      *
      * @return int
      */
@@ -547,11 +550,11 @@ class Views extends CompositeBase
      * @param bool  $buildImpactIndex
      * @param mixed $source
      * @param mixed $joins
-     * @param mixed $dest
+     * @param array<string, mixed> $dest
      * @param mixed $from
      * @param mixed $contextAlias
      */
-    protected function doJoins($source, $joins, &$dest, $from, $contextAlias, $buildImpactIndex = true)
+    protected function doJoins(array $source, $joins, array &$dest, $from, $contextAlias, $buildImpactIndex = true)
     {
         // expand sequences before doing any joins...
         $this->expandSequence($joins, $source);
@@ -580,6 +583,7 @@ class Views extends CompositeBase
                         if (isset($ruleset['maxJoins']) && !$joinsPushed < $ruleset['maxJoins']) {
                             break; // maxJoins reached
                         }
+
                         $joinUris[] = [_ID_RESOURCE => $v[VALUE_URI], _ID_CONTEXT => $contextAlias];
                         $joinsPushed++;
                     }
@@ -602,19 +606,22 @@ class Views extends CompositeBase
                     if (isset($ruleset['condition'])) {
                         $ruleset['condition']['._id'] = $linkMatch['_id'];
                     }
+
                     if (!(isset($ruleset['condition']) && $collection->count($ruleset['condition']) == 0)) {
                         // make sure any sequences are expanded before extracting properties
                         if (isset($ruleset['joins'])) {
                             $this->expandSequence($ruleset['joins'], $linkMatch);
                         }
+
                         if (isset($ruleset['filter'])) {
                             foreach ($ruleset['filter'] as $filterPredicate => $filter) {
                                 foreach ($filter as $filterType => $filterMatch) {
                                     if (isset($linkMatch[$filterPredicate])) {
                                         foreach ($linkMatch[$filterPredicate] as $linkMatchType => $linkMatchValues) {
-                                            if (is_array($linkMatchValues) == false) {
+                                            if (is_array($linkMatchValues) === false) {
                                                 $linkMatchValues = [$linkMatchType => $linkMatchValues];
                                             }
+
                                             foreach ($linkMatchValues as $linkMatchType => $linkMatchValue) {
                                                 if ($this->matchesFilter($linkMatchType, $linkMatchValue, $filterType, $filterMatch)) {
                                                     $dest[_GRAPHS][] = $this->extractProperties($linkMatch, $ruleset, $from);
@@ -634,10 +641,9 @@ class Views extends CompositeBase
                         }
                     }
                 }
-                if (count($recursiveJoins) > 0) {
-                    foreach ($recursiveJoins as $r) {
-                        $this->doJoins($r['data'], $r['ruleset'], $dest, $from, $contextAlias, $buildImpactIndex);
-                    }
+
+                foreach ($recursiveJoins as $r) {
+                    $this->doJoins($r['data'], $r['ruleset'], $dest, $from, $contextAlias, $buildImpactIndex);
                 }
             }
         }
@@ -650,18 +656,14 @@ class Views extends CompositeBase
      * @param string $linkMatchValue
      * @param string $filterType
      * @param string $filterMatch
-     *
-     * @return bool
      */
-    protected function matchesFilter($linkMatchType, $linkMatchValue, $filterType, $filterMatch)
+    protected function matchesFilter($linkMatchType, $linkMatchValue, $filterType, $filterMatch): bool
     {
-        if ($linkMatchType === $filterType) {
-            if ($linkMatchValue === $filterMatch || $this->labeller->uri_to_alias($linkMatchValue) === $filterMatch) {
-                return true;
-            }
+        if ($linkMatchType !== $filterType) {
+            return false;
         }
 
-        return false;
+        return $linkMatchValue === $filterMatch || $this->labeller->uri_to_alias($linkMatchValue) === $filterMatch;
     }
 
     /**
@@ -669,12 +671,10 @@ class Views extends CompositeBase
      * of CBDs in a view.
      *
      * @param mixed $source
-     * @param mixed $viewSpec
+     * @param array<string, mixed> $viewSpec
      * @param mixed $from
-     *
-     * @return array
      */
-    protected function extractProperties($source, $viewSpec, $from)
+    protected function extractProperties(array $source, array $viewSpec, $from): array
     {
         $obj = [];
         if (isset($viewSpec['include'])) {
@@ -683,23 +683,23 @@ class Views extends CompositeBase
                 if (isset($source[$p])) {
                     $obj[$p] = $source[$p];
                 }
-                if ($p === INCLUDE_RDF_SEQUENCE) {
-                    if ($source['rdf:type']) {
-                        foreach ($source['rdf:type'] as $u => $t) {
-                            if (is_array($t) == false) {
-                                $t = [$u => $t];
-                            }
-                            foreach ($t as $typeOfType => $type) {
-                                if ($typeOfType === 'u' && $type === 'rdf:Seq') {
-                                    $seqNumber = 1;
-                                    $found = true;
-                                    while ($found) {
-                                        if (isset($source['rdf:_' . $seqNumber])) {
-                                            $obj['rdf:_' . $seqNumber] = $source['rdf:_' . $seqNumber];
-                                            $seqNumber++;
-                                        } else {
-                                            $found = false;
-                                        }
+
+                if ($p === INCLUDE_RDF_SEQUENCE && $source['rdf:type']) {
+                    foreach ($source['rdf:type'] as $u => $t) {
+                        if (is_array($t) === false) {
+                            $t = [$u => $t];
+                        }
+
+                        foreach ($t as $typeOfType => $type) {
+                            if ($typeOfType === 'u' && $type === 'rdf:Seq') {
+                                $seqNumber = 1;
+                                $found = true;
+                                while ($found) {
+                                    if (isset($source['rdf:_' . $seqNumber])) {
+                                        $obj['rdf:_' . $seqNumber] = $source['rdf:_' . $seqNumber];
+                                        $seqNumber++;
+                                    } else {
+                                        $found = false;
                                     }
                                 }
                             }
@@ -707,19 +707,22 @@ class Views extends CompositeBase
                     }
                 }
             }
+
             if (isset($viewSpec['joins'])) {
                 foreach ($viewSpec['joins'] as $p => $join) {
                     if (isset($join['maxJoins'])) {
                         // todo: refactor with below (extract method)
                         // only include up to maxJoins
                         for ($i = 0; $i < $join['maxJoins']; $i++) {
-                            if (isset($source[$p]) && (isset($source[$p][VALUE_URI]) || isset($source[$p][VALUE_LITERAL])) && $i == 0) { // cater for source with only one val
+                            if (isset($source[$p]) && (isset($source[$p][VALUE_URI]) || isset($source[$p][VALUE_LITERAL])) && $i === 0) { // cater for source with only one val
                                 $obj[$p] = $source[$p];
                             }
+
                             if (isset($source[$p], $source[$p][$i])) {
                                 if (!isset($obj[$p])) {
                                     $obj[$p] = [];
                                 }
+
                                 $obj[$p][] = $source[$p][$i];
                             }
                         }
@@ -734,13 +737,15 @@ class Views extends CompositeBase
                     // todo: refactor with above (extract method)
                     // only include up to maxJoins
                     for ($i = 0; $i < $viewSpec['joins'][$p]['maxJoins']; $i++) {
-                        if ($val && (isset($val[VALUE_URI]) || isset($val[VALUE_LITERAL])) && $i == 0) { // cater for source with only one val
+                        if ($val && (isset($val[VALUE_URI]) || isset($val[VALUE_LITERAL])) && $i === 0) { // cater for source with only one val
                             $obj[$p] = $val;
                         }
+
                         if ($val && isset($val[$i])) {
                             if (!$obj[$p]) {
                                 $obj[$p] = [];
                             }
+
                             $obj[$p][] = $val[$i];
                         }
                     }
@@ -772,6 +777,7 @@ class Views extends CompositeBase
                             $count = count($source[$c['property']]);
                         }
                     }
+
                     $obj[$predicate] = [VALUE_LITERAL => (string) $count];
                 }
             }
@@ -794,10 +800,8 @@ class Views extends CompositeBase
      * @param array|string $resourceUriOrArray
      * @param string       $context
      * @param string       $viewType
-     *
-     * @return array
      */
-    private function createTripodViewIdsFromResourceUris($resourceUriOrArray, $context, $viewType)
+    private function createTripodViewIdsFromResourceUris(array $resourceUriOrArray, $context, $viewType): array
     {
         $contextAlias = $this->getContextAlias($context);
         $ret = [];
@@ -815,13 +819,6 @@ class Views extends CompositeBase
      */
     private function getFromCollectionForViewSpec($viewSpec)
     {
-        $from = null;
-        if (isset($viewSpec['from'])) {
-            $from = $viewSpec['from'];
-        } else {
-            $from = $this->podName;
-        }
-
-        return $from;
+        return $viewSpec['from'] ?? $this->podName;
     }
 }

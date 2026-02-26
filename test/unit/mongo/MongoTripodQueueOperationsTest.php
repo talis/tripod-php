@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Tripod\Mongo\Config;
 use Tripod\Mongo\Driver;
 use Tripod\Mongo\Jobs\DiscoverImpactedSubjects;
@@ -34,7 +36,7 @@ class MongoTripodQueueOperationsTest extends MongoTripodTestBase
     /**
      * Saving a change to a single resource that does not impact any other resources should result in just a single item being added to the queue.
      */
-    public function testSingleItemIsAddedToQueueForChangeToSingleSubject()
+    public function testSingleItemIsAddedToQueueForChangeToSingleSubject(): void
     {
         // create a tripod instance that will send all operations to the queue
         $tripod = $this->getMockBuilder(Driver::class)
@@ -66,7 +68,7 @@ class MongoTripodQueueOperationsTest extends MongoTripodTestBase
 
         $tripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($tripodUpdates));
+            ->willReturn($tripodUpdates);
 
         $subjectsAndPredicatesOfChange = [
             'http://talisaspire.com/resources/doc1' => ['dct:subject'],
@@ -86,7 +88,7 @@ class MongoTripodQueueOperationsTest extends MongoTripodTestBase
 
         $tripodUpdates->expects($this->once())
             ->method('getDiscoverImpactedSubjects')
-            ->will($this->returnValue($discoverImpactedSubjects));
+            ->willReturn($discoverImpactedSubjects);
 
         $discoverImpactedSubjects->expects($this->once())
             ->method('createJob')
@@ -109,7 +111,7 @@ class MongoTripodQueueOperationsTest extends MongoTripodTestBase
     /**
      * Saving a change to a single resource that does not impact any other resources should result in just a single item being added to the queue.
      */
-    public function testSingleItemWithViewsOpIsAddedToQueueForChangeToSingleSubject()
+    public function testSingleItemWithViewsOpIsAddedToQueueForChangeToSingleSubject(): void
     {
         // create a tripod instance that will send all operations to the queue
         $tripod = $this->getMockBuilder(Driver::class)
@@ -141,7 +143,7 @@ class MongoTripodQueueOperationsTest extends MongoTripodTestBase
 
         $tripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($tripodUpdates));
+            ->willReturn($tripodUpdates);
 
         $subjectsAndPredicatesOfChange = [
             'http://talisaspire.com/resources/doc1' => ['dct:subject'],
@@ -165,7 +167,7 @@ class MongoTripodQueueOperationsTest extends MongoTripodTestBase
 
         $tripodUpdates->expects($this->once())
             ->method('getDiscoverImpactedSubjects')
-            ->will($this->returnValue($discoverImpactedSubjects));
+            ->willReturn($discoverImpactedSubjects);
 
         $discoverImpactedSubjects->expects($this->once())
             ->method('createJob')
@@ -185,7 +187,7 @@ class MongoTripodQueueOperationsTest extends MongoTripodTestBase
         $tripod->saveChanges($g1, $g2);
     }
 
-    public function testNoItemIsAddedToQueueForChangeToSingleSubjectWithNoAsyncOps()
+    public function testNoItemIsAddedToQueueForChangeToSingleSubjectWithNoAsyncOps(): void
     {
         // create a tripod instance that will send all operations to the queue
         $tripod = $this->getMockBuilder(Driver::class)
@@ -213,7 +215,7 @@ class MongoTripodQueueOperationsTest extends MongoTripodTestBase
 
         $tripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($tripodUpdates));
+            ->willReturn($tripodUpdates);
 
         $subjectsAndPredicatesOfChange = [
             'http://talisaspire.com/resources/doc1' => ['dct:subject'],
@@ -245,7 +247,7 @@ class MongoTripodQueueOperationsTest extends MongoTripodTestBase
      * 4 items being placed on the queue, with the operations for each relevant to the configured operations based on the specifications
      * todo: new test in composite for one subject that impacts another.
      */
-    public function testSingleJobSubmittedToQueueForChangeToSeveralSubjects()
+    public function testSingleJobSubmittedToQueueForChangeToSeveralSubjects(): void
     {
         $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getDataUpdater', 'getComposite'])
@@ -276,7 +278,7 @@ class MongoTripodQueueOperationsTest extends MongoTripodTestBase
 
         $tripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($tripodUpdates));
+            ->willReturn($tripodUpdates);
 
         $subjectsAndPredicatesOfChange = [
             'http://talisaspire.com/resources/doc1' => ['dct:date'],
@@ -298,7 +300,7 @@ class MongoTripodQueueOperationsTest extends MongoTripodTestBase
 
         $tripodUpdates->expects($this->once())
             ->method('getDiscoverImpactedSubjects')
-            ->will($this->returnValue($discoverImpactedSubjects));
+            ->willReturn($discoverImpactedSubjects);
 
         $discoverImpactedSubjects->expects($this->once())
             ->method('createJob')

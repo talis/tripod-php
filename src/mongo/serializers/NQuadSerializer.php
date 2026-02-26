@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 /**
@@ -9,9 +11,10 @@ namespace Tripod\Mongo;
 class NQuadSerializer
 {
     private $raw;
+
     private $esc_chars;
 
-    public function ___construct()
+    public function ___construct(): void
     {
         $this->esc_chars = [];
         $this->raw = 0;
@@ -28,20 +31,23 @@ class NQuadSerializer
             if (preg_match('/^\_\:/', $v)) {
                 return $v;
             }
+
             if (preg_match('/^[a-z0-9]+\:[^\s\"]*$/is', $v)) {
                 return '<' . htmlspecialchars($this->escape($v)) . '>';
             }
 
             return $this->getTerm(['type' => 'literal', 'value' => $v]);
         }
+
         if ($v['type'] != 'literal') {
             return $this->getTerm($v['value']);
         }
+
         // literal
         $quot = '"';
         if ($this->raw && preg_match('/\"/', $v['value'])) {
             $quot = "'";
-            if (preg_match('/\'/', $v['value'])) {
+            if (preg_match("/'/", $v['value'])) {
                 $quot = '"""';
                 if (preg_match('/\"\"\"/', $v['value']) || preg_match('/\"$/', $v['value']) || preg_match('/^\"/', $v['value'])) {
                     $quot = "'''";
@@ -51,7 +57,8 @@ class NQuadSerializer
                 }
             }
         }
-        if ($this->raw && (strlen($quot) == 1) && preg_match('/[\x0d\x0a]/', $v['value'])) {
+
+        if ($this->raw && (strlen($quot) === 1) && preg_match('/[\x0d\x0a]/', $v['value'])) {
             $quot = $quot . $quot . $quot;
         }
 
@@ -66,10 +73,8 @@ class NQuadSerializer
     /**
      * @param array  $index
      * @param string $context
-     *
-     * @return string
      */
-    public function getSerializedIndex($index, $context)
+    public function getSerializedIndex($index, ?string $context): string
     {
         $r = '';
         $nl = "\n";
@@ -87,13 +92,15 @@ class NQuadSerializer
                 if (!is_array($os)) { // single literal o
                     $os = [['value' => $os, 'type' => 'literal']];
                 }
+
                 foreach ($os as $o) {
                     $o = $this->getTerm($o);
-                    $r .= $r ? $nl : '';
+                    $r .= $r !== '' && $r !== '0' ? $nl : '';
                     $r .= $s . ' ' . $p . ' ' . $o;
                     if ($context != null) {
                         $r .= ' <' . $context . '>';
                     }
+
                     $r .= ' .';
                 }
             }
@@ -120,6 +127,7 @@ class NQuadSerializer
             if (!isset($this->esc_chars[$c])) {
                 $this->esc_chars[$c] = $this->getEscapedChar($c, $this->getCharNo($c));
             }
+
             $r .= $this->esc_chars[$c];
         }
 
@@ -128,10 +136,8 @@ class NQuadSerializer
 
     /**
      * @param string $c
-     *
-     * @return int
      */
-    public function getCharNo($c)
+    public function getCharNo($c): int
     {
         $c_utf = utf8_encode($c);
         $bl = strlen($c_utf); // binary length
@@ -172,40 +178,52 @@ class NQuadSerializer
     { // see http://www.w3.org/TR/rdf-testcases/#ntrip_strings
         if ($no < 9) {
             return '\u' . sprintf('%04X', $no);
-        } // #x0-#x8 (0-8)
+        }
+         // #x0-#x8 (0-8)
         if ($no == 9) {
             return '\t';
-        } // #x9 (9)
+        }
+         // #x9 (9)
         if ($no == 10) {
             return '\n';
-        } // #xA (10)
+        }
+         // #xA (10)
         if ($no < 13) {
             return '\u' . sprintf('%04X', $no);
-        } // #xB-#xC (11-12)
+        }
+         // #xB-#xC (11-12)
         if ($no == 13) {
             return '\r';
-        } // #xD (13)
+        }
+         // #xD (13)
         if ($no < 32) {
             return '\u' . sprintf('%04X', $no);
-        } // #xE-#x1F (14-31)
+        }
+         // #xE-#x1F (14-31)
         if ($no < 34) {
             return $c;
-        } // #x20-#x21 (32-33)
+        }
+         // #x20-#x21 (32-33)
         if ($no == 34) {
             return '\"';
-        } // #x22 (34)
+        }
+         // #x22 (34)
         if ($no < 92) {
             return $c;
-        } // #x23-#x5B (35-91)
+        }
+         // #x23-#x5B (35-91)
         if ($no == 92) {
             return '\\\\';
-        } // #x5C (92)
+        }
+         // #x5C (92)
         if ($no < 127) {
             return $c;
-        } // #x5D-#x7E (93-126)
+        }
+         // #x5D-#x7E (93-126)
         if ($no < 65536) {
             return '\u' . sprintf('%04X', $no);
-        } // #x7F-#xFFFF (128-65535)
+        }
+         // #x7F-#xFFFF (128-65535)
         if ($no < 1114112) {
             return '\U' . sprintf('%08X', $no);
         } // #x10000-#x10FFFF (65536-1114111)
