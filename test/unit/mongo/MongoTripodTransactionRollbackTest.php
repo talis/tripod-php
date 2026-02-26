@@ -4,8 +4,6 @@
  * This test suite was added to specifically verify behaviour of code
  * during Driver->storeChanges.
  * namely that documents are locked, transactions created, documents unlocked etc.
- *
- * Class MongoTripodTransactionRollbackTest
  */
 class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
 {

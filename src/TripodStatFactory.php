@@ -4,10 +4,6 @@
 namespace Tripod;
 use Tripod\Mongo\NoStat;
 
-/**
- * Class TripodStatFactory
- * @package Tripod
- */
 class TripodStatFactory
 {
 

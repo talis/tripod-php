@@ -5,10 +5,6 @@ namespace Tripod\Mongo;
 use \MongoDB\Driver\ReadPreference;
 use \MongoDB\Collection;
 
-/**
- * Class SearchDocuments
- * @package Tripod\Mongo
- */
 class SearchDocuments extends DriverBase
 {
     /**

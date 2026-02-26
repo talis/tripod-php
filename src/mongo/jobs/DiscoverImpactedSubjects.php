@@ -4,10 +4,6 @@ namespace Tripod\Mongo\Jobs;
 
 use \Tripod\Config;
 
-/**
- * Class DiscoverImpactedSubjects
- * @package Tripod\Mongo\Jobs
- */
 class DiscoverImpactedSubjects extends JobBase
 {
 

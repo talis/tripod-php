@@ -4,10 +4,6 @@ namespace Tripod\Mongo;
 
 require_once TRIPOD_DIR.'mongo/MongoTripodConstants.php';
 
-/**
- * Class MongoGraph
- * @package Tripod\Mongo
- */
 class MongoGraph extends \Tripod\ExtendedGraph {
     /**
      * @var Labeller

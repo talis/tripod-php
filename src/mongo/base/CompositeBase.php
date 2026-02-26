@@ -4,10 +4,6 @@ namespace Tripod\Mongo\Composites;
 
 use \Tripod\Mongo\JobGroup;
 
-/**
- * Class CompositeBase
- * @package Tripod\Mongo\Composites
- */
 abstract class CompositeBase extends \Tripod\Mongo\DriverBase implements \Tripod\Mongo\Composites\IComposite
 {
     /**

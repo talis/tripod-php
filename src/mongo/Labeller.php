@@ -2,10 +2,6 @@
 
 namespace Tripod\Mongo;
 
-/**
- * Class Labeller
- * @package Tripod\Mongo
- */
 class Labeller extends \Tripod\Labeller
 {
     /**

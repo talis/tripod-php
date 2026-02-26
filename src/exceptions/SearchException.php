@@ -2,10 +2,8 @@
 
 namespace Tripod\Exceptions;
 
-/**
- * Class SearchException
- * @package Tripod
- */
+// @codeCoverageIgnoreStart
+
 class SearchException extends Exception {
 
 } // @codeCoverageIgnoreEnd

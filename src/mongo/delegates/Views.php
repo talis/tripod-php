@@ -8,10 +8,6 @@ use \Tripod\Mongo\Labeller;
 use \MongoDB\Driver\ReadPreference;
 use \MongoDB\Collection;
 
-/**
- * Class Views
- * @package Tripod\Mongo\Composites
- */
 class Views extends CompositeBase
 {
 

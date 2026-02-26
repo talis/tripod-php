@@ -2,10 +2,6 @@
 
 namespace Tripod;
 
-/**
- * Class IDriver
- * @package Tripod
- */
 interface IDriver
 {
     /**

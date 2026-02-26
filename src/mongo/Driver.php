@@ -10,12 +10,6 @@ use \MongoDB\Driver\ReadPreference;
 use \MongoDB\BSON\Javascript;
 use \MongoDB\Database;
 
-$TOTAL_TIME=0;
-
-/**
- * Class Driver
- * @package Driver\Mongo
- */
 class Driver extends DriverBase implements \Tripod\IDriver
 {
 

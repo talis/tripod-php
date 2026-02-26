@@ -10,10 +10,6 @@ use \Tripod\Mongo\Labeller;
 use \MongoDB\Driver\ReadPreference;
 use \MongoDB\Collection;
 
-/**
- * Class Tables
- * @package Tripod\Mongo\Composites
- */
 class Tables extends CompositeBase
 {
     /**

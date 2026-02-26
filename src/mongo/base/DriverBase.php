@@ -4,8 +4,6 @@ namespace Tripod\Mongo;
 
 require_once TRIPOD_DIR.'ITripodStat.php';
 
-$TOTAL_TIME=0;
-
 use Monolog\Logger;
 use Tripod\Exceptions\Exception;
 use Tripod\IEventHook;
@@ -14,10 +12,6 @@ use \MongoDB\Collection;
 use \MongoDB\Database;
 use Tripod\Mongo\Composites\Views;
 
-/**
- * Class DriverBase
- * @package Tripod\Mongo
- */
 abstract class DriverBase
 {
     /**
@@ -270,14 +264,10 @@ abstract class DriverBase
         return $this->podName;
     }
 
-
-    ///////// LOGGING METHODS BELOW ////////
-
-    // @codeCoverageIgnoreStart
-
     /**
      * @param string $type
      * @param array|null $params
+     * @codeCoverageIgnore
      */
     public function timingLog($type, $params=null)
     {
@@ -286,12 +276,9 @@ abstract class DriverBase
     }
 
     /**
-     * @param string $message
-     * @param array|null $params
-     */
-    /**
      * @param $message
      * @param array|null $params
+     * @codeCoverageIgnore
      */
     public function infoLog($message, $params=null)
     {
@@ -302,6 +289,7 @@ abstract class DriverBase
     /**
      * @param $message
      * @param array|null $params
+     * @codeCoverageIgnore
      */
     public function debugLog($message, $params=null)
     {
@@ -312,6 +300,7 @@ abstract class DriverBase
     /**
      * @param string $message
      * @param array|null $params
+     * @codeCoverageIgnore
      */
     public function errorLog($message, $params=null)
     {
@@ -322,6 +311,7 @@ abstract class DriverBase
     /**
      * @param string $message
      * @param array|null $params
+     * @codeCoverageIgnore
      */
     public function warningLog($message, $params=null)
     {
@@ -333,6 +323,7 @@ abstract class DriverBase
      * @param string $level
      * @param string $message
      * @param array|null $params
+     * @codeCoverageIgnore
      */
     private function log($level, $message, $params)
     {
@@ -347,6 +338,7 @@ abstract class DriverBase
     /**
      * @static
      * @return \Psr\Log\LoggerInterface
+     * @codeCoverageIgnore
      */
     public static function getLogger()
     {
@@ -357,7 +349,6 @@ abstract class DriverBase
         }
         return self::$logger;
     }
-    // @codeCoverageIgnoreEnd
 
     /**
      * Expands an RDF sequence into proper tripod join clauses
@@ -502,10 +493,6 @@ abstract class DriverBase
 
 }
 
-/**
- * Class NoStat
- * @package Tripod\Mongo
- */
 final class NoStat implements \Tripod\ITripodStat
 {
     /**

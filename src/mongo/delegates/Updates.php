@@ -11,10 +11,6 @@ use \MongoDB\Operation\FindOneAndUpdate;
 use \MongoDB\BSON\ObjectId;
 use Tripod\Mongo\Jobs\DiscoverImpactedSubjects;
 
-/**
- * Class Updates
- * @package Tripod\Mongo
- */
 class Updates extends DriverBase
 {
 

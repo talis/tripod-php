@@ -1,7 +1,6 @@
 <?php
 
 /**
- * Class MongoTripodQueueOperationsTest
  * IMPORTANT NOTE:  this test suite does not use any MOCKING, each test will hit your local mongodb instance.
  *
  * This test suite verifies, for a number of different scenarios, that when we save changes through tripod the correct number of items are added to the

@@ -2,10 +2,6 @@
 
 namespace Tripod;
 
-/**
- * Class ISearchProvider
- * @package Tripod
- */
 interface ISearchProvider
 {
     /**
@@ -59,11 +55,11 @@ interface ISearchProvider
      * @throws \Tripod\Exceptions\SearchException if there was an error performing the search, or if the parameters are invalid
      */
     public function search($q, $type, $indices=array(), $fields=array(), $limit=10, $offset=0);
-    
+
     /**
      * Removes all documents from search index based on the specified type id.
      * Here search type id represents to id from, mongo tripod config, that is converted to _id.type in SEARCH_INDEX_COLLECTION
-     * If type id is not specified this method will throw an exception.      
+     * If type id is not specified this method will throw an exception.
      * @param string $typeId search type id
      * @return bool|array  response returned by mongo
      * @throws \Tripod\Exceptions\Exception if there was an error performing the operation

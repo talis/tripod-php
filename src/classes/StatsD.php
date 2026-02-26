@@ -2,10 +2,6 @@
 
 namespace Tripod;
 
-/**
- * Class StatsD
- * @package Tripod
- */
 class StatsD implements ITripodStat
 {
     /** @var string  */

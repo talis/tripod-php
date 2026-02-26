@@ -10,10 +10,6 @@ use \MongoDB\Collection;
 use Tripod\Mongo\Config;
 use Tripod\Mongo\Driver;
 
-/**
- * Class SearchIndexer
- * @package Tripod\Mongo\Composites
- */
 class SearchIndexer extends CompositeBase
 {
     private $tripod = null;

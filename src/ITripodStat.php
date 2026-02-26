@@ -2,10 +2,6 @@
 
 namespace Tripod;
 
-/**
- * Class ITripodStat
- * @package Tripod
- */
 interface ITripodStat
 {
     /**

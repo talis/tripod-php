@@ -6,10 +6,6 @@ use \MongoDB\InsertOneResult;
 use \MongoDB\UpdateOneResult;
 use \MongoDB\Driver\Cursor;
 
-/**
- * Class TransactionLog
- * @package Tripod\Mongo
- */
 class TransactionLog
 {
     private $transaction_db = null;

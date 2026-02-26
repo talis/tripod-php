@@ -6,10 +6,6 @@ use Tripod\Mongo\JobGroup;
 use Tripod\Mongo\Driver;
 use Tripod\ITripodConfigSerializer;
 
-/**
- * Class ApplyOperation
- * @package Tripod\Mongo\Jobs
- */
 class ApplyOperation extends JobBase
 {
 

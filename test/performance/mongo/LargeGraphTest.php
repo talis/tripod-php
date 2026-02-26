@@ -2,8 +2,6 @@
 
 /**
  * A quick performance test to see what amount of time in consumed in specific methods of Config class
- *
- * Class MongoTripodConfigTest
  */
 class LargeGraphTest extends MongoTripodPerformanceTestBase
 {

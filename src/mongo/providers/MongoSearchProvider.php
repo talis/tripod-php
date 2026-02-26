@@ -6,10 +6,6 @@ require_once TRIPOD_DIR . 'mongo/MongoTripodConstants.php';
 
 use \MongoDB\BSON\Regex;
 
-/**
- * Class MongoSearchProvider
- * @package Tripod\Mongo
- */
 class MongoSearchProvider implements \Tripod\ISearchProvider
 {
     /**

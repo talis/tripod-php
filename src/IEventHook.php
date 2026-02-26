@@ -1,17 +1,7 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: chrisc
- * Date: 05/08/2015
- * Time: 13:36
- */
 
 namespace Tripod;
 
-/**
- * Interface IEventHook
- * @package Tripod
- */
 interface IEventHook
 {
     /**

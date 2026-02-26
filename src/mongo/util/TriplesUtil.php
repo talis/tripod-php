@@ -5,17 +5,6 @@ namespace Tripod\Mongo;
 use \MongoDB\Client;
 use \MongoDB\Collection;
 
-/**
- * Created by Chris Clarke
- * Date: 12/01/2012
- * Time: 16:04
- * Class to help working with triples and Tripod
- */
-
-/**
- * Class TriplesUtil
- * @package Tripod\Mongo
- */
 class TriplesUtil
 {
     private $collections = array();

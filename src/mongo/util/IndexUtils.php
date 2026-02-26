@@ -2,10 +2,6 @@
 
 namespace Tripod\Mongo;
 
-/**
- * Class IndexUtils
- * @package Tripod\Mongo
- */
 class IndexUtils
 {
     /**

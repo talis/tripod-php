@@ -2,10 +2,6 @@
 
 namespace Tripod;
 
-/**
- * Class Timer
- * @package Tripod
- */
 class Timer
 {
     /**

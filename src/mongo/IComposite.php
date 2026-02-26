@@ -2,10 +2,6 @@
 
 namespace Tripod\Mongo\Composites;
 
-/**
- * Class IComposite
- * @package Tripod\Mongo\Composites
- */
 interface IComposite
 {
     /**

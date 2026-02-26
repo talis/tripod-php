@@ -2,10 +2,6 @@
 
 namespace Tripod\Mongo\Jobs;
 
-/**
- * Class EnsureIndexes
- * @package Tripod\Mongo\Jobs
- */
 class EnsureIndexes extends JobBase
 {
 
