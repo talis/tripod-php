@@ -58,10 +58,10 @@ class ApplyOperation extends JobBase
                     foreach ($subject['specTypes'] as $specId) {
                         switch ($subject['operation']) {
                             case \OP_VIEWS:
-                                $count += $tripod->getComposite(\OP_VIEWS)->deleteViewsByViewId($specId, $timestamp);
+                                $count += $tripod->getTripodViews()->deleteViewsByViewId($specId, $timestamp);
                                 break;
                             case \OP_TABLES:
-                                $count += $tripod->getComposite(\OP_TABLES)->deleteTableRowsByTableId($specId, $timestamp);
+                                $count += $tripod->getTripodTables()->deleteTableRowsByTableId($specId, $timestamp);
                                 break;
                             case \OP_SEARCH:
                                 $searchProvider = $this->getSearchProvider($tripod);

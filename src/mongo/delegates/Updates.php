@@ -237,18 +237,18 @@ class Updates extends DriverBase
     {
         // Set db preference
         /** @var ReadPreference $dbReadPref */
-        $dbReadPref = $this->getDatabase()->__debugInfo()['readPreference'];
+        $dbReadPref = $this->getDatabase()->getReadPreference();
 
         $dbPref = $dbReadPref->getMode();
         $dbTagsets = $dbReadPref->getTagsets();
 
-        $this->originalDbReadPreference = $this->db->__debugInfo()['readPreference']->getMode();
+        $this->originalDbReadPreference = $this->db->getReadPreference()->getMode();
         if ($dbPref !== ReadPreference::RP_PRIMARY) {
             $this->db = $this->db->withOptions(array('readPreference' => new ReadPreference(ReadPreference::RP_PRIMARY, $dbTagsets)));
         }
 
         /** @var ReadPreference $collReadPref */
-        $collReadPref = $this->getCollection()->__debugInfo()['readPreference'];
+        $collReadPref = $this->getCollection()->getReadPreference();
         $collPref = $collReadPref->getMode();
         $collTagsets = $collReadPref->getTagsets();
 

@@ -49,7 +49,7 @@ class ChangeSet extends ExtendedGraph {
     var $subjectIndex = array();
     var $_index = array();
 
-    public function __construct($a = '') {
+    public function __construct(array $a) {
         parent::__construct();
         $this->a = $a;
         /* parse the before and after graphs if necessary*/

@@ -942,7 +942,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             )
             ->will($this->returnCallback(
                 function () {
-                    $mongo = new Client();
+                    $mongo = new Client(null);
                     return $mongo->selectDatabase('tripod_php_testing');
                 }
             ));

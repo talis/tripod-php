@@ -1087,7 +1087,7 @@ class Config implements IConfigInstance
      */
     public static function getInstance()
     {
-        self::getLogger()->warn(
+        self::getLogger()->warning(
             '\Tripod\Mongo\Config::getInstance deprecated, use \Tripod\Config::getInstance instead'
         );
         return \Tripod\Config::getInstance();
@@ -1100,7 +1100,7 @@ class Config implements IConfigInstance
      */
     public static function setConfig(array $config)
     {
-        self::getLogger()->warn(
+        self::getLogger()->warning(
             '\Tripod\Mongo\Config::setConfig deprecated, use \Tripod\Config::setConfig instead'
         );
         \Tripod\Config::setConfig($config);
@@ -1114,7 +1114,7 @@ class Config implements IConfigInstance
      */
     public static function getConfig()
     {
-        self::getLogger()->warn(
+        self::getLogger()->warning(
             '\Tripod\Mongo\Config::getConfig deprecated, use \Tripod\Config::getConfig instead'
         );
         return \Tripod\Config::getConfig();
@@ -2019,7 +2019,7 @@ class Config implements IConfigInstance
      */
     private static function getQueueName($envVar,$type)
     {
-        $default = (defined('APP_ENV')) ? "tripod::".APP_ENV."::$type" : "tripod::$type";
+        $default = (defined('APP_ENV')) ? "tripod::".constant('APP_ENV')."::$type" : "tripod::$type";
         return self::getenv($envVar,$default);
     }
 
@@ -2034,12 +2034,12 @@ class Config implements IConfigInstance
             $resqueServer = self::getenv(MONGO_TRIPOD_RESQUE_SERVER,'');
             if (!empty($resqueServer))
             {
-                self::getLogger()->addNotice("Use of MONGO_TRIPOD_RESQUE_SERVER is deprecated - use RESQUE_SERVER instead");
+                self::getLogger()->notice("Use of MONGO_TRIPOD_RESQUE_SERVER is deprecated - use RESQUE_SERVER instead");
             }
         }
         if (empty($resqueServer))
         {
-            self::getLogger()->addWarning("RESQUE_SERVER is missing from environment - using localhost:6379 instead");
+            self::getLogger()->warning("RESQUE_SERVER is missing from environment - using localhost:6379 instead");
             $resqueServer = "localhost:6379";
         }
         return $resqueServer;

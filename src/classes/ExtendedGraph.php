@@ -1107,34 +1107,6 @@ class ExtendedGraph
     }
 
     /**
-     * @param string|null $resource_uri
-     * @return string
-     */
-    public function get_description($resource_uri = null) {
-        if ($resource_uri == null) {
-            // @todo: this is the only occurrence of this property, can we remove this?
-            $resource_uri = $this->_primary_resource;
-        }
-        $text = $this->get_first_literal($resource_uri,'http://purl.org/dc/terms/description', '', 'en');
-        if ( strlen($text) == 0) {
-            $text = $this->get_first_literal($resource_uri,DC_DESCRIPTION, '', 'en');
-        }
-        if ( strlen($text) == 0) {
-            $text = $this->get_first_literal($resource_uri,RDFS_COMMENT, '', 'en');
-        }
-        if ( strlen($text) == 0) {
-            $text = $this->get_first_literal($resource_uri,'http://purl.org/rss/1.0/description', '', 'en');
-        }
-        if ( strlen($text) == 0) {
-            $text = $this->get_first_literal($resource_uri,'http://purl.org/dc/terms/abstract', '', 'en');
-        }
-        if ( strlen($text) == 0) {
-            $text = $this->get_first_literal($resource_uri,'http://purl.org/vocab/bio/0.1/olb', '', 'en');
-        }
-        return $text;
-    }
-
-    /**
      * @param array $resources
      * @param string $nodeID_prefix
      * @return array

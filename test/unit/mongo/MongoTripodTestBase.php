@@ -406,11 +406,11 @@ abstract class MongoTripodTestBase extends TestCase
 class TestTripod extends Tripod\Mongo\Driver
 {
     /**
-     * @return MongoDB\Driver\ReadPreference
+     * @return \MongoDB\Driver\ReadPreference
      */
     public function getCollectionReadPreference()
     {
-        return $this->collection->__debugInfo()['readPreference'];
+        return $this->collection->getReadPreference();
     }
 }
 

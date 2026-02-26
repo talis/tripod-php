@@ -311,7 +311,7 @@ class Driver extends DriverBase implements \Tripod\IDriver
         if(class_exists($provider)){
             $timer = new \Tripod\Timer();
             $timer->start();
-            /** @var $searchProvider \Tripod\ISearchProvider */
+            /** @var \Tripod\ISearchProvider $searchProvider */
             $searchProvider = new $provider($this);
             $results =  $searchProvider->search($q, $type, $indices, $fields, $limit, $offset);
             $timer->stop();

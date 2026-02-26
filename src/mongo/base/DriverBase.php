@@ -12,6 +12,7 @@ use Tripod\IEventHook;
 use \MongoDB\Driver\ReadPreference;
 use \MongoDB\Collection;
 use \MongoDB\Database;
+use Tripod\Mongo\Composites\Views;
 
 /**
  * Class DriverBase
@@ -199,7 +200,7 @@ abstract class DriverBase
                 {
                     // handle MONGO_VIEWS that have expired due to ttl. These are expired
                     // on read (lazily) rather than on write
-                    if ($type==MONGO_VIEW && array_key_exists(_EXPIRES,$result['value']))
+                    if ($this instanceof Views && $type==MONGO_VIEW && array_key_exists(_EXPIRES,$result['value']))
                     {
                         // if expires < current date, regenerate view..
                         $currentDate = \Tripod\Mongo\DateUtil::getMongoDate();
