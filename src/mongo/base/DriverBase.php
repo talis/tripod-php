@@ -424,18 +424,6 @@ abstract class DriverBase
     }
 
     /**
-     * Retrieve last error from database.
-     *
-     * @return array
-     */
-    protected function getLastDBError(Database $db)
-    {
-        return $db->command([
-            'getLastError' => 1,
-        ])->toArray()[0];
-    }
-
-    /**
      * @return Collection
      */
     protected function getCollection()
