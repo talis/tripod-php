@@ -17,6 +17,11 @@
             "homepage": "http://talis.com/"
         }
     ],
+    "config": {
+        "audit": {
+            "ignore": ["PKSA-gk21-j82g-2hhy"]
+        }
+    },
     "suggest": {
         "resque/php-resque": "Redis backed library for background jobs"
     },
