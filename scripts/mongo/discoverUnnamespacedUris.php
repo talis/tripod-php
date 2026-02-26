@@ -3,7 +3,7 @@
 use MongoDB\Client;
 use MongoDB\Database;
 
-require_once dirname(__FILE__) . '/common.inc.php';
+require_once __DIR__ . '/common.inc.php';
 
 // Detects un-namespaced subjects or object uris in CBD collections of the target database. Optionally supply a base uri to match against that rather than all uris
 if ($argc != 4 && $argc != 3) {

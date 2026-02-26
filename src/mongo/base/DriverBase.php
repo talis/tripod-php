@@ -342,7 +342,7 @@ abstract class DriverBase
         if (!empty($joins) && isset($joins['followSequence'])) {
             // add any rdf:_x style properties in the source to the joins array,
             // up to rdf:_1000 (unless a max is specified in the spec)
-            $max = (isset($joins['followSequence']['maxJoins'])) ? $joins['followSequence']['maxJoins'] : 1000;
+            $max = $joins['followSequence']['maxJoins'] ?? 1000;
             for ($i = 0; $i < $max; $i++) {
                 $r = 'rdf:_' . ($i + 1);
 
@@ -459,7 +459,7 @@ abstract class DriverBase
                 $hook->{$fn}($args);
             } catch (\Exception $e) {
                 // don't let rabid hooks stop tripod
-                $this->getLogger()->error('Hook ' . get_class($hook) . " threw exception {$e->getMessage()}, continuing");
+                static::getLogger()->error('Hook ' . get_class($hook) . " threw exception {$e->getMessage()}, continuing");
             }
         }
     }

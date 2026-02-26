@@ -59,7 +59,7 @@ class ExtendedGraphTest extends TestCase
         return [
             [null],
             [new stdClass()],
-            [function () {}],
+            [function (): void {}],
         ];
     }
 
@@ -86,7 +86,7 @@ class ExtendedGraphTest extends TestCase
             [[]],
             [null],
             [new stdClass()],
-            [function () {}],
+            [function (): void {}],
         ];
     }
 
@@ -113,7 +113,7 @@ class ExtendedGraphTest extends TestCase
             [[]],
             [null],
             [new stdClass()],
-            [function () {}],
+            [function (): void {}],
         ];
     }
 
@@ -153,7 +153,7 @@ class ExtendedGraphTest extends TestCase
             [[]],
             [null],
             [new stdClass()],
-            [function () {}],
+            [function (): void {}],
         ];
     }
 
@@ -180,7 +180,7 @@ class ExtendedGraphTest extends TestCase
             [[]],
             [null],
             [new stdClass()],
-            [function () {}],
+            [function (): void {}],
         ];
     }
 
@@ -207,7 +207,7 @@ class ExtendedGraphTest extends TestCase
             [[]],
             [null],
             [new stdClass()],
-            [function () {}],
+            [function (): void {}],
         ];
     }
 
@@ -674,22 +674,22 @@ class ExtendedGraphTest extends TestCase
         $rdfType = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 
         $graph1 = new ExtendedGraph();
-        $graph1->add_resource_triple('http://example.com/people/bloggs-joe', $rdfType, 'http://xmlns.com/foaf/0.1/Person', 'en');
+        $graph1->add_resource_triple('http://example.com/people/bloggs-joe', $rdfType, 'http://xmlns.com/foaf/0.1/Person');
 
         $graph2 = new ExtendedGraph();
-        $graph2->add_resource_triple('http://example.com/people/mouse-mickey', $rdfType, 'http://xmlns.com/foaf/0.1/Person', 'en');
+        $graph2->add_resource_triple('http://example.com/people/mouse-mickey', $rdfType, 'http://xmlns.com/foaf/0.1/Person');
 
         $graph3 = new ExtendedGraph();
         $graph3->add_literal_triple('http://example.com/people/mouse-mickey', $rdfType, 'http://xmlns.com/foaf/0.1/Person', 'en');
 
         $graph4 = new ExtendedGraph();
-        $graph4->add_resource_triple('http://example.com/people/mouse-mickey', 'http://some/predicate/p1', 'http://xmlns.com/foaf/0.1/Person', 'en');
+        $graph4->add_resource_triple('http://example.com/people/mouse-mickey', 'http://some/predicate/p1', 'http://xmlns.com/foaf/0.1/Person');
 
         $graph5 = new ExtendedGraph();
-        $graph5->add_resource_triple('http://example.com/people/mouse-mickey', $rdfType, 'http://xmlns.com/foaf/0.1/Mouse', 'en');
+        $graph5->add_resource_triple('http://example.com/people/mouse-mickey', $rdfType, 'http://xmlns.com/foaf/0.1/Mouse');
 
         $graph6 = new ExtendedGraph();
-        $graph6->add_resource_triple('http://example.com/people/mouse-mickey', $rdfType, 'http://xmlns.com/foaf/0.1/Person', 'de');
+        $graph6->add_resource_triple('http://example.com/people/mouse-mickey', $rdfType, 'http://xmlns.com/foaf/0.1/Person');
 
         // Different subject
         $this->assertFalse($graph1->is_equal_to($graph2), 'graph1 should not equal graph2');

@@ -227,7 +227,7 @@ class ChangeSet extends ExtendedGraph
      */
     public function has_changes()
     {
-        foreach ($this->_index as $uri => $properties) {
+        foreach ($this->_index as $properties) {
             if (
                 isset($properties['http://purl.org/vocab/changeset/schema#addition'])
                 or isset($properties['http://purl.org/vocab/changeset/schema#removal'])

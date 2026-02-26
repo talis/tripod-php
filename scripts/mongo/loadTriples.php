@@ -4,9 +4,9 @@ use Tripod\Config;
 use Tripod\Mongo\TriplesUtil;
 use Tripod\Timer;
 
-require_once dirname(__FILE__) . '/common.inc.php';
+require_once __DIR__ . '/common.inc.php';
 
-require_once dirname(dirname(dirname(__FILE__))) . '/src/tripod.inc.php';
+require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 /**
  * @param string $subject

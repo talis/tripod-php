@@ -177,7 +177,7 @@ class MongoGraphTest extends MongoTripodTestBase
         return [
             [null],
             [new stdClass()],
-            [function () {}],
+            [function (): void {}],
         ];
     }
 
@@ -336,14 +336,14 @@ class MongoGraphTest extends MongoTripodTestBase
             [[]],
             [null],
             [new stdClass()],
-            [function () {}],
+            [function (): void {}],
         ];
     }
 
     public function testAddTripodArrayWhenAddingViews()
     {
         // view contains 4 subgraphs
-        $view = json_decode(file_get_contents(dirname(__FILE__) . '/data/view.json'), true);
+        $view = json_decode(file_get_contents(__DIR__ . '/data/view.json'), true);
         $g = new MongoGraph();
         $g->add_tripod_array($view);
 

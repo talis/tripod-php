@@ -3,9 +3,9 @@
 use Tripod\Config;
 use Tripod\Mongo\TriplesUtil;
 
-require_once dirname(__FILE__) . '/common.inc.php';
+require_once __DIR__ . '/common.inc.php';
 
-require_once dirname(dirname(dirname(__FILE__))) . '/src/tripod.inc.php';
+require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 ini_set('memory_limit', '32M');
 
@@ -74,7 +74,7 @@ while (($line = fgets(STDIN)) !== false) {
             foreach ($ns as $n) {
                 $prefix = $util->suggestPrefix($n);
                 if (array_key_exists($prefix, $config['namespaces'])) {
-                    $prefix = $prefix . uniqid();
+                    $prefix .= uniqid();
                 }
                 $newNsConfig[$prefix] = $n;
                 echo "\nFound ns {$n} suggest prefix {$prefix}";
@@ -94,7 +94,7 @@ while (($line = fgets(STDIN)) !== false) {
                 if ($objectNs[$n] > 500) {
                     $prefix = $util->suggestPrefix($n);
                     if (array_key_exists($prefix, $config['namespaces'])) {
-                        $prefix = $prefix . uniqid();
+                        $prefix .= uniqid();
                     }
                     $newNsConfig[$prefix] = $n;
                     echo "\nFound object ns {$n} occurs > 500 times, suggest prefix {$prefix}";

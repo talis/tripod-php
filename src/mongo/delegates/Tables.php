@@ -253,7 +253,7 @@ class Tables extends CompositeBase
             [
                 'returnCursor' => false,
                 'includeCount' => true,
-                'documentType' => '\Tripod\Mongo\Documents\Tables',
+                'documentType' => \Tripod\Mongo\Documents\Tables::class,
             ],
             $options
         );
@@ -1268,7 +1268,7 @@ class Tables extends CompositeBase
                     $this->temporaryFields[] = $fieldName;
                 }
             }
-            $applyRegex = (isset($c['regex'])) ? isset($c['regex']) : null;
+            $applyRegex = isset($c['regex']) ?: null;
             $count = 0;
             // just count predicates at current location
             if (isset($source[$c['property']])) {
@@ -1420,7 +1420,7 @@ class Tables extends CompositeBase
     private function applyRegexToValue($regex, $value)
     {
         if (isset($value[VALUE_URI]) || isset($value[VALUE_LITERAL])) {
-            $v = ($value[VALUE_URI]) ? $value[VALUE_URI] : $value[VALUE_LITERAL];
+            $v = $value[VALUE_URI] ?: $value[VALUE_LITERAL];
 
             return preg_match($regex, $v);
         }

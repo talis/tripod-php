@@ -3,7 +3,7 @@
 use Tripod\Config;
 use Tripod\Exceptions\ConfigException;
 
-require_once dirname(__FILE__) . '/common.inc.php';
+require_once __DIR__ . '/common.inc.php';
 $options = getopt(
     'c:h',
     [
@@ -35,7 +35,7 @@ if (empty($options) || isset($options['h']) || isset($options['help']) || (!isse
 }
 $configLocation = $options['c'] ?? $options['config'];
 
-require_once dirname(dirname(dirname(__FILE__))) . '/src/tripod.inc.php';
+require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
 

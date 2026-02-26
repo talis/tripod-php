@@ -473,7 +473,7 @@ class Labeller
                     if ($parts[0] == 'has') {
                         array_shift($parts);
                     }
-                    $label = join(' ', $parts);
+                    $label = implode(' ', $parts);
                     if ($capitalize) {
                         return ucfirst($label);
                     }
@@ -574,7 +574,7 @@ class Labeller
     {
         $labelled_properties = [];
         $index = $graph->get_index();
-        foreach ($index as $s => $p_list) {
+        foreach ($index as $p_list) {
             foreach ($p_list as $p => $val) {
                 if (!array_key_exists($p, $labelled_properties)) {
                     if (array_key_exists($p, $this->_labels)) {

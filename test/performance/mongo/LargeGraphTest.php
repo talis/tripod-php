@@ -69,7 +69,7 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
 
     protected function loadLargeGraphData()
     {
-        $docs = json_decode(file_get_contents(dirname(__FILE__) . '/data/largeGraph.json'), true);
+        $docs = json_decode(file_get_contents(__DIR__ . '/data/largeGraph.json'), true);
         foreach ($docs as $d) {
             $this->addDocument($d);
         }
@@ -77,6 +77,6 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
 
     protected function getConfigLocation()
     {
-        return dirname(__FILE__) . '/../../unit/mongo/data/config.json';
+        return __DIR__ . '/../../unit/mongo/data/config.json';
     }
 }

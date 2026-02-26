@@ -10,7 +10,7 @@ define('OPERATION_GROUPS_COLLECTION', 'job_groups');
 
 // search
 define('SEARCH_INDEX_COLLECTION', 'search');
-define('SEARCH_PROVIDER_MONGO', '\Tripod\Mongo\MongoSearchProvider');
+define('SEARCH_PROVIDER_MONGO', \Tripod\Mongo\MongoSearchProvider::class);
 define('SEARCH_PROVIDER_ELASTIC_SEARCH', 'es');
 
 // Tripod document properties

@@ -178,7 +178,7 @@ class SearchIndexer extends CompositeBase
         }
 
         // default collection
-        $from = (isset($spec['from'])) ? $spec['from'] : $this->podName;
+        $from = $spec['from'] ?? $this->podName;
 
         $types = [];
         if (is_array($spec['type'])) {

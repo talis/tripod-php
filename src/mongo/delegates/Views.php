@@ -264,7 +264,7 @@ class Views extends CompositeBase
                 }
 
                 $query = ['_id' => ['$in' => $this->createTripodViewIdsFromResourceUris($regrabResources, $context, $viewType)]];
-                $g->add_graph($this->fetchGraph($query, MONGO_VIEW, $this->getCollectionForViewSpec($viewType)), null, $cursorSize);
+                $g->add_graph($this->fetchGraph($query, MONGO_VIEW, $this->getCollectionForViewSpec($viewType)));
             }
         }
 

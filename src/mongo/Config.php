@@ -233,11 +233,8 @@ class Config implements IConfigInstance
         if (!isset($this->specPredicates[$storename])) {
             $this->specPredicates[$storename] = $this->getDefinedPredicatesInSpecs($storename);
         }
-        if (isset($this->specPredicates[$storename][$specId])) {
-            return $this->specPredicates[$storename][$specId];
-        }
 
-        return [];
+        return $this->specPredicates[$storename][$specId] ?? [];
     }
 
     /**
@@ -1396,7 +1393,7 @@ class Config implements IConfigInstance
 
         if (isset($spec['joins'])) {
             $nextLevel = ($depth + 1);
-            foreach ($spec['joins'] as $property => $join) {
+            foreach ($spec['joins'] as $join) {
                 $this->validateTableSpecPart($join, $nextLevel);
             }
         }
@@ -1603,7 +1600,7 @@ class Config implements IConfigInstance
         }
 
         if (isset($spec['joins'])) {
-            foreach ($spec['joins'] as $property => $join) {
+            foreach ($spec['joins'] as $join) {
                 $fieldNames = array_merge($fieldNames, $this->getFieldNamesInSpec($join));
             }
         }

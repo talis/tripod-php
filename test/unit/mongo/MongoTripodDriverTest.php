@@ -620,7 +620,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
             ->getMock();
 
         $tripodUpdate
-            ->expects($this->once(0))
+            ->expects($this->once())
             ->method('setReadPreferenceToPrimary');
 
         $tripodUpdate

@@ -19,7 +19,7 @@ class ConfigGeneratorTest extends MongoTripodTestBase
     {
         $this->config = [
             'class' => 'TestConfigGenerator',
-            'filename' => dirname(__FILE__) . '/data/config.json',
+            'filename' => __DIR__ . '/data/config.json',
         ];
         Config::setConfig($this->config);
     }

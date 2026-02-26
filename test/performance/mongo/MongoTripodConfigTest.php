@@ -31,7 +31,7 @@ class MongoTripodConfigTest extends MongoTripodPerformanceTestBase
     {
         parent::setup();
 
-        $this->config = json_decode(file_get_contents(dirname(__FILE__) . '/../../unit/mongo/data/config.json'), true);
+        $this->config = json_decode(file_get_contents(__DIR__ . '/../../unit/mongo/data/config.json'), true);
     }
 
     /**

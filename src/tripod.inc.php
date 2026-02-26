@@ -3,7 +3,7 @@
 use Tripod\Mongo\Config;
 
 if (!defined('TRIPOD_DIR')) {
-    define('TRIPOD_DIR', dirname(__FILE__) . '/');
+    define('TRIPOD_DIR', __DIR__ . '/');
 }
 
 require_once TRIPOD_DIR . '/mongo/MongoTripodConstants.php';

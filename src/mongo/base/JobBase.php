@@ -111,7 +111,7 @@ abstract class JobBase extends DriverBase
             return;
         }
 
-        $failedJob->errorLog('Caught exception in ' . get_called_class() . ': ' . $e->getMessage());
+        $failedJob->errorLog('Caught exception in ' . static::class . ': ' . $e->getMessage());
         $failedJob->getStat()->increment($failedJob->getStatFailureIncrementKey());
     }
 

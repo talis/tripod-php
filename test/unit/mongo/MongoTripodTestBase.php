@@ -51,7 +51,7 @@ abstract class MongoTripodTestBase extends TestCase
 
     protected function loadResourceData()
     {
-        $docs = json_decode(file_get_contents(dirname(__FILE__) . '/data/resources.json'), true);
+        $docs = json_decode(file_get_contents(__DIR__ . '/data/resources.json'), true);
         foreach ($docs as $d) {
             $this->addDocument($d);
         }
@@ -88,7 +88,7 @@ abstract class MongoTripodTestBase extends TestCase
 
     protected function getConfigLocation()
     {
-        return dirname(__FILE__) . '/data/config.json';
+        return __DIR__ . '/data/config.json';
     }
 
     // HELPERS BELOW HERE
@@ -376,7 +376,7 @@ abstract class MongoTripodTestBase extends TestCase
     {
         $mockedMethods = array_merge(['send'], $mockedMethods);
 
-        return $this->getMockBuilder('\Tripod\StatsD')
+        return $this->getMockBuilder(\Tripod\StatsD::class)
             ->onlyMethods($mockedMethods)
             ->setConstructorArgs([$host, $port, $prefix])
             ->getMock();
@@ -388,7 +388,7 @@ abstract class MongoTripodTestBase extends TestCase
     protected function getStatsDConfig()
     {
         return [
-            'class' => 'Tripod\StatsD',
+            'class' => \Tripod\StatsD::class,
             'config' => [
                 'host' => 'example.com',
                 'port' => 1234,
@@ -402,7 +402,7 @@ abstract class MongoTripodTestBase extends TestCase
      */
     private function loadDataViaTripod(Driver $tripod, $filename)
     {
-        $docs = json_decode(file_get_contents(dirname(__FILE__) . $filename), true);
+        $docs = json_decode(file_get_contents(__DIR__ . $filename), true);
         foreach ($docs as $d) {
             $g = new MongoGraph();
             $g->add_tripod_array($d);

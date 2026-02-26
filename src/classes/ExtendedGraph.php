@@ -1222,7 +1222,7 @@ class ExtendedGraph
                                 $lang = array_key_exists('lang', $o_info) ? $o_info['lang'] : null;
                                 $dt = array_key_exists('datatype', $o_info) ? $o_info['datatype'] : null;
 
-                                $remove_list_literals[] = [$look_for, $look_for, $o_info['value'], $lang, $dt];
+                                $remove_list_literals[] = [$look_for, $look_for, $o_info['value']];
                                 $add_list_literals[] = [$replace_with, $replace_with, $o_info['value'], $lang, $dt];
                             } else {
                                 if ($o_info['value'] == $look_for) {
@@ -1240,7 +1240,7 @@ class ExtendedGraph
                                 $lang = array_key_exists('lang', $o_info) ? $o_info['lang'] : null;
                                 $dt = array_key_exists('datatype', $o_info) ? $o_info['datatype'] : null;
 
-                                $remove_list_literals[] = [$look_for, $p, $o_info['value'], $lang, $dt];
+                                $remove_list_literals[] = [$look_for, $p, $o_info['value']];
                                 $add_list_literals[] = [$replace_with, $p, $o_info['value'], $lang, $dt];
                             } else {
                                 if ($o_info['value'] == $look_for) {
@@ -1262,7 +1262,7 @@ class ExtendedGraph
                                 $lang = array_key_exists('lang', $o_info) ? $o_info['lang'] : null;
                                 $dt = array_key_exists('datatype', $o_info) ? $o_info['datatype'] : null;
 
-                                $remove_list_literals[] = [$s, $look_for, $o_info['value'], $lang, $dt];
+                                $remove_list_literals[] = [$s, $look_for, $o_info['value']];
                                 $add_list_literals[] = [$s, $replace_with, $o_info['value'], $lang, $dt];
                             } else {
                                 if ($o_info['value'] == $look_for) {
@@ -1294,7 +1294,7 @@ class ExtendedGraph
         }
 
         foreach ($remove_list_literals as $t) {
-            $this->remove_literal_triple($t[0], $t[1], $t[2], $t[3], $t[4]);
+            $this->remove_literal_triple($t[0], $t[1], $t[2]);
         }
         foreach ($add_list_literals as $t) {
             $this->add_literal_triple($t[0], $t[1], $t[2], $t[3], $t[4]);
@@ -1417,7 +1417,7 @@ class ExtendedGraph
     {
         $resources = [];
         if (array_key_exists($s, $this->_index)) {
-            foreach ($this->_index[$s] as $p => $values) {
+            foreach ($this->_index[$s] as $values) {
                 foreach ($values as $value) {
                     if ($value['type'] == 'uri' || $value['type'] == 'bnode') {
                         $resources[] = $value['value'];
@@ -1502,7 +1502,7 @@ class ExtendedGraph
 
         $values = [];
 
-        foreach ($properties as $key => $value) {
+        foreach ($properties as $value) {
             $values[] = $value;
         }
 
@@ -1672,8 +1672,8 @@ class ExtendedGraph
      */
     public function is_equal_to(ExtendedGraph $otherGraph)
     {
-        $diffThisAndThat = ExtendedGraph::diff($this->get_index(), $otherGraph->get_index());
-        $diffThatAndThis = ExtendedGraph::diff($otherGraph->get_index(), $this->get_index());
+        $diffThisAndThat = $this->diff($this->get_index(), $otherGraph->get_index());
+        $diffThatAndThis = $this->diff($otherGraph->get_index(), $this->get_index());
 
         return empty($diffThisAndThat) && empty($diffThatAndThis);
     }

@@ -5,7 +5,7 @@ use Tripod\iTripodStat;
 use Tripod\Mongo\Driver;
 use Tripod\Timer;
 
-require_once dirname(__FILE__) . '/common.inc.php';
+require_once __DIR__ . '/common.inc.php';
 $options = getopt(
     'c:s:q:hd:i:a',
     [
@@ -46,13 +46,13 @@ if (empty($options) || isset($options['h']) || isset($options['help'])
     || (!isset($options['c']) && !isset($options['config']))
     || (!isset($options['s']) && !isset($options['storename']))
 ) {
-    showUsage($argv[0]);
+    showUsage();
 
     exit;
 }
 $configLocation = $options['c'] ?? $options['config'];
 
-require_once dirname(dirname(dirname(__FILE__))) . '/src/tripod.inc.php';
+require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 /**
  * @param string|null      $id

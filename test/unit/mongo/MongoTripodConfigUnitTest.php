@@ -119,7 +119,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
     public function testSearchConfig()
     {
         $config = Config::getInstance();
-        $this->assertEquals('\Tripod\Mongo\MongoSearchProvider', $config->getSearchProviderClassName('tripod_php_testing'));
+        $this->assertEquals(\Tripod\Mongo\MongoSearchProvider::class, $config->getSearchProviderClassName('tripod_php_testing'));
 
         $this->assertEquals(3, count($config->getSearchDocumentSpecifications('tripod_php_testing')));
     }
@@ -940,7 +940,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getDatabase'])
             ->getMock();
-        $mockConfig->loadConfig(json_decode(file_get_contents(dirname(__FILE__) . '/data/config.json'), true));
+        $mockConfig->loadConfig(json_decode(file_get_contents(__DIR__ . '/data/config.json'), true));
         $mockConfig->expects($this->exactly(2))
             ->method('getDatabase')
             ->withConsecutive(
@@ -987,7 +987,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             }
         }
 
-        foreach ($config->getSearchDocumentSpecifications($storeName) as $id => $spec) {
+        foreach ($config->getSearchDocumentSpecifications($storeName) as $spec) {
             if (!in_array($spec['to_data_source'], $dataSourcesForStore)) {
                 $dataSourcesForStore[] = $spec['to_data_source'];
             }
@@ -1603,7 +1603,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getMongoClient'])
             ->getMock();
-        $mockConfig->loadConfig(json_decode(file_get_contents(dirname(__FILE__) . '/data/config.json'), true));
+        $mockConfig->loadConfig(json_decode(file_get_contents(__DIR__ . '/data/config.json'), true));
         $mockConfig->expects($this->exactly(1))
             ->method('getMongoClient')
             ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])
@@ -1624,7 +1624,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getMongoClient'])
             ->getMock();
-        $mockConfig->loadConfig(json_decode(file_get_contents(dirname(__FILE__) . '/data/config.json'), true));
+        $mockConfig->loadConfig(json_decode(file_get_contents(__DIR__ . '/data/config.json'), true));
         $mockConfig->expects($this->exactly(30))
             ->method('getMongoClient')
             ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])
@@ -1638,7 +1638,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getMongoClient'])
             ->getMock();
-        $mockConfig->loadConfig(json_decode(file_get_contents(dirname(__FILE__) . '/data/config.json'), true));
+        $mockConfig->loadConfig(json_decode(file_get_contents(__DIR__ . '/data/config.json'), true));
         $mockConfig->expects($this->exactly(5))
             ->method('getMongoClient')
             ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])
