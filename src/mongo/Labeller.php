@@ -31,11 +31,11 @@ class Labeller extends \Tripod\Labeller
     /**
      * If labeller can generate a qname for this uri, it will return it. Otherwise just returns the original uri.
      *
-     * @param string $uri
+     * @param string|null $uri
      *
-     * @return string
+     * @return string|null
      */
-    public function uri_to_alias($uri)
+    public function uri_to_alias(?string $uri): ?string
     {
         try {
             $retVal = $this->uri_to_qname($uri);
@@ -48,28 +48,28 @@ class Labeller extends \Tripod\Labeller
     /**
      * If labeller can generate a uri for this qname, it will return it. Otherwise just returns the original qname.
      *
-     * @param string $qname
+     * @param string|null $qName
      *
-     * @return string
+     * @return string|null
      */
-    public function qname_to_alias($qname)
+    public function qname_to_alias(?string $qName): ?string
     {
         try {
-            $retVal = $this->qname_to_uri($qname);
+            $retVal = $this->qname_to_uri($qName);
         } catch (LabellerException $e) {
         }
 
-        return (empty($retVal)) ? $qname : $retVal;
+        return (empty($retVal)) ? $qName : $retVal;
     }
 
     /**
-     * @param string $qName
+     * @param string|null $qName
      *
-     * @return string
+     * @return string|null
      *
      * @throws LabellerException
      */
-    public function qname_to_uri($qName)
+    public function qname_to_uri(?string $qName): ?string
     {
         $retVal = parent::qname_to_uri($qName);
         if (empty($retVal)) {
@@ -87,10 +87,10 @@ class Labeller extends \Tripod\Labeller
      *
      * @throws LabellerException
      */
-    public function get_prefix($ns)
+    public function get_prefix(string $ns): string
     {
         $prefix = array_search($ns, $this->_ns, true);
-        if ($prefix != null && $prefix !== false) {
+        if ($prefix !== null && $prefix !== false) {
             return $prefix;
         }
 
