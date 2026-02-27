@@ -20,9 +20,11 @@ class TriplesUtilTest extends MongoTripodTestBase
             '_id' => ['r' => 'http://serials.talisaspire.com/issn/0893-0465', 'c' => 'http://talisaspire.com/'],
             'foaf:page' => [
                 [
-                    'u' => 'http://www.ingentaconnect.com/content/bpl/ciso'],
+                    'u' => 'http://www.ingentaconnect.com/content/bpl/ciso',
+                ],
                 [
-                    'u' => 'http://onlinelibrary.wiley.com/journal/10.1111/(ISSN)1548-744X'],
+                    'u' => 'http://onlinelibrary.wiley.com/journal/10.1111/(ISSN)1548-744X',
+                ],
             ],
             'rdf:type' => [
                 'u' => 'bibo:Journal',

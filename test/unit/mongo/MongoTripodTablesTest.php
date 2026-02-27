@@ -1051,7 +1051,8 @@ class MongoTripodTablesTest extends MongoTripodTestBase
 
         $subjectsAndPredicatesOfChange = [
             $labeller->uri_to_alias($uri) => [
-                'rdf:type', 'bibo:issn',
+                'rdf:type',
+                'bibo:issn',
             ],
         ];
 

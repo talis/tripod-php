@@ -85,7 +85,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             '_id' => [
                 _ID_RESOURCE => 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA',
                 _ID_CONTEXT => 'http://talisaspire.com/',
-                'type' => 'v_resource_full'],
+                'type' => 'v_resource_full',
+            ],
             'value' => [
                 _GRAPHS => [
                     [
@@ -123,7 +124,11 @@ class MongoTripodViewsTest extends MongoTripodTestBase
         ];
         // get the view direct from mongo
         $collection = Config::getInstance()->getCollectionForView('tripod_php_testing', 'v_resource_full');
-        $actualView = $collection->findOne(['_id' => ['r' => 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA', 'c' => 'http://talisaspire.com/', 'type' => 'v_resource_full']]);
+        $actualView = $collection->findOne(['_id' => [
+            'r' => 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA',
+            'c' => 'http://talisaspire.com/',
+            'type' => 'v_resource_full',
+        ]]);
         $this->assertEquals($expectedView['_id'], $actualView['_id']);
         $this->assertEquals($expectedView['value'], $actualView['value']);
         $this->assertInstanceOf(UTCDateTime::class, $actualView['_cts']);
@@ -141,7 +146,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             '_id' => [
                 _ID_RESOURCE => 'http://talisaspire.com/resources/filter1',
                 _ID_CONTEXT => 'http://talisaspire.com/',
-                'type' => 'v_resource_filter1'],
+                'type' => 'v_resource_filter1',
+            ],
             'value' => [
                 _GRAPHS => [
                     // This Book should not be included in the view - we are filtering to include only chapters.
@@ -192,7 +198,11 @@ class MongoTripodViewsTest extends MongoTripodTestBase
         ];
         // get the view direct from mongo
         $collection = Config::getInstance()->getCollectionForView('tripod_php_testing', 'v_resource_filter1');
-        $actualView = $collection->findOne(['_id' => ['r' => 'http://talisaspire.com/resources/filter1', 'c' => 'http://talisaspire.com/', 'type' => 'v_resource_filter1']]);
+        $actualView = $collection->findOne(['_id' => [
+            'r' => 'http://talisaspire.com/resources/filter1',
+            'c' => 'http://talisaspire.com/',
+            'type' => 'v_resource_filter1',
+        ]]);
         $this->assertEquals($expectedView['_id'], $actualView['_id']);
         $this->assertEquals($expectedView['value'], $actualView['value']);
         $this->assertInstanceOf(UTCDateTime::class, $actualView['_cts']);
@@ -210,7 +220,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             '_id' => [
                 _ID_RESOURCE => 'http://talisaspire.com/resources/filter1',
                 _ID_CONTEXT => 'http://talisaspire.com/',
-                'type' => 'v_resource_filter2'],
+                'type' => 'v_resource_filter2',
+            ],
             'value' => [
                 _GRAPHS => [
                     // http://talisaspire.com/works/filter2 has the matching literal
@@ -273,7 +284,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             '_id' => [
                 _ID_RESOURCE => 'http://talisaspire.com/resources/filter1',
                 _ID_CONTEXT => 'http://talisaspire.com/',
-                'type' => 'v_resource_filter1'],
+                'type' => 'v_resource_filter1',
+            ],
             'value' => [
                 _GRAPHS => [
                     // This Book should not be included in the view - we are filtering to include only chapters.
@@ -344,7 +356,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             '_id' => [
                 _ID_RESOURCE => 'http://talisaspire.com/resources/filter1',
                 _ID_CONTEXT => 'http://talisaspire.com/',
-                'type' => 'v_resource_filter1'],
+                'type' => 'v_resource_filter1',
+            ],
             'value' => [
                 _GRAPHS => [
                     // This work is now included as it's type has changed to Chapter
@@ -393,7 +406,11 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             ],
         ];
 
-        $updatedView = $collection->findOne(['_id' => ['r' => 'http://talisaspire.com/resources/filter1', 'c' => 'http://talisaspire.com/', 'type' => 'v_resource_filter1']]);
+        $updatedView = $collection->findOne(['_id' => [
+            'r' => 'http://talisaspire.com/resources/filter1',
+            'c' => 'http://talisaspire.com/',
+            'type' => 'v_resource_filter1',
+        ]]);
         $this->assertEquals($expectedUpdatedView['_id'], $updatedView['_id']);
         $this->assertEquals($expectedUpdatedView['value'], $updatedView['value']);
         $this->assertInstanceOf(UTCDateTime::class, $updatedView['_cts']);
@@ -411,7 +428,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             '_id' => [
                 _ID_RESOURCE => 'http://talisaspire.com/resources/filter1',
                 _ID_CONTEXT => 'http://talisaspire.com/',
-                'type' => 'v_resource_rdfsequence'],
+                'type' => 'v_resource_rdfsequence',
+            ],
             'value' => [
                 _GRAPHS => [
                     [
@@ -489,7 +507,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             '_id' => [
                 'r' => 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA',
                 'c' => 'http://talisaspire.com/',
-                'type' => 'v_resource_full_ttl'],
+                'type' => 'v_resource_full_ttl',
+            ],
             'value' => [
                 _GRAPHS => [
                     [
@@ -519,7 +538,11 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             ],
         ];
         // get the view direct from mongo
-        $actualView = Config::getInstance()->getCollectionForView('tripod_php_testing', 'v_resource_full_ttl')->findOne(['_id' => ['r' => 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA', 'c' => 'http://talisaspire.com/', 'type' => 'v_resource_full_ttl']]);
+        $actualView = Config::getInstance()->getCollectionForView('tripod_php_testing', 'v_resource_full_ttl')->findOne(['_id' => [
+            'r' => 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA',
+            'c' => 'http://talisaspire.com/',
+            'type' => 'v_resource_full_ttl',
+        ]]);
         $this->assertEquals($expectedView['_id'], $actualView['_id']);
         $this->assertEquals($expectedView['value'], $actualView['value']);
         $this->assertInstanceOf(UTCDateTime::class, $actualView['_cts']);
@@ -699,7 +722,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             '_id' => [
                 'r' => 'http://talisaspire.com/works/4d101f63c10a6',
                 'c' => 'http://talisaspire.com/',
-                'type' => 'v_counts'],
+                'type' => 'v_counts',
+            ],
             'value' => [
                 _GRAPHS => [
                     [
@@ -739,7 +763,11 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             ],
         ];
 
-        $actualView = Config::getInstance()->getCollectionForView('tripod_php_testing', 'v_counts')->findOne(['_id' => ['r' => 'http://talisaspire.com/works/4d101f63c10a6', 'c' => 'http://talisaspire.com/', 'type' => 'v_counts']]);
+        $actualView = Config::getInstance()->getCollectionForView('tripod_php_testing', 'v_counts')->findOne(['_id' => [
+            'r' => 'http://talisaspire.com/works/4d101f63c10a6',
+            'c' => 'http://talisaspire.com/',
+            'type' => 'v_counts',
+        ]]);
         $this->assertEquals($expectedView['_id'], $actualView['_id']);
         $this->assertEquals($expectedView['value'], $actualView['value']);
         $this->assertInstanceOf(UTCDateTime::class, $actualView['_cts']);
@@ -974,7 +1002,9 @@ class MongoTripodViewsTest extends MongoTripodTestBase
 
         $subjectsAndPredicatesOfChange = [
             $labeller->uri_to_alias($uri1) => [
-                'rdf:type', 'searchterms:topic', 'dct:isVersionOf',
+                'rdf:type',
+                'searchterms:topic',
+                'dct:isVersionOf',
             ],
         ];
 
@@ -1123,13 +1153,15 @@ class MongoTripodViewsTest extends MongoTripodTestBase
 
         $subjectsAndPredicatesOfChange = [
             $labeller->uri_to_alias($uri2) => [
-                'rdf:type', 'dct:subject',
+                'rdf:type',
+                'dct:subject',
             ],
         ];
 
         $mockTripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods([
-                'getDataUpdater', 'getComposite',
+                'getDataUpdater',
+                'getComposite',
             ])
             ->setConstructorArgs([
                 'CBD_testing',
@@ -1303,7 +1335,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
 
         $mockTripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods([
-                'getDataUpdater', 'getComposite',
+                'getDataUpdater',
+                'getComposite',
             ])
             ->setConstructorArgs([
                 'CBD_testing',
@@ -1479,7 +1512,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
 
         $mockTripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods([
-                'getDataUpdater', 'getComposite',
+                'getDataUpdater',
+                'getComposite',
             ])
             ->setConstructorArgs([
                 'CBD_testing',
@@ -1645,7 +1679,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
 
         $mockTripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods([
-                'getDataUpdater', 'getComposite',
+                'getDataUpdater',
+                'getComposite',
             ])
             ->setConstructorArgs([
                 'CBD_testing',
@@ -2071,7 +2106,13 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             ->getMock();
 
         $mockCursor->expects($this->exactly(5))
-            ->method('rewind')->willReturnOnConsecutiveCalls($this->throwException(new Exception('Exception thrown when cursoring to Mongo')), $this->throwException(new Exception('Exception thrown when cursoring to Mongo')), $this->throwException(new Exception('Exception thrown when cursoring to Mongo')), $this->throwException(new Exception('Exception thrown when cursoring to Mongo')), $this->returnValue($mockCursor));
+            ->method('rewind')->willReturnOnConsecutiveCalls(
+                $this->throwException(new Exception('Exception thrown when cursoring to Mongo')),
+                $this->throwException(new Exception('Exception thrown when cursoring to Mongo')),
+                $this->throwException(new Exception('Exception thrown when cursoring to Mongo')),
+                $this->throwException(new Exception('Exception thrown when cursoring to Mongo')),
+                $this->returnValue($mockCursor)
+            );
 
         $mockViewColl->expects($this->once())->method('find')->willReturn($mockCursor);
 

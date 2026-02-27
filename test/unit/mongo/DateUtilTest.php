@@ -15,7 +15,8 @@ class DateUtilTest extends MongoTripodTestBase
 
         $_id = [
             'r' => 'http://talisaspire.com/resources/testEtag' . microtime(false),
-            'c' => 'http://talisaspire.com/'];
+            'c' => 'http://talisaspire.com/',
+        ];
         $doc = [
             '_id' => $_id,
             'dct:title' => ['l' => 'etag'],
@@ -41,7 +42,8 @@ class DateUtilTest extends MongoTripodTestBase
 
         $_id = [
             'r' => 'http://talisaspire.com/resources/testEtag' . microtime(false),
-            'c' => 'http://talisaspire.com/'];
+            'c' => 'http://talisaspire.com/',
+        ];
         $doc = [
             '_id' => $_id,
             'dct:title' => ['l' => 'etag'],
