@@ -727,7 +727,33 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mtc = Config::getInstance();
         $this->assertEquals('myreplicaset', $mtc->getReplicaSetName($mtc->getDefaultDataSourceForStore('tripod_php_testing')));
 
-        $this->assertNull($mtc->getReplicaSetName('testing_2'));
+        $this->assertNull($mtc->getReplicaSetName($mtc->getDefaultDataSourceForStore('testing_2')));
+    }
+
+    public function testGetReplicaSetNameNonExistingDatasource()
+    {
+        Config::setConfig([
+            'defaultContext' => 'http://talisaspire.com/',
+            'data_sources' => [
+                'tlog' => [
+                    'type' => 'mongo',
+                    'connection' => 'mongodb://abc:zyx@localhost:27018',
+                ],
+            ],
+            'transaction_log' => [
+                'database' => 'transactions',
+                'collection' => 'transaction_log',
+                'data_source' => 'tlog',
+            ],
+            'stores' => [],
+        ]);
+
+        /** @var Tripod\Mongo\Config */
+        $mtc = Config::getInstance();
+
+        $this->expectException(ConfigException::class);
+        $this->expectExceptionMessage("Data source 'non_existing_data_source' not in configuration");
+        $mtc->getReplicaSetName('non_existing_data_source');
     }
 
     public function testGetReplicaSetNameFromConnectionString(): void
