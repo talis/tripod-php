@@ -220,20 +220,12 @@ class TriplesUtil
                 $existingGraph->add_tripod_array($collection->findOne($criteria));
                 $existingGraph->add_graph($cbdGraph);
 
-                try {
-                    $collection->updateOne($criteria, ['$set' => $existingGraph->to_tripod_array($cbdSubject, $context)], ['w' => 1]);
-                } catch (\Exception $e2) {
-                    throw new \Exception($e2->getMessage(), $e->getCode(), $e); // todo: would be good to have typed exception
-                }
+                $collection->updateOne($criteria, ['$set' => $existingGraph->to_tripod_array($cbdSubject, $context)], ['w' => 1]);
             } else {
                 // retry
                 echo 'CursorException on update: ' . $e->getMessage() . ", retrying\n";
 
-                try {
-                    $collection->insertOne($cbdGraph->to_tripod_array($cbdSubject, $context), ['w' => 1]);
-                } catch (\Exception $e2) {
-                    throw new \Exception($e2->getMessage(), $e->getCode(), $e); // todo: would be good to have typed exception
-                }
+                $collection->insertOne($cbdGraph->to_tripod_array($cbdSubject, $context), ['w' => 1]);
             }
         }
     }

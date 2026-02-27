@@ -1871,7 +1871,7 @@ class Config implements IConfigInstance
             if (!isset($this->connections[$dataSource])) {
                 self::getLogger()->error('MongoConnectionException failed after ' . $retries . ' attempts (MAX:' . self::CONNECTION_RETRIES . '): ' . $e->getMessage());
 
-                throw new ConnectionTimeoutException($exception);
+                throw $exception;
             }
         }
 
