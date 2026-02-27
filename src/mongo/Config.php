@@ -464,6 +464,10 @@ class Config implements IConfigInstance
      */
     public function getReplicaSetName($datasource)
     {
+        if (empty($this->dataSources[$datasource])) {
+            throw new ConfigException(sprintf("Data source '%s' not in configuration", $datasource));
+        }
+
         if (!empty($this->dataSources[$datasource]['replicaSet'])) {
             return $this->dataSources[$datasource]['replicaSet'];
         }
