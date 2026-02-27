@@ -1361,7 +1361,7 @@ class Tables extends CompositeBase
                 break;
 
             case 'lowercase':
-                $value = is_array($value) ? array_map('strtolower', $value) : strtolower($value);
+                $value = is_array($value) ? array_map([$this, 'strtolower'], $value) : $this->strtolower($value);
 
                 break;
 
@@ -1384,6 +1384,16 @@ class Tables extends CompositeBase
         }
 
         return $value;
+    }
+
+    /**
+     * Lowercase a value, casting to string first.
+     * @param string|\Stringable $value
+     * @return string
+     */
+    private function strtolower($value): string
+    {
+        return strtolower((string) $value);
     }
 
     /**
