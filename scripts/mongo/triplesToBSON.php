@@ -43,6 +43,3 @@ while (($line = fgets(STDIN)) !== false) {
 
 // last doc
 echo json_encode($tu->getTArrayAbout($currentSubject, $triples, Config::getInstance()->getDefaultContextAlias())) . "\n";
-
-?>
-
