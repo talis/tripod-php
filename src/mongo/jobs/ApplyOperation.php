@@ -55,8 +55,7 @@ class ApplyOperation extends JobBase
                 $jobGroup = $this->getJobGroup($subject['storeName'], $this->args[self::TRACKING_KEY]);
                 $jobCount = $jobGroup->incrementJobCount(-1);
                 if ($jobCount <= 0) {
-                    // @todo Replace this with ObjectId->getTimestamp() if we upgrade Mongo driver to 1.2
-                    $timestamp = new UTCDateTime(hexdec(substr($jobGroup->getId(), 0, 8)) * 1000);
+                    $timestamp = new UTCDateTime($jobGroup->getId()->getTimestamp() * 1000);
                     $tripod = $this->getTripod($subject['storeName'], $subject['podName']);
                     $count = 0;
                     foreach ($subject['specTypes'] as $specId) {

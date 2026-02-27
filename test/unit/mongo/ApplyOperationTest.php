@@ -235,7 +235,7 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
-        $timestamp = new UTCDateTime(hexdec(substr($jobTrackerId, 0, 8)) * 1000);
+        $timestamp = new UTCDateTime($jobTrackerId->getTimestamp() * 1000);
 
         $jobGroup = $this->getMockBuilder(JobGroup::class)
             ->onlyMethods(['incrementJobCount'])
@@ -543,7 +543,7 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
-        $timestamp = new UTCDateTime(hexdec(substr($jobTrackerId, 0, 8)) * 1000);
+        $timestamp = new UTCDateTime($jobTrackerId->getTimestamp() * 1000);
 
         $jobGroup = $this->getMockBuilder(JobGroup::class)
             ->onlyMethods(['incrementJobCount'])
@@ -821,7 +821,7 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
-        $timestamp = new UTCDateTime(hexdec(substr($jobTrackerId, 0, 8)) * 1000);
+        $timestamp = new UTCDateTime($jobTrackerId->getTimestamp() * 1000);
 
         $jobGroup = $this->getMockBuilder(JobGroup::class)
             ->onlyMethods(['incrementJobCount'])
