@@ -691,7 +691,7 @@ class Driver extends DriverBase implements IDriver
     /**
      * For mocking.
      */
-    protected function getLabeller(): \Tripod\Mongo\Labeller
+    protected function getLabeller(): Labeller
     {
         return new Labeller();
     }

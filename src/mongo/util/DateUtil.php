@@ -15,7 +15,7 @@ class DateUtil
      *
      * @param float|int|null $milliseconds - time in milliseconds since the epoch
      */
-    public static function getMongoDate($milliseconds = null): \MongoDB\BSON\UTCDateTime
+    public static function getMongoDate($milliseconds = null): UTCDateTime
     {
         if (is_null($milliseconds)) {
             $milliseconds = floor(microtime(true) * 1000);

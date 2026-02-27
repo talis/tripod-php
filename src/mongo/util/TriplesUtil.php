@@ -241,8 +241,9 @@ class TriplesUtil
     }
 
     /**
+     * @param bool|list<string> $parts
+     *
      * @return string
-     * @param list<string>|bool $parts
      */
     private function extract_object(array $parts)
     {

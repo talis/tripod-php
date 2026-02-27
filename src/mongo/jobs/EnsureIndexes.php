@@ -76,7 +76,7 @@ class EnsureIndexes extends JobBase
         return MONGO_QUEUE_ENSURE_INDEXES_FAIL;
     }
 
-    protected function getIndexUtils(): \Tripod\Mongo\IndexUtils
+    protected function getIndexUtils(): IndexUtils
     {
         return new IndexUtils();
     }

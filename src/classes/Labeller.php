@@ -341,11 +341,6 @@ class Labeller
         return null;
     }
 
-    /**
-     * @param string $ns
-     *
-     * @return string
-     */
     public function get_prefix(string $ns): string
     {
         $prefix = array_search($ns, $this->_ns, true);
@@ -374,30 +369,16 @@ class Labeller
         return $prefix;
     }
 
-    /**
-     * @param string $p
-     */
     public function add_labelling_property(string $p): void
     {
         $this->_label_properties[] = $p;
     }
 
-    /**
-     * @return array
-     */
     public function get_ns(): array
     {
         return $this->_ns;
     }
 
-    /**
-     * @param string             $uri
-     * @param ExtendedGraph|null $g
-     * @param bool               $capitalize
-     * @param bool               $use_qnames
-     *
-     * @return string
-     */
     public function get_label(string $uri, ?ExtendedGraph $g = null, bool $capitalize = false, bool $use_qnames = false): string
     {
         if ($g) {
@@ -489,20 +470,13 @@ class Labeller
             if ($capitalize && preg_match('~^[a-z]~', $localname)) {
                 return ucfirst($localname);
             }
+
             return $localname;
         }
 
         return $uri;
     }
 
-    /**
-     * @param string             $uri
-     * @param ExtendedGraph|null $g
-     * @param bool               $capitalize
-     * @param bool               $use_qnames
-     *
-     * @return string
-     */
     public function get_plural_label(string $uri, ?ExtendedGraph $g = null, bool $capitalize = false, bool $use_qnames = false): string
     {
         if ($g) {
@@ -534,14 +508,6 @@ class Labeller
         return $label;
     }
 
-    /**
-     * @param string             $uri
-     * @param ExtendedGraph|null $g
-     * @param bool               $capitalize
-     * @param bool               $use_qnames
-     *
-     * @return string
-     */
     public function get_inverse_label(string $uri, ?ExtendedGraph $g = null, bool $capitalize = false, bool $use_qnames = false): string
     {
         if ($g) {

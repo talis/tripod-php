@@ -4,7 +4,6 @@ use Tripod\Config;
 use Tripod\Mongo\TriplesUtil;
 
 require_once __DIR__ . '/common.inc.php';
-
 require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 ini_set('memory_limit', '32M');
@@ -156,7 +155,7 @@ function indent($json): string
 
         // If the last character was the beginning of an element,
         // output a new line and indent the next line.
-        if ((in_array($char, [',', '{', '['])) && $outOfQuotes) {
+        if (in_array($char, [',', '{', '[']) && $outOfQuotes) {
             $result .= $newLine;
             if ($char === '{' || $char === '[') {
                 $pos++;

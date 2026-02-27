@@ -192,8 +192,9 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @throws ConfigException
      * @param array<string, mixed> $spec
+     *
+     * @throws ConfigException
      */
     public function validateTableSpec(array $spec): void
     {
@@ -298,10 +299,10 @@ class Config implements IConfigInstance
      *
      * @throws ConfigException
      */
-    public static function getInstance(): \Tripod\Mongo\IConfigInstance
+    public static function getInstance(): IConfigInstance
     {
         self::getLogger()->warning(
-            \Tripod\Mongo\Config::class . '::getInstance deprecated, use ' . \Tripod\Config::class . '::getInstance instead'
+            Config::class . '::getInstance deprecated, use ' . \Tripod\Config::class . '::getInstance instead'
         );
 
         return \Tripod\Config::getInstance();
@@ -315,7 +316,7 @@ class Config implements IConfigInstance
     public static function setConfig(array $config): void
     {
         self::getLogger()->warning(
-            \Tripod\Mongo\Config::class . '::setConfig deprecated, use ' . \Tripod\Config::class . '::setConfig instead'
+            Config::class . '::setConfig deprecated, use ' . \Tripod\Config::class . '::setConfig instead'
         );
         \Tripod\Config::setConfig($config);
     }
@@ -328,7 +329,7 @@ class Config implements IConfigInstance
     public static function getConfig(): array
     {
         self::getLogger()->warning(
-            \Tripod\Mongo\Config::class . '::getConfig deprecated, use ' . \Tripod\Config::class . '::getConfig instead'
+            Config::class . '::getConfig deprecated, use ' . \Tripod\Config::class . '::getConfig instead'
         );
 
         return \Tripod\Config::getConfig();
@@ -1115,8 +1116,9 @@ class Config implements IConfigInstance
     /**
      * Used to load the config from self::config when new instance is generated.
      *
-     * @throws ConfigException
      * @param array<string, mixed> $config
+     *
+     * @throws ConfigException
      */
     protected function loadConfig(array $config)
     {
@@ -1316,10 +1318,10 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param int $depth
+     * @param int                  $depth
+     * @param array<string, mixed> $spec
      *
      * @throws ConfigException
-     * @param array<string, mixed> $spec
      */
     protected function validateTableSpecPart(array $spec, $depth = 0)
     {
@@ -1420,7 +1422,7 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param string[] $availableFields
+     * @param string[]             $availableFields
      * @param array<string, mixed> $spec
      */
     protected function validateComputedFieldSpec(string $type, array $spec, array $availableFields)
@@ -1444,9 +1446,10 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @throws ConfigException
      * @param array<string, mixed> $spec
-     * @param string[] $availableFields
+     * @param string[]             $availableFields
+     *
+     * @throws ConfigException
      */
     protected function validateComputedConditionalSpec(array $spec, array $availableFields)
     {
@@ -1537,9 +1540,10 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @throws ConfigException
      * @param array<string, mixed> $spec
-     * @param string[] $availableFields
+     * @param string[]             $availableFields
+     *
+     * @throws ConfigException
      */
     protected function validateComputedReplaceSpec(array $spec, array $availableFields)
     {
@@ -1561,9 +1565,10 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @throws ConfigException
      * @param array<int, mixed> $spec
-     * @param string[] $availableFields
+     * @param string[]          $availableFields
+     *
+     * @throws ConfigException
      */
     protected function validateComputedArithmeticSpec(array $spec, array $availableFields)
     {
@@ -1883,7 +1888,7 @@ class Config implements IConfigInstance
      *
      * @param string $connectionString
      */
-    protected function getMongoClient($connectionString, array $connectionOptions = []): \MongoDB\Client
+    protected function getMongoClient($connectionString, array $connectionOptions = []): Client
     {
         return new Client(
             $connectionString,
@@ -1954,10 +1959,11 @@ class Config implements IConfigInstance
     /**
      * Returns the value of the supplied key or throws an error, if missing.
      *
+     * @param array<string, mixed> $a
      *
      * @return mixed
+     *
      * @throws ConfigException
-     * @param array<string, mixed> $a
      */
     private function getMandatoryKey(string $key, array $a, string $configName = 'config')
     {
@@ -1995,7 +2001,6 @@ class Config implements IConfigInstance
     }
 
     /**
-     *
      * @return string
      */
     private static function getQueueName(string $envVar, string $type)
@@ -2006,9 +2011,10 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param bool   $default
+     * @param bool $default
      *
      * @return bool|string
+     *
      * @throws ConfigException
      */
     private static function getenv(string $env, $default = false)

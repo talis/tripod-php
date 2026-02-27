@@ -5,7 +5,6 @@ use Tripod\Mongo\TriplesUtil;
 use Tripod\Timer;
 
 require_once __DIR__ . '/common.inc.php';
-
 require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 /**

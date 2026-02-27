@@ -78,7 +78,7 @@ class ChangeSet extends ExtendedGraph
                     $parser->parse(false, $a[$rdf]);
                     $a[$rdf] = $parser->getSimpleIndex(0);
                 } elseif (
-                    is_array($a[$rdf]) && isset($a[$rdf][0]) && isset($a[$rdf][0]['s'])
+                    is_array($a[$rdf]) && isset($a[$rdf][0], $a[$rdf][0]['s'])
                 ) { // triples array
                     /** @var \ARC2_RDFSerializer $ser */
                     $ser = \ARC2::getTurtleSerializer();
@@ -210,9 +210,6 @@ class ChangeSet extends ExtendedGraph
         }
     }
 
-    /**
-     * @return string
-     */
     public function toRDFXML(): string
     {
         /** @var \ARC2_RDFSerializer $ser */
@@ -221,9 +218,6 @@ class ChangeSet extends ExtendedGraph
         return $ser->getSerializedIndex($this->_index);
     }
 
-    /**
-     * @return string
-     */
     public function to_rdfxml(): string
     {
         return $this->toRDFXML();

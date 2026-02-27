@@ -112,9 +112,6 @@ abstract class MongoTripodTestBase extends TestCase
         )->insertOne($doc, ['w' => 1]);
     }
 
-    /**
-     * @return Collection
-     */
     protected function getTlogCollection(): Collection
     {
         $config = Config::getInstance();
@@ -123,9 +120,6 @@ abstract class MongoTripodTestBase extends TestCase
         return $config->getTransactionLogDatabase()->selectCollection($tLogConfig['collection']);
     }
 
-    /**
-     * @return Collection
-     */
     protected function getTripodCollection(Driver $tripod): Collection
     {
         $config = Config::getInstance();
@@ -141,9 +135,6 @@ abstract class MongoTripodTestBase extends TestCase
     /**
      * @param array|string            $_id
      * @param Collection|IDriver|null $collection
-     * @param bool                    $fromTransactionLog
-     *
-     * @return array|null
      */
     protected function getDocument($_id, $collection = null, bool $fromTransactionLog = false): ?array
     {
@@ -284,15 +275,14 @@ abstract class MongoTripodTestBase extends TestCase
         $doc = $this->getDocument($_id, $tripod, $fromTransactionLog);
         if ($doc === null) {
             $this->assertNull($doc);
+
             return; // if document doesn't exist then it doesn't have the property, so assertion is successful
         }
         $this->assertArrayNotHasKey($property, $doc, 'Document for ' . var_export($_id, true) . sprintf(' should not have property [%s], but propert was found', $property));
     }
 
     /**
-     * @param array       $_id
      * @param Driver|null $tripod
-     * @param bool        $fromTransactionLog
      */
     protected function assertDocumentExists(array $_id, $tripod = null, bool $fromTransactionLog = false): void
     {
@@ -302,9 +292,7 @@ abstract class MongoTripodTestBase extends TestCase
     }
 
     /**
-     * @param array       $_id
      * @param Driver|null $tripod
-     * @param bool        $useTransactionTripod
      */
     protected function assertDocumentHasBeenDeleted(array $_id, $tripod = null, bool $useTransactionTripod = false): void
     {
@@ -392,7 +380,7 @@ abstract class MongoTripodTestBase extends TestCase
     }
 
     /**
-     * @return array<string, class-string<\Tripod\StatsD>|array<string, int|string>>
+     * @return array<string, array<string, int|string>|class-string<StatsD>>
      */
     protected function getStatsDConfig(): array
     {

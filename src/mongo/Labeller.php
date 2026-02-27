@@ -30,10 +30,6 @@ class Labeller extends \Tripod\Labeller
 
     /**
      * If labeller can generate a qname for this uri, it will return it. Otherwise just returns the original uri.
-     *
-     * @param string|null $uri
-     *
-     * @return string|null
      */
     public function uri_to_alias(?string $uri): ?string
     {
@@ -47,10 +43,6 @@ class Labeller extends \Tripod\Labeller
 
     /**
      * If labeller can generate a uri for this qname, it will return it. Otherwise just returns the original qname.
-     *
-     * @param string|null $qName
-     *
-     * @return string|null
      */
     public function qname_to_alias(?string $qName): ?string
     {
@@ -63,10 +55,6 @@ class Labeller extends \Tripod\Labeller
     }
 
     /**
-     * @param string|null $qName
-     *
-     * @return string|null
-     *
      * @throws LabellerException
      */
     public function qname_to_uri(?string $qName): ?string
@@ -81,10 +69,6 @@ class Labeller extends \Tripod\Labeller
 
     // overrides the default behaviour of trying to return a ns even if the prefix is not registered - instead, throw exception
     /**
-     * @param string $ns
-     *
-     * @return string
-     *
      * @throws LabellerException
      */
     public function get_prefix(string $ns): string
