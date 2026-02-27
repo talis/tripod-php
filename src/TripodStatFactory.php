@@ -9,8 +9,9 @@ use Tripod\Mongo\NoStat;
 class TripodStatFactory
 {
     /**
-     * @return ITripodStat
      * @param array<string, mixed> $config
+     *
+     * @return ITripodStat
      */
     public static function create(array $config = [])
     {

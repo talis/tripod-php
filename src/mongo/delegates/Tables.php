@@ -8,6 +8,7 @@ require_once TRIPOD_DIR . 'mongo/MongoTripodConstants.php';
 
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
+use MongoDB\Driver\CursorInterface;
 use MongoDB\Driver\ReadPreference;
 use Tripod\Exceptions\LabellerException;
 use Tripod\ITripodStat;
@@ -230,12 +231,12 @@ class Tables extends CompositeBase
     /**
      * Query the tables collection and return the results.
      *
-     * @param int    $offset
-     * @param int    $limit
+     * @param int                  $offset
+     * @param int                  $limit
      * @param array<string, mixed> $options Table query options
-     *
-     * @return array<string, \MongoDB\Driver\CursorInterface|mixed[]>
      * @param array<string, mixed> $filter
+     *
+     * @return array<string, CursorInterface|mixed[]>
      */
     public function getTableRows(
         string $tableSpecId,
@@ -299,9 +300,9 @@ class Tables extends CompositeBase
     /**
      * Returns the distinct values for a table column, optionally filtered by query.
      *
+     * @param array<string, mixed> $filter
      *
      * @return array<string, mixed[]>
-     * @param array<string, mixed> $filter
      */
     public function distinct(string $tableSpecId, string $fieldName, array $filter = []): array
     {
@@ -419,7 +420,6 @@ class Tables extends CompositeBase
      * @param string|null $resource
      * @param string|null $context
      * @param string|null $queueName Queue for background bulk generation
-     * @return array
      */
     public function generateTableRows(string $tableType, $resource = null, $context = null, $queueName = null): ?array
     {
@@ -546,8 +546,8 @@ class Tables extends CompositeBase
     /**
      * Count the number of documents in the spec that match $filters.
      *
-     * @param string $tableSpec Table spec ID
-     * @param array<string, mixed> $filters Query filters to get count on
+     * @param string               $tableSpec Table spec ID
+     * @param array<string, mixed> $filters   Query filters to get count on
      *
      * @return int
      */
@@ -642,7 +642,7 @@ class Tables extends CompositeBase
      * If an exception in thrown because a field is too large to index, the field is
      * truncated and the save is retried.
      *
-     * @param array<string, \MongoDB\BSON\UTCDateTime>|array<string, mixed[]> $generatedRow the rows to save
+     * @param array<string, mixed[]>|array<string, UTCDateTime> $generatedRow the rows to save
      *
      * @throws \Exception
      */
@@ -714,7 +714,7 @@ class Tables extends CompositeBase
 
     /**
      * @param array<string, mixed> $spec The table spec
-     * @param mixed[] $dest The table row document to save
+     * @param mixed[]              $dest The table row document to save
      */
     protected function doComputedFields(array $spec, array &$dest)
     {
@@ -733,9 +733,9 @@ class Tables extends CompositeBase
     }
 
     /**
-     * @param string $function A defined computed value function
-     * @param array<string, mixed> $spec The computed field spec
-     * @param array<string, mixed> $dest The table row document to save
+     * @param string               $function A defined computed value function
+     * @param array<string, mixed> $spec     The computed field spec
+     * @param array<string, mixed> $dest     The table row document to save
      *
      * @return mixed The computed value
      */
@@ -764,10 +764,11 @@ class Tables extends CompositeBase
     }
 
     /**
+     * @param array<int, mixed> $equation
+     *
      * @return float|int|null
      *
      * @throws \InvalidArgumentException
-     * @param array<int, mixed> $equation
      */
     protected function computeArithmeticValue(array $equation, array &$dest)
     {
@@ -824,7 +825,7 @@ class Tables extends CompositeBase
 
     /**
      * @param array<string, mixed> $replaceSpec The replace value spec
-     * @param array $dest        The table row document to save
+     * @param array                $dest        The table row document to save
      *
      * @return mixed
      */
@@ -850,7 +851,7 @@ class Tables extends CompositeBase
 
     /**
      * @param array<string, mixed> $conditionalSpec The conditional spec
-     * @param array $dest            The table row document to save
+     * @param array                $dest            The table row document to save
      *
      * @return mixed The computed value
      */
@@ -896,9 +897,9 @@ class Tables extends CompositeBase
     }
 
     /**
-     * @param mixed       $value   The value to replace, if it contains a variable
-     * @param array<string, mixed> $dest The table row document to save
-     * @param string|null $setType Force the return to be set to specified type
+     * @param mixed                $value   The value to replace, if it contains a variable
+     * @param array<string, mixed> $dest    The table row document to save
+     * @param string|null          $setType Force the return to be set to specified type
      *
      * @return mixed
      */
@@ -1084,7 +1085,7 @@ class Tables extends CompositeBase
                                         }
                                     }
 
-                                    // Otherwise apply a modifier
+                                // Otherwise apply a modifier
                                 } elseif (isset($dest[$f['fieldName']])) {
                                     $dest[$f['fieldName']] = $this->applyModifier($function, $dest[$f['fieldName']], $functionOptions);
                                 }
@@ -1119,7 +1120,7 @@ class Tables extends CompositeBase
      *
      * @param array<string, mixed> $source
      * @param array<string, mixed> $f
-     * @param string $predicate
+     * @param string               $predicate
      */
     protected function generateValues(array $source, array $f, $predicate, array &$dest)
     {
@@ -1345,8 +1346,8 @@ class Tables extends CompositeBase
      *      join - pass in "glue":" " to specify what to glue multiple values together with
      *      date - no options.
      *
-     * @param string $modifier
-     * @param string $value
+     * @param string               $modifier
+     * @param string               $value
      * @param array<string, mixed> $options
      *
      * @return mixed
@@ -1388,8 +1389,8 @@ class Tables extends CompositeBase
 
     /**
      * Lowercase a value, casting to string first.
+     *
      * @param string|\Stringable $value
-     * @return string
      */
     private function strtolower($value): string
     {
@@ -1399,7 +1400,7 @@ class Tables extends CompositeBase
     /**
      * Apply a regex to the RDF property value defined in $value.
      *
-     * @param mixed $regex
+     * @param mixed                $regex
      * @param array<string, mixed> $value
      *
      * @return int

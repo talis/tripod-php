@@ -35,7 +35,6 @@ class SearchDocuments extends DriverBase
      * @param string $resource
      * @param string $context
      *
-     *
      * @throws \Exception
      */
     public function generateSearchDocumentBasedOnSpecId(string $specId, $resource, $context): ?array
@@ -125,7 +124,6 @@ class SearchDocuments extends DriverBase
     /**
      * @param string $resource
      * @param string $context
-     *
      *
      * @throws \Exception
      */
@@ -287,7 +285,7 @@ class SearchDocuments extends DriverBase
 
     /**
      * @param array<string, mixed> $field
-     * @param array<int, mixed> $values
+     * @param array<int, mixed>    $values
      */
     private function addValuesToTarget(array $values, array $field, array &$target): void
     {

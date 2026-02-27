@@ -253,10 +253,10 @@ abstract class JobBase extends DriverBase
     }
 
     /**
-     * @param string $queueName     Queue name
-     * @param string $class         Class name
-     * @param array<string, mixed> $data Job arguments
-     * @param int    $retryAttempts If queue fails, retry x times before throwing an exception
+     * @param string               $queueName     Queue name
+     * @param string               $class         Class name
+     * @param array<string, mixed> $data          Job arguments
+     * @param int                  $retryAttempts If queue fails, retry x times before throwing an exception
      *
      * @return string A tracking token for the submitted job
      *

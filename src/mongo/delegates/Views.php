@@ -176,6 +176,7 @@ class Views extends CompositeBase
      *
      * @param string|null $resource
      * @param string|null $context
+     *
      * @return MongoGraph
      */
     public function getViewForResource($resource, string $viewType, $context = null)
@@ -334,7 +335,6 @@ class Views extends CompositeBase
      * @param string|null $resource
      * @param string|null $context
      *
-     *
      * @throws \Exception
      */
     public function generateViewsForResourcesOfType($rdfType, $resource = null, $context = null): void
@@ -403,7 +403,6 @@ class Views extends CompositeBase
      * @param string|null $context
      * @param string|null $queueName Queue for background bulk generation
      *
-     * @return array
      * @throws ViewException
      */
     public function generateView(string $viewId, $resource = null, $context = null, $queueName = null): ?array
@@ -532,8 +531,8 @@ class Views extends CompositeBase
     /**
      * Count the number of documents in the spec that match $filters.
      *
-     * @param string $viewSpec View spec ID
-     * @param array<string, mixed> $filters Query filters to get count on
+     * @param string               $viewSpec View spec ID
+     * @param array<string, mixed> $filters  Query filters to get count on
      *
      * @return int
      */
@@ -547,12 +546,12 @@ class Views extends CompositeBase
     /**
      * Joins data to $dest from $source according to specification in $joins, or queries DB if data is not available in $source.
      *
-     * @param bool  $buildImpactIndex
-     * @param mixed $source
-     * @param mixed $joins
+     * @param bool                 $buildImpactIndex
+     * @param mixed                $source
+     * @param mixed                $joins
      * @param array<string, mixed> $dest
-     * @param mixed $from
-     * @param mixed $contextAlias
+     * @param mixed                $from
+     * @param mixed                $contextAlias
      */
     protected function doJoins(array $source, $joins, array &$dest, $from, $contextAlias, $buildImpactIndex = true)
     {
@@ -670,9 +669,9 @@ class Views extends CompositeBase
      * Returns a document with properties extracted from $source, according to $viewSpec. Useful for partial representations
      * of CBDs in a view.
      *
-     * @param mixed $source
+     * @param mixed                $source
      * @param array<string, mixed> $viewSpec
-     * @param mixed $from
+     * @param mixed                $from
      */
     protected function extractProperties(array $source, array $viewSpec, $from): array
     {

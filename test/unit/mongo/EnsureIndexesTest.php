@@ -38,7 +38,7 @@ class EnsureIndexesTest extends ResqueJobTestBase
      *
      * @throws Exception
      */
-    public function testMandatoryArgs(string $argument, string $argumentName = null): void
+    public function testMandatoryArgs(string $argument, ?string $argumentName = null): void
     {
         if (!$argumentName) {
             $argumentName = $argument;
@@ -220,7 +220,7 @@ class EnsureIndexesTest extends ResqueJobTestBase
      *
      * @return EnsureIndexes&MockObject
      */
-    protected function createMockJob($methods = []): \PHPUnit\Framework\MockObject\MockObject
+    protected function createMockJob($methods = []): MockObject
     {
         $methodsToStub = ['getIndexUtils', 'submitJob', 'warningLog', 'enqueue', 'getJobStatus'];
 

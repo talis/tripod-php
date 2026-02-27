@@ -69,7 +69,7 @@ class ImpactedSubject
         $this->podName = $podName;
         $this->specTypes = $specTypes;
 
-        if ($stat instanceof \Tripod\ITripodStat) {
+        if ($stat instanceof ITripodStat) {
             $this->tripodStat = $stat;
         }
     }
@@ -117,7 +117,7 @@ class ImpactedSubject
     /**
      * Serialises the data as an array.
      *
-     * @return array<string, string|mixed[]>
+     * @return array<string, mixed[]|string>
      */
     public function toArray(): array
     {
@@ -146,7 +146,7 @@ class ImpactedSubject
     /**
      * For mocking.
      */
-    protected function getTripod(): \Tripod\Mongo\Driver
+    protected function getTripod(): Driver
     {
         return new Driver($this->getPodName(), $this->getStoreName(), [
             'readPreference' => ReadPreference::RP_PRIMARY,

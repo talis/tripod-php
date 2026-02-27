@@ -44,7 +44,6 @@ class MongoSearchProvider implements ISearchProvider
      *
      * @param array $document the document to index
      *
-     *
      * @throws SearchException if there was an error indexing the document
      */
     public function indexDocument($document): void
@@ -72,7 +71,6 @@ class MongoSearchProvider implements ISearchProvider
      * @param string            $resource
      * @param string            $context
      * @param array|string|null $specId
-     *
      *
      * @throws SearchException if there was an error removing the document
      */
@@ -356,8 +354,8 @@ class MongoSearchProvider implements ISearchProvider
     /**
      * Count the number of documents in the spec that match $filters.
      *
-     * @param string $searchSpec Search spec ID
-     * @param array<string, mixed> $filters Query filters to get count on
+     * @param string               $searchSpec Search spec ID
+     * @param array<string, mixed> $filters    Query filters to get count on
      *
      * @return int
      */

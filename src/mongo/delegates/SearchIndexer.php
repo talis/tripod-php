@@ -156,6 +156,7 @@ class SearchIndexer extends CompositeBase
      * @param string|null $resourceUri
      * @param string|null $context
      * @param string|null $queueName
+     *
      * @return array|null Will return an array with a count and group id, if $queueName is sent and $resourceUri is null
      */
     public function generateSearchDocuments(
@@ -289,7 +290,7 @@ class SearchIndexer extends CompositeBase
     /**
      * @param string $context
      */
-    protected function getSearchDocumentGenerator(Collection $collection, $context): \Tripod\Mongo\SearchDocuments
+    protected function getSearchDocumentGenerator(Collection $collection, $context): SearchDocuments
     {
         return new SearchDocuments($this->storeName, $collection, $context, $this->tripod->getStat());
     }

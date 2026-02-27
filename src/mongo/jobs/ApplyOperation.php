@@ -139,7 +139,7 @@ class ApplyOperation extends JobBase
      *
      * @param array<string, mixed> $args
      */
-    protected function createImpactedSubject(array $args): \Tripod\Mongo\ImpactedSubject
+    protected function createImpactedSubject(array $args): ImpactedSubject
     {
         return new ImpactedSubject(
             $args['resourceId'],
@@ -156,7 +156,7 @@ class ApplyOperation extends JobBase
      * @param string          $storeName   Tripod store (database) name
      * @param ObjectId|string $trackingKey JobGroup ID
      */
-    protected function getJobGroup($storeName, $trackingKey): \Tripod\Mongo\JobGroup
+    protected function getJobGroup($storeName, $trackingKey): JobGroup
     {
         return new JobGroup($storeName, $trackingKey);
     }
@@ -164,7 +164,7 @@ class ApplyOperation extends JobBase
     /**
      * For mocking.
      */
-    protected function getSearchProvider(Driver $tripod): \Tripod\Mongo\MongoSearchProvider
+    protected function getSearchProvider(Driver $tripod): MongoSearchProvider
     {
         return new MongoSearchProvider($tripod);
     }
