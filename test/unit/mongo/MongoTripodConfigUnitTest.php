@@ -1647,7 +1647,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig->expects($this->exactly(1))
             ->method('getMongoClient')
             ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])
-            ->willReturnCallback(function (): \MongoDB\Client {
+            ->willReturnCallback(function (): Client {
                 return new Client();
             });
         $mockConfig->getDatabase('tripod_php_testing', 'rs1', ReadPreference::RP_SECONDARY_PREFERRED);
@@ -1680,10 +1680,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig->expects($this->exactly(5))
             ->method('getMongoClient')
             ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])->willReturnOnConsecutiveCalls($this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')), $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')), $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')), $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')), $this->returnCallback(
-            function (): \MongoDB\Client {
-                return new Client();
-            }
-        ));
+                function (): Client {
+                    return new Client();
+                }
+            ));
 
         $mockConfig->getDatabase('tripod_php_testing', 'rs1', ReadPreference::RP_SECONDARY_PREFERRED);
         $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_SECONDARY_PREFERRED);

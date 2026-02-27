@@ -666,7 +666,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
         $this->assertEquals(0, $collection->count($impactQuery));
     }
 
-    protected function getSearchDocuments(Driver $tripod): \Tripod\Mongo\SearchDocuments
+    protected function getSearchDocuments(Driver $tripod): SearchDocuments
     {
         return new SearchDocuments(
             $tripod->getStoreName(),

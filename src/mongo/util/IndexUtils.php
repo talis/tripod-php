@@ -161,7 +161,7 @@ class IndexUtils
      *
      * @return \Tripod\Mongo\Config
      */
-    protected function getConfig(): \Tripod\Mongo\IConfigInstance
+    protected function getConfig(): IConfigInstance
     {
         return Config::getInstance();
     }

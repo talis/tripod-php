@@ -248,10 +248,10 @@ abstract class DriverBase
 
     /**
      * @param array<string, mixed> $query
-     * @param string          $type
-     * @param Collection|null $collection
-     * @param array           $includeProperties
-     * @param int             $cursorSize
+     * @param string               $type
+     * @param Collection|null      $collection
+     * @param array                $includeProperties
+     * @param int                  $cursorSize
      *
      * @return MongoGraph
      */
@@ -345,7 +345,7 @@ abstract class DriverBase
     /**
      * Expands an RDF sequence into proper tripod join clauses.
      *
-     * @param array $joins
+     * @param array                $joins
      * @param array<string, mixed> $source
      */
     protected function expandSequence(&$joins, array $source)
@@ -377,10 +377,10 @@ abstract class DriverBase
      * Adds an _id object (or array of _id objects) to the target document's impact index.
      *
      * @param array<string, mixed> &$target
-     * @param mixed $buildImpactIndex
+     * @param mixed                $buildImpactIndex
+     * @param array<string, mixed> $id
      *
      * @throws \InvalidArgumentException
-     * @param array<string, mixed> $id
      */
     protected function addIdToImpactIndex(array $id, array &$target, $buildImpactIndex = true)
     {

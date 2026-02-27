@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use MongoDB\BSON\Binary;
-use MongoDB\BSON\Javascript;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\Regex;
 use MongoDB\BSON\UTCDateTime;

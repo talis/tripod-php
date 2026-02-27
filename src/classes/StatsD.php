@@ -69,7 +69,7 @@ class StatsD implements ITripodStat
     }
 
     /**
-     * @return array<string, class-string<\Tripod\StatsD>|array<string, int|string>>
+     * @return array<string, array<string, int|string>|class-string<StatsD>>
      */
     public function getConfig()
     {
@@ -232,6 +232,7 @@ class StatsD implements ITripodStat
      * }
      *
      * @param array|string $value
+     *
      * @return array An associative array of the grouped_by_database and aggregate stats
      */
     protected function generateStatData(string $operation, $value): array

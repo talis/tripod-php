@@ -730,6 +730,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
      * @param string $startTime
      * @param string $endTime
      * @param int    $_version
+     *
      * @return array<string, mixed>
      */
     protected function buildTransactionDocument($id, $subjectOfChange, $startTime, $endTime, $_version): array

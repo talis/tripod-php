@@ -294,7 +294,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      *
      * @return IndexUtils&MockObject mocked IndexUtil object
      */
-    protected function createMockIndexUtils($mockConfig): \PHPUnit\Framework\MockObject\MockObject
+    protected function createMockIndexUtils($mockConfig): MockObject
     {
         $mockIndexUtils = $this->getMockBuilder(IndexUtils::class)
             ->onlyMethods(['getConfig'])
@@ -312,7 +312,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      *
      * @return Collection&MockObject mock Collection object
      */
-    protected function createMockCollection(): \PHPUnit\Framework\MockObject\MockObject
+    protected function createMockCollection(): MockObject
     {
         return $this->getMockBuilder(MongoDB\Collection::class)
             ->onlyMethods(['createIndex', 'dropIndexes'])
@@ -329,7 +329,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      *
      * @return MockObject&TripodTestConfig mock Config object
      */
-    protected function createMockConfig(): \PHPUnit\Framework\MockObject\MockObject
+    protected function createMockConfig(): MockObject
     {
         return $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods([
@@ -457,7 +457,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      *
      * @param Collection&MockObject $mockCollection mock Collection object
      * @param bool                  $background     create indexes in the background
-     * @param array<string, bool> $indexOptions
+     * @param array<string, bool>   $indexOptions
      */
     protected function oneCustomAndThreeInternalTripodCBDIndexesShouldBeCreated($mockCollection, $background = true, array $indexOptions = [])
     {
@@ -541,8 +541,8 @@ class IndexUtilsTest extends MongoTripodTestBase
      * This is a minimal config used to assert what should happen when ensuring
      * indexes for a CBD collection.
      *
-     * @param MockObject&TripodTestConfig $mockConfig mock Config object
-     * @param array<string, bool> $indexOptions
+     * @param MockObject&TripodTestConfig $mockConfig   mock Config object
+     * @param array<string, bool>         $indexOptions
      */
     protected function setConfigForCBDIndexes($mockConfig, array $indexOptions = [])
     {

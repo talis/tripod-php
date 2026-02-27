@@ -147,7 +147,6 @@ class Updates extends DriverBase
      * @param string|null $context
      * @param string|null $description
      *
-     *
      * @throws \Exception
      */
     public function saveChanges(
@@ -267,7 +266,6 @@ class Updates extends DriverBase
      *
      * @param string $transaction_id
      * @param string $reason
-     *
      *
      * @throws \Exception, if something goes wrong when unlocking documents, or creating audit entries
      */
@@ -575,7 +573,6 @@ class Updates extends DriverBase
      * @param string $transaction_id id of the transaction
      * @param array  $originalCBDs   containing the original CBDS
      *
-     *
      * @throws \Exception
      */
     protected function rollbackTransaction(string $transaction_id, $originalCBDs, \Exception $exception): bool
@@ -643,7 +640,8 @@ class Updates extends DriverBase
      * @param string $contextAlias
      * @param string $transaction_id
      *
-     * @return array<string, string|mixed[]>
+     * @return array<string, mixed[]|string>
+     *
      * @throws \Exception
      */
     protected function applyChangeSet(ChangeSet $cs, array $originalCBDs, $contextAlias, $transaction_id)
@@ -997,7 +995,6 @@ class Updates extends DriverBase
      *
      * @param string $transaction_id id for this transaction
      *
-     *
      * @throws \Exception is thrown if for any reason the update to mongo fails
      */
     protected function unlockAllDocuments(string $transaction_id): bool
@@ -1114,7 +1111,7 @@ class Updates extends DriverBase
         return $this->config->getCollectionForManualRollbackAudit($this->storeName);
     }
 
-    protected function generateIdForNewMongoDocument(): \MongoDB\BSON\ObjectId
+    protected function generateIdForNewMongoDocument(): ObjectId
     {
         return new ObjectId();
     }
@@ -1129,6 +1126,7 @@ class Updates extends DriverBase
 
     /**
      * Saves a transaction.
+     *
      * @param array<string, mixed> $transaction
      */
     protected function applyTransaction(array $transaction)
@@ -1159,7 +1157,7 @@ class Updates extends DriverBase
      *
      * @param array<string, mixed> $data
      */
-    protected function getTripod(array $data): \Tripod\Mongo\Driver
+    protected function getTripod(array $data): Driver
     {
         return new Driver(
             $data['collection'],
@@ -1256,7 +1254,6 @@ class Updates extends DriverBase
      * @param mixed $changeUri
      * @param mixed $changePredicate
      *
-     *
      * @throws Exception
      */
     private function getChangesGroupedByNsPredicate(ChangeSet $cs, $changeUri, $changePredicate): array
@@ -1291,9 +1288,9 @@ class Updates extends DriverBase
     /**
      * Helper method to add operator to a set of existing changes ready to be sent to Mongo.
      *
-     * @param array<string, mixed> $changes
-     * @param mixed $operator
-     * @param array<string, int>|array<string, \MongoDB\BSON\UTCDateTime> $kvp
+     * @param array<string, mixed>                          $changes
+     * @param mixed                                         $operator
+     * @param array<string, int>|array<string, UTCDateTime> $kvp
      */
     private function addOperatorToChange(array &$changes, string $operator, array $kvp): void
     {

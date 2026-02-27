@@ -5,7 +5,6 @@ use Tripod\Mongo\Jobs\EnsureIndexes;
 use Tripod\Timer;
 
 require_once __DIR__ . '/common.inc.php';
-
 require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 if (!in_array($argc, [2, 3, 4])) {

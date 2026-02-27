@@ -133,19 +133,11 @@ class ExtendedGraph
         return $this->_labeller->uri_to_qname($uri);
     }
 
-    /**
-     * @param string $ns
-     *
-     * @return string
-     */
     public function get_prefix(string $ns): string
     {
         return $this->_labeller->get_prefix($ns);
     }
 
-    /**
-     * @param string $p
-     */
     public function add_labelling_property(string $p): void
     {
         $this->_labeller->add_labelling_property($p);
@@ -186,11 +178,11 @@ class ExtendedGraph
     /**
      * Adds a triple with a literal object to the graph.
      *
-     * @param string $s    the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string $p    the predicate of the triple as a URI
-     * @param bool|float|int|string  $o    the object of the triple as a scalar value
-     * @param string|null $lang the language code of the triple's object (optional)
-     * @param string|null $dt   the datatype URI of the triple's object (optional)
+     * @param string                $s    the subject of the triple, either a URI or a blank node in the format _:name
+     * @param string                $p    the predicate of the triple as a URI
+     * @param bool|float|int|string $o    the object of the triple as a scalar value
+     * @param string|null           $lang the language code of the triple's object (optional)
+     * @param string|null           $dt   the datatype URI of the triple's object (optional)
      *
      * @return bool true if the triple was new, false if it already existed in the graph
      */
@@ -297,7 +289,6 @@ class ExtendedGraph
      * Serialise the graph to HTML.
      *
      * @param array|string|null $s
-     * @param bool              $guess_labels
      *
      * @return string a HTML version of the graph
      */
@@ -408,7 +399,7 @@ class ExtendedGraph
      * Fetch the first literal value for a given subject and predicate. If there are multiple possible values then one is selected at random.
      *
      * @param string                     $s       the subject to search for
-     * @param array|string               $p       the predicate to search for, or an array of predicates
+     * @param string|string[]            $p       the predicate to search for, or an array of predicates
      * @param bool|float|int|string|null $default a default value to use if no literal values are found
      *
      * @return bool|float|int|string|null the first literal value found or the supplied default if no values were found
@@ -480,9 +471,9 @@ class ExtendedGraph
     /**
      * Remove a triple with a resource object from the graph.
      *
-     * @param string $s the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string $p the predicate URI of the triple
-     * @param bool|float|int|string  $o the object of the triple, either a URI or a blank node in the format _:name
+     * @param string                $s the subject of the triple, either a URI or a blank node in the format _:name
+     * @param string                $p the predicate URI of the triple
+     * @param bool|float|int|string $o the object of the triple, either a URI or a blank node in the format _:name
      */
     public function remove_resource_triple(string $s, string $p, $o): void
     {
@@ -507,9 +498,7 @@ class ExtendedGraph
     }
 
     /**
-     * @param string $s
-     * @param string $p
-     * @param bool|float|int|string  $o
+     * @param bool|float|int|string $o
      */
     public function remove_literal_triple(string $s, string $p, $o): void
     {
@@ -592,9 +581,6 @@ class ExtendedGraph
         }
     }
 
-    /**
-     * @return array
-     */
     public function get_parser_errors(): array
     {
         return $this->parser_errors;
@@ -720,8 +706,6 @@ class ExtendedGraph
      * Add the triples in the supplied graph to the current graph.
      *
      * @param ExtendedGraph $g the graph to read
-     *
-     * @return bool
      */
     public function add_graph(ExtendedGraph $g): bool
     {
@@ -743,9 +727,9 @@ class ExtendedGraph
     /**
      * Tests whether the graph contains the given triple.
      *
-     * @param string $s the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string $p the predicate URI of the triple
-     * @param bool|float|int|string  $o the object of the triple, either a URI or a blank node in the format _:name
+     * @param string                $s the subject of the triple, either a URI or a blank node in the format _:name
+     * @param string                $p the predicate URI of the triple
+     * @param bool|float|int|string $o the object of the triple, either a URI or a blank node in the format _:name
      *
      * @return bool true if the triple exists in the graph, false otherwise
      */
@@ -765,11 +749,11 @@ class ExtendedGraph
     /**
      * Tests whether the graph contains the given triple.
      *
-     * @param string      $s    the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string      $p    the predicate URI of the triple
-     * @param bool|float|int|string      $o    the object of the triple as a literal value
-     * @param string|null $lang the language of the object
-     * @param string|null $dt   the datatype of the object
+     * @param string                $s    the subject of the triple, either a URI or a blank node in the format _:name
+     * @param string                $p    the predicate URI of the triple
+     * @param bool|float|int|string $o    the object of the triple as a literal value
+     * @param string|null           $lang the language of the object
+     * @param string|null           $dt   the datatype of the object
      *
      * @return bool true if the triple exists in the graph, false otherwise
      */
@@ -819,8 +803,8 @@ class ExtendedGraph
     /**
      * Fetch the literal values for a given subject and predicate.
      *
-     * @param string $s the subject to search for
-     * @param string|array $p the predicate to search for or an array of predicates
+     * @param string       $s the subject to search for
+     * @param array|string $p the predicate to search for or an array of predicates
      *
      * @return array list of literals that are the objects of triples with the supplied subject and predicate
      */
@@ -853,8 +837,8 @@ class ExtendedGraph
     /**
      * Fetch the values for a given subject and predicate.
      *
-     * @param string $s the subject to search for
-     * @param string|array $p the predicate to search for, or an array of predicates
+     * @param string       $s the subject to search for
+     * @param array|string $p the predicate to search for, or an array of predicates
      *
      * @return array list of values of triples with the supplied subject and predicate
      */
@@ -909,8 +893,6 @@ class ExtendedGraph
      * Fetch an array of all the subject that have and rdf type that matches that given.
      *
      * @param string $t the type to match
-     *
-     * @return array
      */
     public function get_subjects_of_type(string $t): array
     {
@@ -931,10 +913,8 @@ class ExtendedGraph
     /**
      * Fetch an array of all the subjects where the predicate and object match a ?s $p $o triple in the graph and the object is a literal value.
      *
-     * @param string $p the predicate to match
+     * @param string                $p the predicate to match
      * @param bool|float|int|string $o the literal object to match
-     *
-     * @return array
      */
     public function get_subjects_where_literal(string $p, $o): array
     {
@@ -1026,25 +1006,11 @@ class ExtendedGraph
         return count($this->_index) === 0;
     }
 
-    /**
-     * @param string $resource_uri
-     * @param bool   $capitalize
-     * @param bool   $use_qnames
-     *
-     * @return string
-     */
     public function get_label(string $resource_uri, bool $capitalize = false, bool $use_qnames = false): string
     {
         return $this->_labeller->get_label($resource_uri, $this, $capitalize, $use_qnames);
     }
 
-    /**
-     * @param string $resource_uri
-     * @param bool   $capitalize
-     * @param bool   $use_qnames
-     *
-     * @return string
-     */
     public function get_inverse_label(string $resource_uri, bool $capitalize = false, bool $use_qnames = false): string
     {
         return $this->_labeller->get_inverse_label($resource_uri, $this, $capitalize, $use_qnames);
@@ -1085,7 +1051,6 @@ class ExtendedGraph
      * returns a simpleIndex consisting of all the statements in array1 that weren't found in any of the subsequent arrays.
      *
      * @param array1, array2, [array3, ...]
-     *
      *
      * @author Keith
      */
@@ -1139,8 +1104,6 @@ class ExtendedGraph
      * merges all  rdf/json-style arrays passed as parameters.
      *
      * @param array1, array2, [array3, ...]
-     *
-     * @return array
      *
      * @author Keith
      */
@@ -1208,10 +1171,6 @@ class ExtendedGraph
         return $current;
     }
 
-    /**
-     * @param string $look_for
-     * @param string $replace_with
-     */
     public function replace_resource(string $look_for, string $replace_with): void
     {
         $remove_list_resources = [];
@@ -1299,9 +1258,6 @@ class ExtendedGraph
         }
     }
 
-    /**
-     * @param string $listUri
-     */
     public function get_list_values(string $listUri): array
     {
         $array = [];
@@ -1325,9 +1281,6 @@ class ExtendedGraph
 
     /**
      * Replaces $uri1 with $uri2 in subject, predicate and object position.
-     *
-     * @param string $uri1
-     * @param string $uri2
      */
     public function replace_uris(string $uri1, string $uri2): void
     {
@@ -1357,8 +1310,6 @@ class ExtendedGraph
     }
 
     /**
-     * @param string|null $s
-     * @param string|null $p
      * @param bool|float|int|string|null $o
      */
     public function get_triple_count(?string $s = null, ?string $p = null, $o = null): int
@@ -1428,9 +1379,6 @@ class ExtendedGraph
         return array_unique($resources);
     }
 
-    /**
-     * @param string $p
-     */
     public function remove_properties(string $p): void
     {
         foreach ($this->get_subjects() as $s) {
@@ -1438,9 +1386,6 @@ class ExtendedGraph
         }
     }
 
-    /**
-     * @param string $p
-     */
     public function get_resource_properties(string $p): array
     {
         $resources = [];
@@ -1453,7 +1398,6 @@ class ExtendedGraph
     }
 
     /**
-     * @param string $p
      * @param bool|float|int|string $o
      */
     public function get_subjects_with_property_value(string $p, $o): array
@@ -1468,9 +1412,6 @@ class ExtendedGraph
         return $subjects;
     }
 
-    /**
-     * @param string $sequenceUri
-     */
     public function get_sequence_values(string $sequenceUri): array
     {
         $triples = $this->get_index();
@@ -1502,9 +1443,6 @@ class ExtendedGraph
         return $values;
     }
 
-    /**
-     * @param string $sequenceUri
-     */
     public function get_next_sequence(string $sequenceUri): int
     {
         $values = $this->get_sequence_values($sequenceUri);
@@ -1513,7 +1451,6 @@ class ExtendedGraph
     }
 
     /**
-     * @param string $s
      * @param bool|float|int|string $o
      */
     public function add_literal_to_sequence(string $s, $o): void
@@ -1523,9 +1460,6 @@ class ExtendedGraph
 
     /**
      * Remove a resource from a specified sequence and reindex the sequence to remove the gap.
-     *
-     * @param string $sequenceUri
-     * @param string $resourceValue
      */
     public function remove_resource_from_sequence(string $sequenceUri, string $resourceValue): void
     {
@@ -1548,20 +1482,11 @@ class ExtendedGraph
         }
     }
 
-    /**
-     * @param string $s
-     * @param string $o
-     */
     public function add_resource_to_sequence(string $s, string $o): void
     {
         $this->add_to_sequence($s, $o, 'resource');
     }
 
-    /**
-     * @param string $s
-     * @param string $o
-     * @param int    $position
-     */
     public function add_resource_to_sequence_in_position(string $s, string $o, int $position): void
     {
         $sequenceValues = $this->get_sequence_values($s);
@@ -1585,8 +1510,6 @@ class ExtendedGraph
     }
 
     /**
-     * @param string $s
-     * @param string $p
      * @param bool|float|int|string $oOldValue
      * @param bool|float|int|string $oNewValue
      */
@@ -1628,10 +1551,6 @@ class ExtendedGraph
     }
 
     /**
-     * @param string $uri
-     *
-     * @return string
-     *
      * @throws Exception
      */
     public function get_label_for_uri(string $uri): string
@@ -1661,9 +1580,6 @@ class ExtendedGraph
         return empty($diffThisAndThat) && empty($diffThatAndThis);
     }
 
-    /**
-     * @param string $type
-     */
     public function remove_subjects_of_type(string $type): void
     {
         $subjects = $this->get_subjects_of_type($type);
@@ -1705,10 +1621,6 @@ class ExtendedGraph
     }
 
     /**
-     * @param string $s
-     * @param string $p
-     *
-     *
      * @throws Exception
      */
     private function _add_triple(string $s, string $p, array $o_info): bool
@@ -1746,9 +1658,6 @@ class ExtendedGraph
         return false;
     }
 
-    /**
-     * @param array $triples
-     */
     private function _add_arc2_triple_list(array &$triples): void
     {
         $bnode_index = [];
@@ -1810,9 +1719,6 @@ class ExtendedGraph
     }
 
     // until ARC2 upgrades to support RDF/PHP we need to rename all types of "uri" to "iri"
-    /**
-     * @param array $index
-     */
     private function _to_arc_index(array &$index): array
     {
         $ret = [];
@@ -1840,9 +1746,7 @@ class ExtendedGraph
     }
 
     /**
-     * @param string $p
      * @param bool|float|int|string $o
-     * @param string $type
      */
     private function get_subjects_where(string $p, $o, string $type): array
     {
@@ -1863,7 +1767,6 @@ class ExtendedGraph
     }
 
     /**
-     * @param string $s
      * @param bool|float|int|string $o
      */
     private function add_to_sequence(string $s, $o, string $type = 'resource'): void

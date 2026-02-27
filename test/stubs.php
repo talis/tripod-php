@@ -1,12 +1,11 @@
 <?php
 
-namespace Tripod\Mongo {
-    /**
-     * @param int $seconds
-     * @return int|false
-     */
-    function sleep(int $seconds)
-    {
-        return 0;
-    }
+namespace Tripod\Mongo;
+
+/**
+ * @return false|int
+ */
+function sleep(int $seconds)
+{
+    return 0;
 }
