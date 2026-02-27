@@ -44,7 +44,8 @@ function showUsage(): void
     echo $help;
 }
 
-if ($options === [] || $options === false || isset($options['h']) || isset($options['help'])
+if (
+    $options === [] || $options === false || isset($options['h']) || isset($options['help'])
     || (!isset($options['c']) && !isset($options['config']))
     || (!isset($options['s']) && !isset($options['storename']))
 ) {
