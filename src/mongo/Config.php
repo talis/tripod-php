@@ -1074,7 +1074,7 @@ class Config implements IConfigInstance
     /**
      * Sets the Tripod config.
      */
-    public static function deserialize(array $config): self
+    public static function deserialize(array $config)
     {
         if (isset($config['class'], $config['config'])) {
             $config = $config['config'];

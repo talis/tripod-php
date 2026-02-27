@@ -431,7 +431,7 @@ class TripodTestConfig extends Tripod\Mongo\Config
      */
     public function __construct() {}
 
-    protected function loadConfig(array $config)
+    public function loadConfig(array $config)
     {
         parent::loadConfig($config);
     }

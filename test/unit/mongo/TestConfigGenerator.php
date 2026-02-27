@@ -16,7 +16,7 @@ class TestConfigGenerator extends Config
         return ['class' => get_class($this), 'filename' => $this->fileName];
     }
 
-    public static function deserialize(array $config): self
+    public static function deserialize(array $config)
     {
         $instance = new self();
         $instance->fileName = $config['filename'];
