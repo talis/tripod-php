@@ -8,7 +8,7 @@ class TestJobBase extends JobBase
      * Expose this method for testing.
      * {@inheritDoc}
      */
-    protected function getTripodConfig()
+    public function getTripodConfig()
     {
         return parent::getTripodConfig();
     }
