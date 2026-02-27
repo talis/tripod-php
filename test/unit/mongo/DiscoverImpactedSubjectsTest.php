@@ -814,10 +814,8 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $applyOperation->expects($this->once())
             ->method('createJob')
             ->with(
-                [
-                    $tableSubjects,
-                    $args['queue'],
-                ]
+                $tableSubjects,
+                $args['queue'],
             );
 
         $this->performJob($discoverImpactedSubjects);
