@@ -296,7 +296,7 @@ class Labeller
      * @param string $prefix the namespace prefix to associate with the URI
      * @param string $uri    the URI to associate with the prefix
      */
-    public function set_namespace_mapping($prefix, $uri): void
+    public function set_namespace_mapping(string $prefix, string $uri): void
     {
         $this->_ns[$prefix] = $uri;
     }
@@ -304,13 +304,13 @@ class Labeller
     /**
      * Convert a QName to a URI using registered namespace prefixes.
      *
-     * @param string $qname the QName to convert
+     * @param string|null $qName the QName to convert
      *
-     * @return string the URI corresponding to the QName if a suitable prefix exists, null otherwise
+     * @return string|null the URI corresponding to the QName if a suitable prefix exists, null otherwise
      */
-    public function qname_to_uri($qname): ?string
+    public function qname_to_uri(?string $qName): ?string
     {
-        if (!preg_match('~^(.+):(.+)$~', $qname, $m)) {
+        if ($qName === null || !preg_match('~^(.+):(.+)$~', $qName, $m)) {
             return null;
         }
         if (isset($this->_ns[$m[1]])) {
@@ -323,13 +323,13 @@ class Labeller
     /**
      * Convert a URI to a QName using registered namespace prefixes.
      *
-     * @param string $uri the URI to convert
+     * @param string|null $uri the URI to convert
      *
-     * @return string the QName corresponding to the URI if a suitable prefix exists, null otherwise
+     * @return string|null the QName corresponding to the URI if a suitable prefix exists, null otherwise
      */
-    public function uri_to_qname($uri): ?string
+    public function uri_to_qname(?string $uri): ?string
     {
-        if (preg_match('~^(.*[\/\#])([a-z0-9\-\_\:]+)$~i', $uri, $m)) {
+        if ($uri !== null && preg_match('~^(.*[\/\#])([a-z0-9\-\_\:]+)$~i', $uri, $m)) {
             $ns = $m[1];
             $localname = $m[2];
             $prefix = $this->get_prefix($ns);
@@ -346,7 +346,7 @@ class Labeller
      *
      * @return string
      */
-    public function get_prefix($ns)
+    public function get_prefix(string $ns): string
     {
         $prefix = array_search($ns, $this->_ns, true);
         if ($prefix != null && $prefix !== false) {
@@ -377,7 +377,7 @@ class Labeller
     /**
      * @param string $p
      */
-    public function add_labelling_property($p): void
+    public function add_labelling_property(string $p): void
     {
         $this->_label_properties[] = $p;
     }
@@ -385,7 +385,7 @@ class Labeller
     /**
      * @return array
      */
-    public function get_ns()
+    public function get_ns(): array
     {
         return $this->_ns;
     }
@@ -398,7 +398,7 @@ class Labeller
      *
      * @return string
      */
-    public function get_label($uri, $g = null, $capitalize = false, $use_qnames = false)
+    public function get_label(string $uri, ?ExtendedGraph $g = null, bool $capitalize = false, bool $use_qnames = false): string
     {
         if ($g) {
             $label = $g->get_first_literal($uri, 'http://www.w3.org/2004/02/skos/core#prefLabel', '', 'en');
@@ -503,7 +503,7 @@ class Labeller
      *
      * @return string
      */
-    public function get_plural_label($uri, $g = null, $capitalize = false, $use_qnames = false)
+    public function get_plural_label(string $uri, ?ExtendedGraph $g = null, bool $capitalize = false, bool $use_qnames = false): string
     {
         if ($g) {
             $label = $g->get_first_literal($uri, 'http://purl.org/net/vocab/2004/03/label#plural', '', 'en');
@@ -542,7 +542,7 @@ class Labeller
      *
      * @return string
      */
-    public function get_inverse_label($uri, $g = null, $capitalize = false, $use_qnames = false)
+    public function get_inverse_label(string $uri, ?ExtendedGraph $g = null, bool $capitalize = false, bool $use_qnames = false): string
     {
         if ($g) {
             $label = $g->get_first_literal($uri, 'http://purl.org/net/vocab/2004/03/label#inverseSingular', '', 'en');

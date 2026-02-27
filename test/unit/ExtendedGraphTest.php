@@ -31,10 +31,7 @@ class ExtendedGraphTest extends TestCase
         $this->assertTrue($hasPropertyResult, 'The triple should have been added for this value');
     }
 
-    /**
-     * @return \Iterator<(int | string), array<(1.2 | int | string | true)>>
-     */
-    public function addValidValueToLiteralResultsInTriple_Provider(): \Iterator
+    public function addValidValueToLiteralResultsInTriple_Provider(): iterable
     {
         yield ['String'];
         yield [1];
@@ -57,10 +54,7 @@ class ExtendedGraphTest extends TestCase
         $this->assertFalse($hasPropertyResult, 'The triple should not have been added for this value');
     }
 
-    /**
-     * @return \Iterator<(int | string), array<(Closure(): void | \stdClass | null)>>
-     */
-    public function addInvalidValueToLiteralResultsInNoTriple_Provider(): \Iterator
+    public function addInvalidValueToLiteralResultsInNoTriple_Provider(): iterable
     {
         yield [null];
         yield [new stdClass()];
@@ -74,16 +68,13 @@ class ExtendedGraphTest extends TestCase
      */
     public function testAddInvalidSubjectToLiteralThrowsException($value): void
     {
-        $this->expectException(Tripod\Exceptions\Exception::class);
+        $this->expectExceptionMessageMatches('/^(The subject is invalid|Argument 1.+must be of the type string.+)$/');
 
         $graph = new ExtendedGraph();
         $graph->add_resource_triple($value, 'http://some/predicate', 'http://someplace.com');
     }
 
-    /**
-     * @return \Iterator<(int | string), array<(1.2 | array<never> | Closure(): void | int | \stdClass | string | true | null)>>
-     */
-    public function addInvalidSubjectToLiteralResultsInNoTriple_Provider(): \Iterator
+    public function addInvalidSubjectToLiteralResultsInNoTriple_Provider(): iterable
     {
         yield [''];
         yield [1];
@@ -102,27 +93,22 @@ class ExtendedGraphTest extends TestCase
      */
     public function testAddInvalidPredicateToLiteralThrowsException($value): void
     {
-        $this->expectException(Tripod\Exceptions\Exception::class);
+        $this->expectExceptionMessageMatches('/^(The predicate is invalid|Argument 2.+must be of the type string.+)$/');
 
         $graph = new ExtendedGraph();
         $graph->add_resource_triple('http://some/subject/1', $value, 'http://someplace.com');
     }
 
-    /**
-     * @return array<int, string[]|int[]|1.2[]|true[]|array<int, never[]>|null[]|\stdClass[]|(\Closure(): void)[]>
-     */
-    public function addInvalidPredicateToLiteralResultsInNoTriple_Provider(): array
+    public function addInvalidPredicateToLiteralResultsInNoTriple_Provider(): iterable
     {
-        return [
-            [''],
-            [1],
-            [1.2],
-            [true],
-            [[]],
-            [null],
-            [new stdClass()],
-            [function (): void {}],
-        ];
+        yield [''];
+        yield [1];
+        yield [1.2];
+        yield [true];
+        yield [[]];
+        yield [null];
+        yield [new stdClass()];
+        yield [function (): void {}];
     }
 
     public function testAddValidValueToResourceResultsInTriple(): void
@@ -145,18 +131,21 @@ class ExtendedGraphTest extends TestCase
     {
         $graph = new ExtendedGraph();
 
-        $addResult = $graph->add_resource_triple('http://some/subject/1', 'http://some/predicate', $value);
+        try {
+            $addResult = $graph->add_resource_triple('http://some/subject/1', 'http://some/predicate', $value);
+        } catch (TypeError $typeError) {
+            $addResult = false;
+        }
         $this->assertFalse($addResult, 'The triple should not have been added for this value');
 
         $hasPropertyResult = $graph->subject_has_property('http://some/subject/1', 'http://some/predicate');
         $this->assertFalse($hasPropertyResult, 'The triple should not have been added for this value');
     }
 
-    /**
-     * @return \Iterator<(int | string), array<(1.2 | array<never> | Closure(): void | int | \stdClass | true | null)>>
-     */
-    public function addInvalidValueToResourceResultsInNoTriple_Provider(): \Iterator
+    public function addInvalidValueToResourceResultsInNoTriple_Provider(): iterable
     {
+        yield [''];
+        yield ['0'];
         yield [1];
         yield [1.2];
         yield [true];
@@ -173,16 +162,13 @@ class ExtendedGraphTest extends TestCase
      */
     public function testAddInvalidSubjectToResourceThrowsException($value): void
     {
-        $this->expectException(Tripod\Exceptions\Exception::class);
+        $this->expectExceptionMessageMatches('/^(The subject is invalid|Argument 1.+must be of the type string.+)$/');
 
         $graph = new ExtendedGraph();
         $graph->add_resource_triple($value, 'http://some/predicate', 'http://someplace.com');
     }
 
-    /**
-     * @return \Iterator<(int | string), array<(1.2 | array<never> | Closure(): void | int | \stdClass | string | true | null)>>
-     */
-    public function addInvalidSubjectToResourceResultsInNoTriple_Provider(): \Iterator
+    public function addInvalidSubjectToResourceResultsInNoTriple_Provider(): iterable
     {
         yield [''];
         yield [1];
@@ -201,27 +187,22 @@ class ExtendedGraphTest extends TestCase
      */
     public function testAddInvalidPredicateToResourceThrowsException($value): void
     {
-        $this->expectException(Tripod\Exceptions\Exception::class);
+        $this->expectExceptionMessageMatches('/^(The predicate is invalid|Argument 2.+must be of the type string.+)$/');
 
         $graph = new ExtendedGraph();
         $graph->add_resource_triple('http://some/subject/1', $value, 'http://someplace.com');
     }
 
-    /**
-     * @return array<int, string[]|int[]|1.2[]|true[]|array<int, never[]>|null[]|\stdClass[]|(\Closure(): void)[]>
-     */
-    public function addInvalidPredicateToResourceResultsInNoTriple_Provider(): array
+    public function addInvalidPredicateToResourceResultsInNoTriple_Provider(): iterable
     {
-        return [
-            [''],
-            [1],
-            [1.2],
-            [true],
-            [[]],
-            [null],
-            [new stdClass()],
-            [function (): void {}],
-        ];
+        yield [''];
+        yield [1];
+        yield [1.2];
+        yield [true];
+        yield [[]];
+        yield [null];
+        yield [new stdClass()];
+        yield [function (): void {}];
     }
 
     public function testRemoveProperties(): void
@@ -482,7 +463,7 @@ class ExtendedGraphTest extends TestCase
         $graph->add_literal_triple('http://some/subject/3', 'http://some/predicate', 'some object');
 
         $expected = 3;
-        $actual = $graph->get_triple_count(false, 'http://some/predicate');
+        $actual = $graph->get_triple_count(null, 'http://some/predicate');
         $this->assertEquals($expected, $actual);
     }
 
@@ -495,7 +476,7 @@ class ExtendedGraphTest extends TestCase
         $graph->add_literal_triple('http://some/subject/3', 'http://some/predicate', 'some object');
 
         $expected = 3;
-        $actual = $graph->get_triple_count(false, false, 'some object');
+        $actual = $graph->get_triple_count(null, null, 'some object');
         $this->assertEquals($expected, $actual);
     }
 
