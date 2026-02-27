@@ -436,7 +436,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
 
         $mTripodUpdate->expects($this->atLeastOnce())
             ->method('getUniqId')
-            ->willReturn(1);
+            ->willReturn('1');
         $mTripod->expects($this->atLeastOnce())
             ->method('getDataUpdater')
             ->willReturn($mTripodUpdate);
@@ -468,7 +468,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
 
         $mTripodUpdate->expects($this->atLeastOnce())
             ->method('getUniqId')
-            ->willReturn(2);
+            ->willReturn('2');
         $mTripod->expects($this->atLeastOnce())
             ->method('getDataUpdater')
             ->willReturn($mTripodUpdate);
@@ -517,7 +517,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
 
         $mTripodUpdate->expects($this->atLeastOnce())
             ->method('getUniqId')
-            ->willReturn(3);
+            ->willReturn('3');
         $mTripod->expects($this->atLeastOnce())
             ->method('getDataUpdater')
             ->willReturn($mTripodUpdate);
@@ -574,7 +574,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
 
         $mTripodUpdate->expects($this->atLeastOnce())
             ->method('getUniqId')
-            ->willReturn(1);
+            ->willReturn('1');
         $mTripod->expects($this->atLeastOnce())
             ->method('getDataUpdater')
             ->willReturn($mTripodUpdate);
@@ -592,7 +592,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
 
         $mTripodUpdate->expects($this->atLeastOnce())
             ->method('getUniqId')
-            ->willReturn(2);
+            ->willReturn('2');
         $mTripodUpdate->expects($this->atLeastOnce())
             ->method('applyChangeSet')
             ->willThrowException(new Exception('exception thrown by mock test'));
@@ -725,16 +725,17 @@ class MongoTransactionLogTest extends MongoTripodTestBase
     /**
      * helper method.
      *
+     * @param int    $id
      * @param string $subjectOfChange
      * @param string $startTime
      * @param string $endTime
      * @param int    $_version
      * @return array<string, mixed>
      */
-    protected function buildTransactionDocument(string $id, $subjectOfChange, $startTime, $endTime, $_version): array
+    protected function buildTransactionDocument($id, $subjectOfChange, $startTime, $endTime, $_version): array
     {
         return [
-            '_id' => 'transaction_' . $id,
+            '_id' => 'transaction_' . (string) $id,
             'changes' => [
                 [
                     '_id' => ['r' => '_:cs0', 'c' => 'http://talisaspire.com/'],
