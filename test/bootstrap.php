@@ -9,6 +9,8 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 require_once __DIR__ . '/../src/tripod.inc.php';
 
+require_once __DIR__ . '/stubs.php';
+
 // Mongo Config For Main DB
 define('MONGO_MAIN_DB', 'acorn');
 define('MONGO_MAIN_COLLECTION', 'CBD_harvest');
