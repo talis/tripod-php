@@ -56,10 +56,8 @@ class EnsureIndexesTest extends ResqueJobTestBase
 
     /**
      * Data provider for testMandatoryArgs.
-     *
-     * @return \Iterator<(int | string), array<string>>
      */
-    public function mandatoryArgDataProvider(): \Iterator
+    public function mandatoryArgDataProvider(): iterable
     {
         yield ['tripodConfig', 'tripodConfig or tripodConfigGenerator'];
         yield ['storeName'];

@@ -136,10 +136,7 @@ class MongoGraphTest extends MongoTripodTestBase
         $this->assertEquals($expected, $g);
     }
 
-    /**
-     * @return \Iterator<(int | string), array<(1.2 | int | string | true)>>
-     */
-    public function addTripodArrayContainingValidLiteralValues_Provider(): \Iterator
+    public function addTripodArrayContainingValidLiteralValues_Provider(): iterable
     {
         yield ['A String'];
         yield [1];
@@ -175,10 +172,7 @@ class MongoGraphTest extends MongoTripodTestBase
         $this->assertEquals($expected, $g);
     }
 
-    /**
-     * @return \Iterator<(int | string), array<(Closure(): void | \stdClass | null)>>
-     */
-    public function addTripodArrayContainingInvalidLiteralValues_Provider(): \Iterator
+    public function addTripodArrayContainingInvalidLiteralValues_Provider(): iterable
     {
         yield [null];
         yield [new stdClass()];
@@ -192,7 +186,7 @@ class MongoGraphTest extends MongoTripodTestBase
      */
     public function testAddTripodArrayContainingInvalidPredicates($value): void
     {
-        $this->expectException(LabellerException::class);
+        $this->expectExceptionMessageMatches('/Argument 1 .* must be of the type string or null/');
         $doc = [
             '_id' => ['r' => 'http://talisaspire.com/works/4d101f63c10a6-2', 'c' => 'http://talisaspire.com/works/4d101f63c10a6-2'],
             '_version' => 0,
@@ -211,10 +205,7 @@ class MongoGraphTest extends MongoTripodTestBase
         $g->add_tripod_array($doc);
     }
 
-    /**
-     * @return \Iterator<(int | string), array<(1.2 | int | true)>>
-     */
-    public function addTripodArrayContainingInvalidPredicates_Provider(): \Iterator
+    public function addTripodArrayContainingInvalidPredicates_Provider(): iterable
     {
         yield [1];
         yield [1.2];
@@ -268,10 +259,7 @@ class MongoGraphTest extends MongoTripodTestBase
         $g->add_tripod_array($doc);
     }
 
-    /**
-     * @return \Iterator<(int | string), array<(1.2 | int | string | true)>>
-     */
-    public function addTripodArrayContainingInvalidSubject_Provider(): \Iterator
+    public function addTripodArrayContainingInvalidSubject_Provider(): iterable
     {
         yield [''];
         yield [1];
@@ -333,10 +321,7 @@ class MongoGraphTest extends MongoTripodTestBase
         $this->assertEquals($expected, $g);
     }
 
-    /**
-     * @return \Iterator<(int | string), array<(1.2 | array<never> | Closure(): void | int | \stdClass | true | null)>>
-     */
-    public function addTripodArrayContainingInvalidResourceValues_Provider(): \Iterator
+    public function addTripodArrayContainingInvalidResourceValues_Provider(): iterable
     {
         yield [1];
         yield [1.2];

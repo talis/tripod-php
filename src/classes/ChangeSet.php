@@ -213,7 +213,7 @@ class ChangeSet extends ExtendedGraph
     /**
      * @return string
      */
-    public function toRDFXML()
+    public function toRDFXML(): string
     {
         /** @var \ARC2_RDFSerializer $ser */
         $ser = \ARC2::getRDFXMLSerializer();
@@ -224,7 +224,7 @@ class ChangeSet extends ExtendedGraph
     /**
      * @return string
      */
-    public function to_rdfxml()
+    public function to_rdfxml(): string
     {
         return $this->toRDFXML();
     }
