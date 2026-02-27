@@ -281,7 +281,10 @@ abstract class MongoTripodTestBase extends TestCase
         }
 
         $doc = $this->getDocument($_id, $tripod, $fromTransactionLog);
-
+        if ($doc === null) {
+            $this->assertNull($doc);
+            return; // if document doesn't exist then it doesn't have the property, so assertion is successful
+        }
         $this->assertArrayNotHasKey($property, $doc, 'Document for ' . var_export($_id, true) . sprintf(' should not have property [%s], but propert was found', $property));
     }
 
