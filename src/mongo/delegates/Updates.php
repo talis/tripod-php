@@ -734,7 +734,7 @@ class Updates extends DriverBase
                         if (count($valueObject) === 1) {
                             $valueObject = $valueObject[0]; // un-array if only one value
                         }
-                        
+
                         $this->addOperatorToChange($mongoUpdateOperations, MONGO_OPERATION_SET, [$nsPredicate => $valueObject]);
                     } elseif ($predicateExists) {
                         // remove all existing values, if existed in the first place
@@ -777,7 +777,7 @@ class Updates extends DriverBase
                         ]
                     );
 
-                    throw new \Exception($e, $e->getCode(), $e);
+                    throw $e;
                 }
             }
 

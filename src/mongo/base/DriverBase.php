@@ -318,7 +318,7 @@ abstract class DriverBase
         if ($cursorSuccess === false) {
             self::getLogger()->error('CursorException failed after ' . $retries . ' attempts (MAX:' . Config::CONNECTION_RETRIES . '): ' . $e->getMessage());
 
-            throw new \Exception($exception);
+            throw $exception;
         }
 
         if ($ttlExpiredResources) {
