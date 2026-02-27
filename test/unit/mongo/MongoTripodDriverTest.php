@@ -79,7 +79,8 @@ class MongoTripodDriverTest extends MongoTripodTestBase
                 [
                     '_id' => [
                         _ID_RESOURCE => 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA',
-                        _ID_CONTEXT => 'http://talisaspire.com/'],
+                        _ID_CONTEXT => 'http://talisaspire.com/',
+                    ],
                     'dct:source' => [
                         'http://life.ac.uk/resources/BFBC6A06-A8B0-DED8-53AA-8E80DB44CC53',
                         'http://life.ac.uk/resources/836E7CAD-63D2-63A0-B1CB-AA6A7E54A5C9',
@@ -103,7 +104,8 @@ class MongoTripodDriverTest extends MongoTripodTestBase
                 [
                     '_id' => [
                         _ID_RESOURCE => 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA',
-                        _ID_CONTEXT => 'http://talisaspire.com/'],
+                        _ID_CONTEXT => 'http://talisaspire.com/',
+                    ],
                     'dct:subject' => 'http://talisaspire.com/disciplines/physics',
                 ],
             ],
@@ -696,8 +698,11 @@ class MongoTripodDriverTest extends MongoTripodTestBase
 
         $tripodMock = $this->getMockBuilder(TestTripod::class)
             ->onlyMethods(['getDataUpdater'])
-            ->setConstructorArgs(['CBD_testing', 'tripod_php_testing',
-                ['defaultContext' => 'http://talisaspire.com/', 'readPreference' => ReadPreference::RP_SECONDARY_PREFERRED]])
+            ->setConstructorArgs([
+                'CBD_testing',
+                'tripod_php_testing',
+                ['defaultContext' => 'http://talisaspire.com/', 'readPreference' => ReadPreference::RP_SECONDARY_PREFERRED],
+            ])
             ->getMock();
 
         $tripodUpdate = $this->getMockBuilder(Updates::class)
@@ -1588,13 +1593,15 @@ class MongoTripodDriverTest extends MongoTripodTestBase
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:1',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => 'acorn:Work',
                 ],
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:2',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => ['acorn:Work', 'acorn:Work2'],
                 ],
             ],
@@ -1615,7 +1622,8 @@ class MongoTripodDriverTest extends MongoTripodTestBase
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:1',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => 'acorn:Work',
                 ],
             ],
@@ -1643,15 +1651,18 @@ class MongoTripodDriverTest extends MongoTripodTestBase
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:1',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => 'acorn:Work',
                 ],
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:2',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => ['acorn:Work', 'acorn:Work2'],
-                ]],
+                ],
+            ],
         ];
         $actualResult = $this->tripod->select(
             ['_id' => ['$in' => [[_ID_RESOURCE => 'baseData:1'], [_ID_RESOURCE => 'baseData:2']]]],
@@ -1676,13 +1687,15 @@ class MongoTripodDriverTest extends MongoTripodTestBase
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:1',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => 'acorn:Work',
                 ],
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:2',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => ['acorn:Work', 'acorn:Work2'],
                 ],
             ],
@@ -2278,7 +2291,8 @@ class MongoTripodDriverTest extends MongoTripodTestBase
 
         $_id = [
             'r' => 'http://talisaspire.com/resources/testEtag',
-            'c' => 'http://talisaspire.com/'];
+            'c' => 'http://talisaspire.com/',
+        ];
         $doc = [
             '_id' => $_id,
             'dct:title' => ['l' => 'etag'],

@@ -108,7 +108,8 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
                         'indexes' => [
                             'IllegalCompoundIndex' => [
                                 'rdf:type.value' => 1,
-                                'dct:subject.value' => 1],
+                                'dct:subject.value' => 1,
+                            ],
                         ],
                     ],
                 ],
@@ -316,8 +317,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             'tripod_php_testing' => [
                 'data_source' => 'db',
                 'pods' => [
-                    'CBD_testing' => [
-                    ],
+                    'CBD_testing' => [],
                 ],
             ],
         ];
@@ -356,8 +356,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             'tripod_php_testing' => [
                 'data_source' => 'db',
                 'pods' => [
-                    'CBD_testing' => [
-                    ],
+                    'CBD_testing' => [],
                 ],
             ],
         ];
@@ -399,8 +398,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             'tripod_php_testing' => [
                 'data_source' => 'db',
                 'pods' => [
-                    'CBD_testing' => [
-                    ],
+                    'CBD_testing' => [],
                 ],
             ],
         ];
@@ -674,8 +672,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             'tripod_php_testing' => [
                 'data_source' => 'db',
                 'pods' => [
-                    'CBD_testing' => [
-                    ],
+                    'CBD_testing' => [],
                 ],
             ],
         ];
@@ -753,15 +750,13 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             'tripod_php_testing' => [
                 'data_source' => 'rs1',
                 'pods' => [
-                    'CBD_testing' => [
-                    ],
+                    'CBD_testing' => [],
                 ],
             ],
             'testing_2' => [
                 'data_source' => 'mongo1',
                 'pods' => [
-                    'CBD_testing' => [
-                    ],
+                    'CBD_testing' => [],
                 ],
             ],
         ];
@@ -1122,8 +1117,12 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
 
         $collectionsForDataSource = [];
         $collectionsForDataSource['rs1'] = [
-            VIEWS_COLLECTION, SEARCH_INDEX_COLLECTION, TABLE_ROWS_COLLECTION, 'CBD_testing',
-            AUDIT_MANUAL_ROLLBACKS_COLLECTION, LOCKS_COLLECTION,
+            VIEWS_COLLECTION,
+            SEARCH_INDEX_COLLECTION,
+            TABLE_ROWS_COLLECTION,
+            'CBD_testing',
+            AUDIT_MANUAL_ROLLBACKS_COLLECTION,
+            LOCKS_COLLECTION,
         ];
 
         $collectionsForDataSource['rs2'] = [VIEWS_COLLECTION, SEARCH_INDEX_COLLECTION, TABLE_ROWS_COLLECTION, 'CBD_testing_2', 'transaction_log'];
@@ -1723,11 +1722,17 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig->loadConfig(json_decode(file_get_contents(__DIR__ . '/data/config.json'), true));
         $mockConfig->expects($this->exactly(5))
             ->method('getMongoClient')
-            ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])->willReturnOnConsecutiveCalls($this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')), $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')), $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')), $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')), $this->returnCallback(
-                function (): Client {
-                    return new Client();
-                }
-            ));
+            ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])->willReturnOnConsecutiveCalls(
+                $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')),
+                $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')),
+                $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')),
+                $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')),
+                $this->returnCallback(
+                    function (): Client {
+                        return new Client();
+                    }
+                )
+            );
 
         $mockConfig->getDatabase('tripod_php_testing', 'rs1', ReadPreference::RP_SECONDARY_PREFERRED);
         $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_SECONDARY_PREFERRED);
