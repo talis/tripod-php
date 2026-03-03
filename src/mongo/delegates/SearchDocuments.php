@@ -66,7 +66,8 @@ class SearchDocuments extends DriverBase
                 // add id of current record to rules..
                 $indexRules['condition']['_id'] = [
                     'r' => $this->labeller->uri_to_alias($resource),
-                    'c' => $this->labeller->uri_to_alias($context)];
+                    'c' => $this->labeller->uri_to_alias($context),
+                ];
 
                 if ($this->getConfigInstance()->getCollectionForCBD($this->storeName, $irFrom)->findOne($indexRules['condition'])) {
                     // match found, add this spec id to those that should be generated

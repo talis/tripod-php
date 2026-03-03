@@ -172,7 +172,8 @@ class MongoGraph extends ExtendedGraph
                 // single value literal
                 $simpleGraphValueObject[] = [
                     'type' => 'literal',
-                    'value' => $mongoValueObject[VALUE_LITERAL]];
+                    'value' => $mongoValueObject[VALUE_LITERAL],
+                ];
             }
         } elseif (array_key_exists(VALUE_URI, $mongoValueObject)) {
             // only allow valid values
@@ -180,7 +181,8 @@ class MongoGraph extends ExtendedGraph
                 // single value uri
                 $simpleGraphValueObject[] = [
                     'type' => 'uri',
-                    'value' => $this->_labeller->qname_to_alias($mongoValueObject[VALUE_URI])];
+                    'value' => $this->_labeller->qname_to_alias($mongoValueObject[VALUE_URI]),
+                ];
             }
         } else {
             // If we have an array of values
@@ -203,7 +205,8 @@ class MongoGraph extends ExtendedGraph
 
                     $simpleGraphValueObject[] = [
                         'type' => $valueTypeLabel,
-                        'value' => ($type == VALUE_URI) ? $this->_labeller->qname_to_alias($value) : $value];
+                        'value' => ($type == VALUE_URI) ? $this->_labeller->qname_to_alias($value) : $value,
+                    ];
                 }
             }
         }
@@ -222,7 +225,8 @@ class MongoGraph extends ExtendedGraph
         $valueTypeProp = ($simpleGraphValueObject['type'] == 'literal') ? VALUE_LITERAL : VALUE_URI;
 
         return [
-            $valueTypeProp => ($simpleGraphValueObject['type'] == 'literal') ? $simpleGraphValueObject['value'] : $this->_labeller->uri_to_alias($simpleGraphValueObject['value'])];
+            $valueTypeProp => ($simpleGraphValueObject['type'] == 'literal') ? $simpleGraphValueObject['value'] : $this->_labeller->uri_to_alias($simpleGraphValueObject['value']),
+        ];
     }
 
     /**

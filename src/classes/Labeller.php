@@ -350,7 +350,17 @@ class Labeller
 
         $parts = preg_split('/[\/#]/', $ns);
         for ($i = count($parts) - 1; $i >= 0; $i--) {
-            if (preg_match('~^[a-zA-Z][a-zA-Z0-9\-]+$~', $parts[$i]) && !array_key_exists($parts[$i], $this->_ns) && $parts[$i] != 'schema' && $parts[$i] != 'ontology' && $parts[$i] != 'vocab' && $parts[$i] != 'terms' && $parts[$i] != 'ns' && $parts[$i] != 'core' && strlen($parts[$i]) > 3) {
+            if (
+                preg_match('~^[a-zA-Z][a-zA-Z0-9\-]+$~', $parts[$i])
+                && !array_key_exists($parts[$i], $this->_ns)
+                && $parts[$i] != 'schema'
+                && $parts[$i] != 'ontology'
+                && $parts[$i] != 'vocab'
+                && $parts[$i] != 'terms'
+                && $parts[$i] != 'ns'
+                && $parts[$i] != 'core'
+                && strlen($parts[$i]) > 3
+            ) {
                 $prefix = strtolower($parts[$i]);
                 $this->_ns[$prefix] = $ns;
 

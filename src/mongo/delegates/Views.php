@@ -346,7 +346,8 @@ class Views extends CompositeBase
             // check for rdfType and rdfTypeAlias
             if (
                 ($viewSpec['type'] == $rdfType || (is_array($viewSpec['type']) && in_array($rdfType, $viewSpec['type'])))
-                || ($viewSpec['type'] == $rdfTypeAlias || (is_array($viewSpec['type']) && in_array($rdfTypeAlias, $viewSpec['type'])))) {
+                || ($viewSpec['type'] == $rdfTypeAlias || (is_array($viewSpec['type']) && in_array($rdfTypeAlias, $viewSpec['type'])))
+            ) {
                 $foundSpec = true;
                 $this->debugLog('Processing ' . $viewSpec['_id']);
                 $this->generateView($key, $resource, $context);
@@ -516,7 +517,8 @@ class Views extends CompositeBase
             'view' => $viewSpec['type'],
             'duration' => $t->result(),
             'filter' => $filter,
-            'from' => $from]);
+            'from' => $from,
+        ]);
         $this->getStat()->timer(MONGO_CREATE_VIEW . ('.' . $viewId), $t->result());
 
         $stat = ['count' => $count];
