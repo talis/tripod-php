@@ -248,7 +248,8 @@ class SearchIndexer extends CompositeBase
             'type' => $spec['type'],
             'duration' => $t->result(),
             'filter' => $filter,
-            'from' => $from]);
+            'from' => $from,
+        ]);
         $this->getStat()->timer(MONGO_CREATE_SEARCH_DOC . ('.' . $searchDocumentType), $t->result());
 
         $stat = ['count' => $count];

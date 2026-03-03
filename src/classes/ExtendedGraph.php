@@ -26,9 +26,24 @@ class ExtendedGraph
     // FROM SimpleGraph
     public $_index = [];
 
-    public $_image_properties = ['http://xmlns.com/foaf/0.1/depiction', 'http://xmlns.com/foaf/0.1/img'];
+    public $_image_properties = [
+        'http://xmlns.com/foaf/0.1/depiction',
+        'http://xmlns.com/foaf/0.1/img',
+    ];
 
-    public $_property_order = ['http://www.w3.org/2004/02/skos/core#prefLabel', RDFS_LABEL, 'http://purl.org/dc/terms/title', DC_TITLE, FOAF_NAME, 'http://www.w3.org/2004/02/skos/core#definition', RDFS_COMMENT, 'http://purl.org/dc/terms/description', DC_DESCRIPTION, 'http://purl.org/vocab/bio/0.1/olb', RDF_TYPE];
+    public $_property_order = [
+        'http://www.w3.org/2004/02/skos/core#prefLabel',
+        RDFS_LABEL,
+        'http://purl.org/dc/terms/title',
+        DC_TITLE,
+        FOAF_NAME,
+        'http://www.w3.org/2004/02/skos/core#definition',
+        RDFS_COMMENT,
+        'http://purl.org/dc/terms/description',
+        DC_DESCRIPTION,
+        'http://purl.org/vocab/bio/0.1/olb',
+        RDF_TYPE,
+    ];
 
     public $parser_errors = [];
 
@@ -1120,11 +1135,12 @@ class ExtendedGraph
                 /* Make sure that bnode ids don't overlap:
                 _:a in g1 isn't the same as _:a in g2 */
 
-                if (substr($uri, 0, 2) == '_:') {// bnode
+                if (substr($uri, 0, 2) == '_:') { // bnode
                     $old_id = $uri;
                     $count = 1;
 
-                    while (isset($current[$uri]) || $old_id != $uri && isset($newGraph[$uri]) || isset($old_bnodeids[$uri])
+                    while (
+                        isset($current[$uri]) || $old_id != $uri && isset($newGraph[$uri]) || isset($old_bnodeids[$uri])
                     ) {
                         $uri .= $count++;
                     }
@@ -1146,7 +1162,8 @@ class ExtendedGraph
                                 } else { // bnode hasn't been transposed
                                     $old_bnode_id = $bnode;
                                     $count = 1;
-                                    while (isset($current[$bnode]) || $object['value'] != $bnode && isset($newGraph[$bnode]) || isset($old_bnodeids[$uri])
+                                    while (
+                                        isset($current[$bnode]) || $object['value'] != $bnode && isset($newGraph[$bnode]) || isset($old_bnodeids[$uri])
                                     ) {
                                         $bnode .= $count++;
                                     }
@@ -1688,8 +1705,7 @@ class ExtendedGraph
 
             if ($t['o_type'] === 'iri') {
                 $obj['type'] = 'uri';
-            } elseif (in_array($t['o_type'], ['literal1', 'literal2', 'long_literal1', 'long_literal2'], true)
-            ) {
+            } elseif (in_array($t['o_type'], ['literal1', 'literal2', 'long_literal1', 'long_literal2'], true)) {
                 $obj['type'] = 'literal';
             } else {
                 $obj['type'] = $t['o_type'];

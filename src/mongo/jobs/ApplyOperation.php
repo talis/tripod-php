@@ -80,7 +80,7 @@ class ApplyOperation extends JobBase
 
                     $this->infoLog(
                         '[JobGroupId ' . $jobGroup->getId()->__toString() . '] composite cleanup for '
-                        . $subject['operation'] . ' removed ' . $count . ' stale composite documents'
+                            . $subject['operation'] . ' removed ' . $count . ' stale composite documents'
                     );
                 }
             }
