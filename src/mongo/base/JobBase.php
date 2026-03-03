@@ -78,7 +78,7 @@ abstract class JobBase extends DriverBase
         $this->timer->stop();
         $this->debugLog(
             '[JOBID ' . $this->job->payload['id'] . '] ' . get_class($this)
-            . sprintf('::perform() done in %sms', $this->timer->result())
+                . sprintf('::perform() done in %sms', $this->timer->result())
         );
         $this->getStat()->timer($this->getStatTimerSuccessKey(), $this->timer->result());
     }

@@ -532,7 +532,8 @@ class Tables extends CompositeBase
             'type' => $tableSpec['type'],
             'duration' => $t->result(),
             'filter' => $filter,
-            'from' => $from]);
+            'from' => $from,
+        ]);
         $this->getStat()->timer(MONGO_CREATE_TABLE . ('.' . $tableType), $t->result());
 
         $stat = ['count' => $count];

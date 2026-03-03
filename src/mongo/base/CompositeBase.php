@@ -66,8 +66,7 @@ abstract class CompositeBase extends DriverBase implements IComposite
                 $currentSubjectProperties = [];
                 if (isset($subjectsAndPredicatesOfChange[$docResource])) {
                     $currentSubjectProperties = $subjectsAndPredicatesOfChange[$docResource];
-                } elseif (isset($subjectsToAlias[$docResource], $subjectsAndPredicatesOfChange[$subjectsToAlias[$docResource]])
-                ) {
+                } elseif (isset($subjectsToAlias[$docResource], $subjectsAndPredicatesOfChange[$subjectsToAlias[$docResource]])) {
                     $currentSubjectProperties = $subjectsAndPredicatesOfChange[$subjectsToAlias[$docResource]];
                 }
 

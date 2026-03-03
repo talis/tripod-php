@@ -99,7 +99,8 @@ class Updates extends DriverBase
             OP_ASYNC => [OP_VIEWS => false, OP_TABLES => true, OP_SEARCH => true],
             'stat' => null,
             'readPreference' => ReadPreference::RP_PRIMARY_PREFERRED,
-            'retriesToGetLock' => 20], $opts);
+            'retriesToGetLock' => 20,
+        ], $opts);
         $this->readPreference = $opts['readPreference'];
         $this->config = $this->getConfigInstance();
 
@@ -1032,7 +1033,8 @@ class Updates extends DriverBase
                 [
                     _ID_KEY => [
                         _ID_RESOURCE => $this->labeller->uri_to_alias($s),
-                        _ID_CONTEXT => $contextAlias],
+                        _ID_CONTEXT => $contextAlias,
+                    ],
                 ]
             );
 

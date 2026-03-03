@@ -1210,8 +1210,10 @@ class Config implements IConfigInstance
                                 $fieldsThatAreArrays = 0;
                                 foreach ($cardinalityIndexFields as $field => $fieldVal) {
                                     $cardinalityField = str_replace('.value', '', $field);
-                                    if (!array_key_exists($cardinalityField, $this->cardinality[$storeName][$podName])
-                                        || $this->cardinality[$storeName][$podName][$cardinalityField] != 1) {
+                                    if (
+                                        !array_key_exists($cardinalityField, $this->cardinality[$storeName][$podName])
+                                        || $this->cardinality[$storeName][$podName][$cardinalityField] != 1
+                                    ) {
                                         $fieldsThatAreArrays++;
                                     }
 
@@ -1381,7 +1383,9 @@ class Config implements IConfigInstance
             $validComputingFieldFunctions = Tables::$computedFieldFunctions;
             if ($validationLevel == self::VALIDATE_MAX) {
                 $availableFields = $this->getFieldNamesInSpec($spec);
-                $availableFields = array_map(function (string $field): string { return '$' . $field; }, $availableFields);
+                $availableFields = array_map(function (string $field): string {
+                    return '$' . $field;
+                }, $availableFields);
             }
 
             foreach ($spec['computed_fields'] as $field) {
