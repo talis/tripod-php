@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod;
 
 class StatsD implements ITripodStat
@@ -10,10 +12,10 @@ class StatsD implements ITripodStat
     /** @var int|string */
     private $port;
 
-    /** @var string */
+    /** @var string|null */
     private $prefix;
 
-    /** @var string */
+    /** @var string|null */
     private $pivotValue;
 
     /**
@@ -31,6 +33,8 @@ class StatsD implements ITripodStat
     /**
      * @param string $operation
      * @param int    $inc
+     *
+     * @return void
      */
     public function increment($operation, $inc = 1)
     {
@@ -43,12 +47,12 @@ class StatsD implements ITripodStat
      * @param string $operation
      * @param number $duration
      *
-     * @return mixed
+     * @return void
      */
     public function timer($operation, $duration)
     {
         $this->send(
-            $this->generateStatData($operation, ['1|c', "{$duration}|ms"])
+            $this->generateStatData($operation, ['1|c', $duration . '|ms'])
         );
     }
 
@@ -56,9 +60,8 @@ class StatsD implements ITripodStat
      * Record an arbitrary value.
      *
      * @param string $operation
-     * @param string $value
      */
-    public function gauge($operation, $value)
+    public function gauge($operation, string $value): void
     {
         $this->send(
             $this->generateStatData($operation, $value . '|g')
@@ -66,7 +69,7 @@ class StatsD implements ITripodStat
     }
 
     /**
-     * @return array
+     * @return array<string, array<string, int|string>|class-string<StatsD>>
      */
     public function getConfig()
     {
@@ -80,9 +83,6 @@ class StatsD implements ITripodStat
         ];
     }
 
-    /**
-     * @return StatsD
-     */
     public static function createFromConfig(array $config)
     {
         if (isset($config['config'])) {
@@ -105,11 +105,9 @@ class StatsD implements ITripodStat
     }
 
     /**
-     * @param string $prefix
-     *
      * @throws \InvalidArgumentException
      */
-    public function setPrefix($prefix)
+    public function setPrefix(?string $prefix): void
     {
         if ($this->isValidPathValue($prefix)) {
             $this->prefix = $prefix;
@@ -129,7 +127,7 @@ class StatsD implements ITripodStat
     /**
      * @param int|string $port
      */
-    public function setPort($port)
+    public function setPort($port): void
     {
         $this->port = $port;
     }
@@ -145,7 +143,7 @@ class StatsD implements ITripodStat
     /**
      * @param string $host
      */
-    public function setHost($host)
+    public function setHost($host): void
     {
         $this->host = $host;
     }
@@ -159,11 +157,9 @@ class StatsD implements ITripodStat
     }
 
     /**
-     * @param string $pivotValue
-     *
      * @throws \InvalidArgumentException
      */
-    public function setPivotValue($pivotValue)
+    public function setPivotValue(?string $pivotValue): void
     {
         if ($this->isValidPathValue($pivotValue)) {
             $this->pivotValue = $pivotValue;
@@ -177,42 +173,49 @@ class StatsD implements ITripodStat
      *
      * @param array $data
      * @param int   $sampleRate
+     *
+     * @return void
      */
     protected function send($data, $sampleRate = 1)
     {
+        if (empty($this->host)) {
+            return;
+        }
+
         $sampledData = [];
         if ($sampleRate < 1) {
             foreach ($data as $stat => $value) {
                 if ((mt_rand() / mt_getrandmax()) <= $sampleRate) {
-                    $sampledData[$stat] = "{$value}|@{$sampleRate}";
+                    $sampledData[$stat] = sprintf('%s|@%d', $value, $sampleRate);
                 }
             }
         } else {
             $sampledData = $data;
         }
+
         if (empty($sampledData)) {
             return;
         }
 
         try {
-            if (!empty($this->host)) { // if host is configured, send..
-                $fp = fsockopen("udp://{$this->host}", $this->port);
-                if (!$fp) {
-                    return;
-                }
-                // make this a non blocking stream
-                stream_set_blocking($fp, false);
-                foreach ($sampledData as $stat => $value) {
-                    if (is_array($value)) {
-                        foreach ($value as $v) {
-                            fwrite($fp, "{$stat}:{$v}");
-                        }
-                    } else {
-                        fwrite($fp, "{$stat}:{$value}");
-                    }
-                }
-                fclose($fp);
+            $fp = fsockopen('udp://' . $this->host, $this->port);
+            if (!$fp) {
+                return;
             }
+
+            // make this a non blocking stream
+            stream_set_blocking($fp, false);
+            foreach ($sampledData as $stat => $value) {
+                if (is_array($value)) {
+                    foreach ($value as $v) {
+                        fwrite($fp, sprintf('%s:%s', $stat, $v));
+                    }
+                } else {
+                    fwrite($fp, sprintf('%s:%s', $stat, $value));
+                }
+            }
+
+            fclose($fp);
         } catch (\Exception $e) {
         }
     }
@@ -224,46 +227,35 @@ class StatsD implements ITripodStat
      *  "{prefix}.tripod.{stat}"=>"1|c"
      * }
      *
-     * @param string       $operation
      * @param array|string $value
      *
      * @return array An associative array of the grouped_by_database and aggregate stats
      */
-    protected function generateStatData($operation, $value)
+    protected function generateStatData(string $operation, $value): array
     {
         $data = [];
         foreach ($this->getStatsPaths() as $path) {
-            $data[$path . ".{$operation}"] = $value;
+            $data[$path . ('.' . $operation)] = $value;
         }
 
         return $data;
     }
 
-    /**
-     * @return array
-     */
-    protected function getStatsPaths()
+    protected function getStatsPaths(): array
     {
         return array_values(array_filter([$this->getAggregateStatPath()]));
     }
 
-    /**
-     * @return string
-     */
-    protected function getAggregateStatPath()
+    protected function getAggregateStatPath(): string
     {
         return empty($this->prefix) ? STAT_CLASS : $this->prefix . '.' . STAT_CLASS;
     }
 
     /**
      * StatsD paths cannot start with, end with, or have more than one consecutive '.'.
-     *
-     * @param string $value
-     *
-     * @return bool
      */
-    protected function isValidPathValue($value)
+    protected function isValidPathValue(?string $value): bool
     {
-        return preg_match('/(^\.)|(\.\.+)|(\.$)/', $value) === 0;
+        return $value === null || preg_match('/(^\.)|(\.\.+)|(\.$)/', $value) === 0;
     }
 }

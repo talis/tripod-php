@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 use Tripod\Mongo\NoStat;
 use Tripod\StatsD;
 use Tripod\TripodStatFactory;
 
 class MongoTripodStatTest extends MongoTripodTestBase
 {
-    public function testStatFactory()
+    public function testStatFactory(): void
     {
         $statConfig = $this->getStatsDConfig();
 
@@ -21,7 +23,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $this->assertInstanceOf(NoStat::class, $noStat);
     }
 
-    public function testStatsDSettersAndGetters()
+    public function testStatsDSettersAndGetters(): void
     {
         $stat = StatsD::createFromConfig($this->getStatsDConfig());
 
@@ -49,7 +51,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $this->assertEquals(['class' => StatsD::class, 'config' => ['host' => 'bar.baz', 'port' => 4567, 'prefix' => 'FOO_BAR']], $stat->getConfig());
     }
 
-    public function testStatsDIncrementNoPrefix()
+    public function testStatsDIncrementNoPrefix(): void
     {
         $statConfig = $this->getStatsDConfig();
 
@@ -64,7 +66,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->increment('FOO.BAR');
     }
 
-    public function testStatsDIncrementWithPivotValueNoPrefix()
+    public function testStatsDIncrementWithPivotValueNoPrefix(): void
     {
         $statConfig = $this->getStatsDConfig();
 
@@ -84,7 +86,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->increment('FOO.BAR');
     }
 
-    public function testStatsDIncrementWithPrefix()
+    public function testStatsDIncrementWithPrefix(): void
     {
         $statConfig = $this->getStatsDConfig();
 
@@ -99,7 +101,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->increment('FOO.BAR');
     }
 
-    public function testStatsDIncrementWithPivotValueAndPrefix()
+    public function testStatsDIncrementWithPivotValueAndPrefix(): void
     {
         $statConfig = $this->getStatsDConfig();
 
@@ -117,7 +119,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->increment('FOO.BAR', 5);
     }
 
-    public function testStatsDTimerNoPrefix()
+    public function testStatsDTimerNoPrefix(): void
     {
         $statConfig = $this->getStatsDConfig();
 
@@ -132,7 +134,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->timer('FOO.BAR', 1234);
     }
 
-    public function testStatsDTimerWithPivotValueNoPrefix()
+    public function testStatsDTimerWithPivotValueNoPrefix(): void
     {
         $statConfig = $this->getStatsDConfig();
 
@@ -150,7 +152,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->timer('FOO.BAR', 1234);
     }
 
-    public function testStatsDTimerWithPrefix()
+    public function testStatsDTimerWithPrefix(): void
     {
         $statConfig = $this->getStatsDConfig();
 
@@ -165,7 +167,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->timer('FOO.BAR', 4567);
     }
 
-    public function testStatsDTimerWithPrefixAndPivotValue()
+    public function testStatsDTimerWithPrefixAndPivotValue(): void
     {
         $statConfig = $this->getStatsDConfig();
 
@@ -183,7 +185,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->timer('FOO.BAR', 4567);
     }
 
-    public function testStatsDGaugeNoPrefix()
+    public function testStatsDGaugeNoPrefix(): void
     {
         $statConfig = $this->getStatsDConfig();
 
@@ -198,7 +200,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->gauge('FOO.BAR', 'xyz');
     }
 
-    public function testStatsDGaugeWithPivotValueNoPrefix()
+    public function testStatsDGaugeWithPivotValueNoPrefix(): void
     {
         $statConfig = $this->getStatsDConfig();
 
@@ -216,7 +218,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->gauge('FOO.BAR', 'xyz');
     }
 
-    public function testStatsDGaugeWithPrefix()
+    public function testStatsDGaugeWithPrefix(): void
     {
         $statConfig = $this->getStatsDConfig();
 
@@ -231,7 +233,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->gauge('FOO.BAR', 'abc');
     }
 
-    public function testStatsDGaugeWithPrefixAndPivotValue()
+    public function testStatsDGaugeWithPrefixAndPivotValue(): void
     {
         $statConfig = $this->getStatsDConfig();
 
@@ -249,31 +251,31 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->gauge('FOO.BAR', 'abc');
     }
 
-    public function testPrefixCannotStartWithDot()
+    public function testPrefixCannotStartWithDot(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid prefix supplied');
 
-        $stat = new StatsD('foo.bar', 4567, '.some_prefix');
+        new StatsD('foo.bar', 4567, '.some_prefix');
     }
 
-    public function testPrefixCannotEndWithDot()
+    public function testPrefixCannotEndWithDot(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid prefix supplied');
 
-        $stat = new StatsD('foo.bar', 4567, 'some_prefix.');
+        new StatsD('foo.bar', 4567, 'some_prefix.');
     }
 
-    public function testPrefixCannotContainConsecutiveDot()
+    public function testPrefixCannotContainConsecutiveDot(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid prefix supplied');
 
-        $stat = new StatsD('foo.bar', 4567, 'some..prefix');
+        new StatsD('foo.bar', 4567, 'some..prefix');
     }
 
-    public function testPivotValueCannotStartWithDot()
+    public function testPivotValueCannotStartWithDot(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid pivot value supplied');
@@ -282,7 +284,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->setPivotValue('.someValue');
     }
 
-    public function testPivotValueCannotEndWithDot()
+    public function testPivotValueCannotEndWithDot(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid pivot value supplied');
@@ -291,7 +293,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->setPivotValue('someValue.');
     }
 
-    public function testPivotValueCannotContainConsecutiveDot()
+    public function testPivotValueCannotContainConsecutiveDot(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid pivot value supplied');

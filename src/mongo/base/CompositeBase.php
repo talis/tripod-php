@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo\Composites;
 
 use Tripod\Exceptions\LabellerException;
@@ -33,6 +35,7 @@ abstract class CompositeBase extends DriverBase implements IComposite
             // build $filter for queries to impact index
             $filter[] = [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias];
         }
+
         $query = [_ID_KEY => ['$in' => $filter]];
         $docs = $this->getCollection()->find(
             $query,
@@ -63,15 +66,16 @@ abstract class CompositeBase extends DriverBase implements IComposite
                 $currentSubjectProperties = [];
                 if (isset($subjectsAndPredicatesOfChange[$docResource])) {
                     $currentSubjectProperties = $subjectsAndPredicatesOfChange[$docResource];
-                } elseif (isset($subjectsToAlias[$docResource], $subjectsAndPredicatesOfChange[$subjectsToAlias[$docResource]])
-                ) {
+                } elseif (isset($subjectsToAlias[$docResource], $subjectsAndPredicatesOfChange[$subjectsToAlias[$docResource]])) {
                     $currentSubjectProperties = $subjectsAndPredicatesOfChange[$subjectsToAlias[$docResource]];
                 }
+
                 foreach ($docTypes as $type) {
                     if ($this->checkIfTypeShouldTriggerOperation($type, $types, $currentSubjectProperties)) {
                         if (!array_key_exists($this->getPodName(), $candidates)) {
                             $candidates[$this->getPodName()] = [];
                         }
+
                         if (!array_key_exists($docHash, $candidates[$this->getPodName()])) {
                             $candidates[$this->getPodName()][$docHash] = ['id' => $doc[_ID_KEY]];
                         }
@@ -87,6 +91,7 @@ abstract class CompositeBase extends DriverBase implements IComposite
                 if (!array_key_exists($spec['from'], $candidates)) {
                     $candidates[$spec['from']] = [];
                 }
+
                 $docHash = md5($doc[_ID_KEY][_ID_RESOURCE] . $doc[_ID_KEY][_ID_CONTEXT]);
 
                 if (!array_key_exists($docHash, $candidates[$spec['from']])) {
@@ -97,9 +102,11 @@ abstract class CompositeBase extends DriverBase implements IComposite
                         ],
                     ];
                 }
+
                 if (!array_key_exists('specTypes', $candidates[$spec['from']][$docHash])) {
                     $candidates[$spec['from']][$docHash]['specTypes'] = [];
                 }
+
                 // Save the specification type so we only have to regen resources in that table type
                 if (!in_array($doc[_ID_KEY][_ID_TYPE], $candidates[$spec['from']][$docHash]['specTypes'])) {
                     $candidates[$spec['from']][$docHash]['specTypes'][] = $doc[_ID_KEY][_ID_TYPE];
@@ -171,7 +178,7 @@ abstract class CompositeBase extends DriverBase implements IComposite
         $intersectingTypes = array_unique(array_intersect($types, $validTypes));
 
         // If views have a matching type *at all*, the operation is triggered
-        return !empty($intersectingTypes);
+        return $intersectingTypes !== [];
     }
 
     /**
@@ -181,7 +188,7 @@ abstract class CompositeBase extends DriverBase implements IComposite
      */
     protected function getApplyOperation()
     {
-        if (!isset($this->applyOperation)) {
+        if ($this->applyOperation === null) {
             $this->applyOperation = new ApplyOperation();
         }
 

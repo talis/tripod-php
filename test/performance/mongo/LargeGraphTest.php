@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Tripod\ExtendedGraph;
 use Tripod\Mongo\Driver;
 
@@ -29,7 +31,7 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
         $this->loadLargeGraphData();
     }
 
-    public function testUpdateSingleTripleOfLargeGraph()
+    public function testUpdateSingleTripleOfLargeGraph(): void
     {
         $uri = 'http://largegraph/1';
 
@@ -37,6 +39,7 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
 
         $graph = new ExtendedGraph();
         $graph->add_literal_triple($uri, 'http://rdfs.org/sioc/spec/name', 'new name');
+
         $this->tripod->saveChanges(new ExtendedGraph(), $graph);
 
         $testEndTime = microtime();
@@ -48,7 +51,7 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
         );
     }
 
-    public function testDescribeOfLargeGraph()
+    public function testDescribeOfLargeGraph(): void
     {
         $uri = 'http://largegraph/1';
 
@@ -56,6 +59,7 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
 
         $graph = new ExtendedGraph();
         $graph->add_literal_triple($uri, 'http://rdfs.org/sioc/spec/name', 'new name');
+
         $this->tripod->describeResource($uri);
 
         $testEndTime = microtime();
@@ -75,7 +79,7 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
         }
     }
 
-    protected function getConfigLocation()
+    protected function getConfigLocation(): string
     {
         return __DIR__ . '/../../unit/mongo/data/config.json';
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use Tripod\Config;
@@ -13,7 +15,7 @@ class IndexUtils
      * @param string|null $storeName  - database name to ensure indexes for
      * @param bool        $background - index in the background (default) or lock DB whilst indexing
      */
-    public function ensureIndexes($reindex = false, $storeName = null, $background = true)
+    public function ensureIndexes($reindex = false, $storeName = null, $background = true): void
     {
         $config = $this->getConfig();
         $dbs = ($storeName == null) ? $config->getDbs() : [$storeName];
@@ -77,12 +79,12 @@ class IndexUtils
                     if (isset($spec['ensureIndexes'])) {
                         $indexes = array_merge($indexes, $spec['ensureIndexes']);
                     }
-                    if ($reindex) {
-                        if (!in_array($collection->getNamespace(), $reindexedCollections)) {
-                            $collection->dropIndexes();
-                            $reindexedCollections[] = $collection->getNamespace();
-                        }
+
+                    if ($reindex && !in_array($collection->getNamespace(), $reindexedCollections)) {
+                        $collection->dropIndexes();
+                        $reindexedCollections[] = $collection->getNamespace();
                     }
+
                     foreach ($indexes as $index) {
                         $collection->createIndex(
                             $index,
@@ -107,12 +109,12 @@ class IndexUtils
                     if (isset($spec['ensureIndexes'])) {
                         $indexes = array_merge($indexes, $spec['ensureIndexes']);
                     }
-                    if ($reindex) {
-                        if (!in_array($collection->getNamespace(), $reindexedCollections)) {
-                            $collection->dropIndexes();
-                            $reindexedCollections[] = $collection->getNamespace();
-                        }
+
+                    if ($reindex && !in_array($collection->getNamespace(), $reindexedCollections)) {
+                        $collection->dropIndexes();
+                        $reindexedCollections[] = $collection->getNamespace();
                     }
+
                     foreach ($indexes as $index) {
                         $collection->createIndex(
                             $index,
@@ -135,12 +137,11 @@ class IndexUtils
                         [\_CREATED_TS => 1],
                     ];
 
-                    if ($reindex) {
-                        if (!in_array($collection->getNamespace(), $reindexedCollections)) {
-                            $collection->dropIndexes();
-                            $reindexedCollections[] = $collection->getNamespace();
-                        }
+                    if ($reindex && !in_array($collection->getNamespace(), $reindexedCollections)) {
+                        $collection->dropIndexes();
+                        $reindexedCollections[] = $collection->getNamespace();
                     }
+
                     foreach ($indexes as $index) {
                         $collection->createIndex(
                             $index,
@@ -160,7 +161,7 @@ class IndexUtils
      *
      * @return \Tripod\Mongo\Config
      */
-    protected function getConfig()
+    protected function getConfig(): IConfigInstance
     {
         return Config::getInstance();
     }

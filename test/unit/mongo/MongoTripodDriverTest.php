@@ -1,7 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
 use MongoDB\BSON\Binary;
-use MongoDB\BSON\Javascript;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\Regex;
 use MongoDB\BSON\UTCDateTime;
@@ -66,7 +67,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->loadResourceDataViaTripod();
     }
 
-    public function testSelectMultiValue()
+    public function testSelectMultiValue(): void
     {
         $expectedResult = [
             'head' => [
@@ -78,7 +79,8 @@ class MongoTripodDriverTest extends MongoTripodTestBase
                 [
                     '_id' => [
                         _ID_RESOURCE => 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA',
-                        _ID_CONTEXT => 'http://talisaspire.com/'],
+                        _ID_CONTEXT => 'http://talisaspire.com/',
+                    ],
                     'dct:source' => [
                         'http://life.ac.uk/resources/BFBC6A06-A8B0-DED8-53AA-8E80DB44CC53',
                         'http://life.ac.uk/resources/836E7CAD-63D2-63A0-B1CB-AA6A7E54A5C9',
@@ -90,7 +92,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertEquals($expectedResult, $actualResult);
     }
 
-    public function testSelectSingleValue()
+    public function testSelectSingleValue(): void
     {
         $expectedResult = [
             'head' => [
@@ -102,7 +104,8 @@ class MongoTripodDriverTest extends MongoTripodTestBase
                 [
                     '_id' => [
                         _ID_RESOURCE => 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA',
-                        _ID_CONTEXT => 'http://talisaspire.com/'],
+                        _ID_CONTEXT => 'http://talisaspire.com/',
+                    ],
                     'dct:subject' => 'http://talisaspire.com/disciplines/physics',
                 ],
             ],
@@ -111,7 +114,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertEquals($expectedResult, $actualResult);
     }
 
-    public function testGraph()
+    public function testGraph(): void
     {
         $expectedResult = new ExtendedGraph();
         $expectedResult->add_turtle(
@@ -152,7 +155,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertFalse($cs->has_changes());
     }
 
-    public function testDescribeResource()
+    public function testDescribeResource(): void
     {
         $expectedResult = new ExtendedGraph();
         $expectedResult->add_turtle(
@@ -193,7 +196,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertFalse($cs->has_changes());
     }
 
-    public function testDescribeResources()
+    public function testDescribeResources(): void
     {
         $expectedResult = new ExtendedGraph();
         $expectedResult->add_turtle(
@@ -241,13 +244,13 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertFalse($cs->has_changes());
     }
 
-    public function testGetCount()
+    public function testGetCount(): void
     {
         $count = $this->tripod->getCount(['rdf:type.' . VALUE_URI => 'bibo:Book']);
         $this->assertEquals(9, $count);
     }
 
-    public function testGetCountWithGroupBy()
+    public function testGetCountWithGroupBy(): void
     {
         $count = $this->tripod->getCount(['rdf:type.' . VALUE_URI => 'bibo:Book'], 'bibo:isbn13.l');
 
@@ -259,7 +262,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertEquals(1, $count['9780393929690']);
     }
 
-    public function testTripodSaveChangesRemovesLiteralTriple()
+    public function testTripodSaveChangesRemovesLiteralTriple(): void
     {
         $oG = $this->tripod->describeResource('http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA');
         $nG = new MongoGraph();
@@ -271,7 +274,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertEquals($nG, $uG, 'Updated does not match expected graph');
     }
 
-    public function testTripodSaveChangesAddsLiteralTriple()
+    public function testTripodSaveChangesAddsLiteralTriple(): void
     {
         $oG = $this->tripod->describeResource('http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA');
         $nG = new MongoGraph();
@@ -288,10 +291,11 @@ class MongoTripodDriverTest extends MongoTripodTestBase
      * we dont have to load the whole document in as the old graph, we just enumerate the single triple we want removed
      * what should happen is that the cs builder will translate that into a single removal.
      */
-    public function testTripodSaveChangesRemovesLiteralTripleUsingEmptyNewGraphAndPartialOldGraph()
+    public function testTripodSaveChangesRemovesLiteralTripleUsingEmptyNewGraphAndPartialOldGraph(): void
     {
         $oG = new MongoGraph();
         $oG->add_literal_triple('http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA', $oG->qname_to_uri('bibo:isbn13'), '9780393929690');
+
         $nG = new MongoGraph();
 
         $this->tripod->saveChanges($oG, $nG, 'http://talisaspire.com/', 'my changes');
@@ -306,7 +310,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
      * this test verifies that if we simply want to add some data to a document that exists in we dont need to specify an oldgraph; we just need to specify the new graph
      * the cs builder should translate that into a single addition statement and apply it.
      */
-    public function testTripodSaveChangesAddsLiteralTripleUsingEmptyOldGraph()
+    public function testTripodSaveChangesAddsLiteralTripleUsingEmptyOldGraph(): void
     {
         $oG = new MongoGraph();
         $nG = new MongoGraph();
@@ -318,7 +322,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertHasLiteralTriple($uG, 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA', $nG->qname_to_uri('searchterms:title'), 'TEST TITLE');
     }
 
-    public function testTripodSaveChangesUpdatesLiteralTriple()
+    public function testTripodSaveChangesUpdatesLiteralTriple(): void
     {
         $oG = $this->tripod->describeResource('http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA');
         $nG = new MongoGraph();
@@ -335,13 +339,14 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertFalse($uG->has_literal_triple('http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA', $nG->qname_to_uri('searchterms:title'), 'Physics 3rd Edition'), 'Graph should not contain literal triple we removed');
     }
 
-    public function testSaveCompletelyNewGraph()
+    public function testSaveCompletelyNewGraph(): void
     {
         $uri = 'http://example.com/resources/1';
 
         $g = new MongoGraph();
         $g->add_resource_triple($uri, $g->qname_to_uri('rdf:type'), $g->qname_to_uri('acorn:Resource'));
         $g->add_literal_triple($uri, $g->qname_to_uri('dct:title'), 'wibble');
+
         $this->tripod->saveChanges(new MongoGraph(), $g, 'http://talisaspire.com/', 'something new');
 
         $uG = $this->tripod->describeResource($uri);
@@ -351,7 +356,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertTrue($uG->has_literal_triple($uri, $g->qname_to_uri('dct:title'), 'wibble'), 'Graph should contain literal triple we added');
     }
 
-    public function testRemoveGraphEntirely()
+    public function testRemoveGraphEntirely(): void
     {
         $uri = 'http://example.com/resources/1';
 
@@ -359,6 +364,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $g = new MongoGraph();
         $g->add_resource_triple($uri, $g->qname_to_uri('rdf:type'), $g->qname_to_uri('acorn:Resource'));
         $g->add_literal_triple($uri, $g->qname_to_uri('dct:title'), 'wibble');
+
         $this->tripod->saveChanges(new MongoGraph(), $g, 'http://talisaspire.com/', 'something new');
 
         // retrieve it and make sure it was saved correctly
@@ -374,7 +380,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertTrue($g->is_empty());
     }
 
-    public function testSaveFailsWhenOldGraphIsInvalidNoDataInStoreForObj()
+    public function testSaveFailsWhenOldGraphIsInvalidNoDataInStoreForObj(): void
     {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Error storing changes');
@@ -388,10 +394,10 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $nG = new MongoGraph();
         $nG->add_resource_triple($uri, $nG->qname_to_uri('rdf:type'), $nG->qname_to_uri('acorn:List'));
 
-        $result = $this->tripod->saveChanges($oG, $nG, 'http://talisaspire.com/');
+        $this->tripod->saveChanges($oG, $nG, 'http://talisaspire.com/');
     }
 
-    public function testInterleavingUpdateFailsIfUnderlyingDataHasChanged()
+    public function testInterleavingUpdateFailsIfUnderlyingDataHasChanged(): void
     {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Error storing changes');
@@ -419,22 +425,23 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $mockTripodUpdate->expects($this->once())
             ->method('getDocumentForUpdate')
             ->with($uri)
-            ->will($this->returnValue($doc));
+            ->willReturn($doc);
 
         $mockTripod->expects($this->atLeastOnce())
             ->method('getDataUpdater')
-            ->will($this->returnValue($mockTripodUpdate));
+            ->willReturn($mockTripodUpdate);
         $mockTripod->setTransactionLog($this->tripodTransactionLog);
 
         $oG = new MongoGraph();
         $oG->add_resource_triple($uri, $oG->qname_to_uri('rdf:type'), $oG->qname_to_uri('acorn:Book'));
+
         $nG = new MongoGraph();
         $nG->add_resource_triple($uri, $nG->qname_to_uri('rdf:type'), $nG->qname_to_uri('acorn:Foo'));
 
-        $result = $mockTripod->saveChanges($oG, $nG, 'http://talisaspire.com/');
+        $mockTripod->saveChanges($oG, $nG, 'http://talisaspire.com/');
     }
 
-    public function testInterleavingUpdateFailsIfCriteriaIsNotValidAtPointOfSave()
+    public function testInterleavingUpdateFailsIfCriteriaIsNotValidAtPointOfSave(): void
     {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Error storing changes');
@@ -444,6 +451,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
 
         $g = new MongoGraph();
         $g->add_resource_triple($uri, $g->qname_to_uri('rdf:type'), $g->qname_to_uri('acorn:Book'));
+
         $this->tripod->saveChanges(new MongoGraph(), $g, 'http://talisaspire.com/');
 
         // canned response will simulate that the underlying data has changed
@@ -466,11 +474,11 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $mockTripodUpdate->expects($this->once())
             ->method('getDocumentForUpdate')
             ->with($uri)
-            ->will($this->returnValue($doc));
+            ->willReturn($doc);
 
         $mockTripod->expects($this->atLeastOnce())
             ->method('getDataUpdater')
-            ->will($this->returnValue($mockTripodUpdate));
+            ->willReturn($mockTripodUpdate);
 
         $mockTripod->setTransactionLog($this->tripodTransactionLog);
 
@@ -480,10 +488,10 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $nG = new MongoGraph();
         $nG->add_resource_triple($uri, $nG->qname_to_uri('rdf:type'), $nG->qname_to_uri('acorn:Foo'));
 
-        $result = $mockTripod->saveChanges($oG, $nG, 'http://talisaspire.com/');
+        $mockTripod->saveChanges($oG, $nG, 'http://talisaspire.com/');
     }
 
-    public function testAddMultipleTriplesForSameProperty()
+    public function testAddMultipleTriplesForSameProperty(): void
     {
         $uri = 'http://example.com/resources/1';
 
@@ -493,6 +501,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $oG->add_literal_triple($uri, $oG->qname_to_uri('dct:title'), 'Some title');
         $oG->add_literal_triple($uri, $oG->qname_to_uri('dct:title'), 'Another title');
         $oG->add_literal_triple($uri, $oG->qname_to_uri('dct:title'), 'Yet another title');
+
         $this->tripod->saveChanges(new MongoGraph(), $oG, 'http://talisaspire.com/');
 
         // retrieve it and make sure it was saved correctly
@@ -504,7 +513,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertTrue($g->has_literal_triple($uri, $g->qname_to_uri('dct:title'), 'Yet another title'), 'Graph should contain literal triple we added');
     }
 
-    public function testRemoveMultipleTriplesForSameProperty()
+    public function testRemoveMultipleTriplesForSameProperty(): void
     {
         $uri = 'http://example.com/resources/1';
 
@@ -514,11 +523,13 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $oG->add_literal_triple($uri, $oG->qname_to_uri('dct:title'), 'Some title');
         $oG->add_literal_triple($uri, $oG->qname_to_uri('dct:title'), 'Another title');
         $oG->add_literal_triple($uri, $oG->qname_to_uri('dct:title'), 'Yet another title');
+
         $this->tripod->saveChanges(new MongoGraph(), $oG, 'http://talisaspire.com/');
 
         // remove all three dct:title triples
         $g2 = new MongoGraph();
         $g2->add_resource_triple($uri, $oG->qname_to_uri('rdf:type'), $oG->qname_to_uri('acorn:Resource'));
+
         $this->tripod->saveChanges($oG, $g2, 'http://talisaspire.com/');
 
         $g = $this->tripod->describeResource($uri);
@@ -529,7 +540,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertFalse($g->has_literal_triple($uri, $g->qname_to_uri('dct:title'), 'Yet another title'), 'Graph should not contain literal triple we removed');
     }
 
-    public function testChangeMultipleTriplesForSamePropertySimple()
+    public function testChangeMultipleTriplesForSamePropertySimple(): void
     {
         $uri = 'http://example.com/resources/1';
 
@@ -539,6 +550,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $oG->add_literal_triple($uri, $oG->qname_to_uri('dct:title'), 'Some title');
         $oG->add_literal_triple($uri, $oG->qname_to_uri('dct:title'), 'Another title');
         $oG->add_literal_triple($uri, $oG->qname_to_uri('dct:title'), 'Yet another title');
+
         $this->tripod->saveChanges(new MongoGraph(), $oG, 'http://talisaspire.com/');
 
         $g2 = new MongoGraph();
@@ -546,6 +558,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $g2->add_literal_triple($uri, $g2->qname_to_uri('dct:title'), 'Updated Some title');
         $g2->add_literal_triple($uri, $g2->qname_to_uri('dct:title'), 'Updated Another title');
         $g2->add_literal_triple($uri, $g2->qname_to_uri('dct:title'), 'Updated Yet another title');
+
         $this->tripod->saveChanges($oG, $g2, 'http://talisaspire.com/');
 
         $g = $this->tripod->describeResource($uri);
@@ -562,7 +575,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertTrue($g->has_literal_triple($uri, $g->qname_to_uri('dct:title'), 'Updated Yet another title'), 'Graph should contain literal triple we added');
     }
 
-    public function testChangeMultipleTriplesForSamePropertyMoreComplex()
+    public function testChangeMultipleTriplesForSamePropertyMoreComplex(): void
     {
         $uri = 'http://example.com/resources/1';
 
@@ -574,6 +587,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $oG->add_literal_triple($uri, $oG->qname_to_uri('dct:title'), 'Title three');
         $oG->add_literal_triple($uri, $oG->qname_to_uri('dct:title'), 'Title four');
         $oG->add_literal_triple($uri, $oG->qname_to_uri('dct:title'), 'Title five');
+
         $this->tripod->saveChanges(new MongoGraph(), $oG, 'http://talisaspire.com/');
 
         // new data
@@ -583,6 +597,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $g2->add_literal_triple($uri, $g2->qname_to_uri('dct:title'), 'New Title two');
         $g2->add_literal_triple($uri, $g2->qname_to_uri('dct:title'), 'Title five');
         $g2->add_literal_triple($uri, $g2->qname_to_uri('dct:title'), 'New Title seven');
+
         $this->tripod->saveChanges($oG, $g2, 'http://talisaspire.com/');
 
         $g = $this->tripod->describeResource($uri);
@@ -601,7 +616,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertTrue($g->has_literal_triple($uri, $g->qname_to_uri('dct:title'), 'New Title seven'), 'Graph should contain literal triple we added');
     }
 
-    public function testSetReadPreferenceWhenSavingChanges()
+    public function testSetReadPreferenceWhenSavingChanges(): void
     {
         $subjectOne = 'http://talisaspire.com/works/checkReadPreferencesWrite';
 
@@ -630,14 +645,15 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $tripodMock
             ->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($tripodUpdate));
+            ->willReturn($tripodUpdate);
 
         $g = new MongoGraph();
         $g->add_literal_triple($subjectOne, $g->qname_to_uri('dct:title'), 'Title one');
+
         $tripodMock->saveChanges(new MongoGraph(), $g, 'http://talisaspire.com/');
     }
 
-    public function testReadPreferencesAreRestoredWhenErrorSavingChanges()
+    public function testReadPreferencesAreRestoredWhenErrorSavingChanges(): void
     {
         $subjectOne = 'http://talisaspire.com/works/checkReadPreferencesAreRestoredOnError';
         $tripodMock = $this->getMockBuilder(Driver::class)
@@ -657,7 +673,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $tripodUpdate
             ->expects($this->once())
             ->method('getContextAlias')
-            ->will($this->throwException(new Exception('A Test Exception')));
+            ->willThrowException(new Exception('A Test Exception'));
 
         $tripodUpdate
             ->expects($this->once())
@@ -666,23 +682,27 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $tripodMock
             ->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($tripodUpdate));
+            ->willReturn($tripodUpdate);
 
         $this->expectException(Exception::class);
 
         $g = new MongoGraph();
         $g->add_literal_triple($subjectOne, $g->qname_to_uri('dct:title'), 'Title one');
+
         $tripodMock->saveChanges(new MongoGraph(), $g, 'http://talisaspire.com/');
     }
 
-    public function testReadPreferencesOverMultipleSaves()
+    public function testReadPreferencesOverMultipleSaves(): void
     {
         $subjectOne = 'http://talisaspire.com/works/checkReadPreferencesOverMultipleSaves';
 
         $tripodMock = $this->getMockBuilder(TestTripod::class)
             ->onlyMethods(['getDataUpdater'])
-            ->setConstructorArgs(['CBD_testing', 'tripod_php_testing',
-                ['defaultContext' => 'http://talisaspire.com/', 'readPreference' => ReadPreference::RP_SECONDARY_PREFERRED]])
+            ->setConstructorArgs([
+                'CBD_testing',
+                'tripod_php_testing',
+                ['defaultContext' => 'http://talisaspire.com/', 'readPreference' => ReadPreference::RP_SECONDARY_PREFERRED],
+            ])
             ->getMock();
 
         $tripodUpdate = $this->getMockBuilder(Updates::class)
@@ -692,47 +712,48 @@ class MongoTripodDriverTest extends MongoTripodTestBase
 
         $tripodUpdate
             ->expects($this->exactly(3))
-            ->method('validateGraphCardinality')
-            ->will(
-                $this->onConsecutiveCalls(null, $this->throwException(new Exception('readPreferenceOverMultipleSavesTestException')), null)
-            );
+            ->method('validateGraphCardinality')->willReturnOnConsecutiveCalls(null, $this->throwException(new Exception('readPreferenceOverMultipleSavesTestException')), null);
 
         $tripodMock
             ->expects($this->atLeastOnce())
             ->method('getDataUpdater')
-            ->will($this->returnValue($tripodUpdate));
+            ->willReturn($tripodUpdate);
 
         $expectedCollectionReadPreference = $tripodMock->getCollectionReadPreference();
-        $this->assertEquals($expectedCollectionReadPreference->getMode(), ReadPreference::RP_SECONDARY_PREFERRED);
+        $this->assertEquals(ReadPreference::RP_SECONDARY_PREFERRED, $expectedCollectionReadPreference->getMode());
 
         // Assert that a simple save results in read preferences being restored
         $g = new MongoGraph();
         $g->add_literal_triple($subjectOne, $g->qname_to_uri('dct:title'), 'Title one');
+
         $tripodMock->saveChanges(new MongoGraph(), $g, 'http://talisaspire.com/');
         $this->assertEquals($expectedCollectionReadPreference, $tripodMock->getCollectionReadPreference());
 
         // Assert a thrown exception still results in read preferences being restored
         $g = new MongoGraph();
         $g->add_literal_triple($subjectOne, $g->qname_to_uri('dct:title2'), 'Title two');
+
         $exceptionThrown = false;
 
         try {
             $tripodMock->saveChanges(new MongoGraph(), $g, 'http://talisaspire.com/');
         } catch (Exception $e) {
             $exceptionThrown = true;
-            $this->assertEquals('readPreferenceOverMultipleSavesTestException', $e->getMessage());
+            $this->assertSame('readPreferenceOverMultipleSavesTestException', $e->getMessage());
         }
+
         $this->assertTrue($exceptionThrown);
         $this->assertEquals($expectedCollectionReadPreference, $tripodMock->getCollectionReadPreference());
 
         // Assert that a new save after the exception still results in read preferences being restored
         $g = new MongoGraph();
         $g->add_literal_triple($subjectOne, $g->qname_to_uri('dct:title3'), 'Title three');
+
         $tripodMock->saveChanges(new MongoGraph(), $g, 'http://talisaspire.com/');
         $this->assertEquals($expectedCollectionReadPreference, $tripodMock->getCollectionReadPreference());
     }
 
-    public function testSaveChangesToLockedDocument()
+    public function testSaveChangesToLockedDocument(): void
     {
         $subjectOne = 'http://talisaspire.com/works/lockedDoc';
 
@@ -747,7 +768,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->tripod->saveChanges(new MongoGraph(), $g, 'http://talisaspire.com/');
     }
 
-    public function testSaveChangesToMultipleSubjects()
+    public function testSaveChangesToMultipleSubjects(): void
     {
         $subjectOne = 'http://example.com/resources/1';
         $subjectTwo = 'http://example.com/resources/2';
@@ -760,6 +781,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $oG->add_resource_triple($subjectTwo, $oG->qname_to_uri('rdf:type'), $oG->qname_to_uri('acorn:Book'));
         $oG->add_literal_triple($subjectTwo, $oG->qname_to_uri('dct:title'), 'Title three');
         $oG->add_literal_triple($subjectTwo, $oG->qname_to_uri('dct:title'), 'Title four');
+
         $this->tripod->saveChanges(new MongoGraph(), $oG, 'http://talisaspire.com/');
 
         // retrieve them both, assert they are as we expect
@@ -802,7 +824,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertTrue($uG->has_literal_triple($subjectTwo, $uG->qname_to_uri('dct:author'), 'James Brown'));
     }
 
-    public function testDocumentVersioning()
+    public function testDocumentVersioning(): void
     {
         $uri = 'http://example.com/resources/1';
 
@@ -810,6 +832,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $g = new MongoGraph();
         $g->add_resource_triple($uri, $g->qname_to_uri('rdf:type'), $g->qname_to_uri('acorn:Resource'));
         $g->add_literal_triple($uri, $g->qname_to_uri('dct:title'), 'wibble');
+
         $this->tripod->saveChanges(new MongoGraph(), $g, 'http://talisaspire.com/', 'something new');
         $uG = $this->tripod->describeResource($uri);
         $this->assertTrue($uG->has_triples_about($uri), 'new entity we created was not saved');
@@ -820,6 +843,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $nG = new MongoGraph();
         $nG->add_graph($g);
         $nG->add_literal_triple($uri, $g->qname_to_uri('dct:title'), 'another title');
+
         $this->tripod->saveChanges($g, $nG, 'http://talisaspire.com/');
         $uG = $this->tripod->describeResource($uri);
         $this->assertTrue($uG->has_resource_triple($uri, $g->qname_to_uri('rdf:type'), $g->qname_to_uri('acorn:Resource')), 'Graph should contain resource triple we added');
@@ -830,6 +854,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $nG = new MongoGraph();
         // $nG->add_graph();
         $nG->add_literal_triple($uri, $g->qname_to_uri('dct:title'), 'only a title');
+
         $this->tripod->saveChanges($uG, $nG, 'http://talisaspire.com/');
 
         $uG = $this->tripod->describeResource($uri);
@@ -844,7 +869,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertDocumentHasBeenDeleted(['r' => $uri, 'c' => 'http://talisaspire.com/']);
     }
 
-    public function testSaveChangesWithInvalidCardinality()
+    public function testSaveChangesWithInvalidCardinality(): void
     {
         $this->expectException(CardinalityException::class);
         $this->expectExceptionMessage("Cardinality failed on http://foo/bar/1 for 'rdf:type' - should only have 1 value and has: http://foo/bar#Class1, http://foo/bar#Class2");
@@ -890,7 +915,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $tripod->saveChanges($oldGraph, $newGraph, 'http://talisaspire.com/');
     }
 
-    public function testDiscoverImpactedSubjectsAreDoneAllOperationsASync()
+    public function testDiscoverImpactedSubjectsAreDoneAllOperationsASync(): void
     {
         $uri_1 = 'http://example.com/1';
         $uri_2 = 'http://example.com/2';
@@ -966,15 +991,15 @@ class MongoTripodDriverTest extends MongoTripodTestBase
             ->method('getComposite');
         $mockTripodUpdates->expects($this->once())
             ->method('getDiscoverImpactedSubjects')
-            ->will($this->returnValue($mockDiscoverImpactedSubjects));
+            ->willReturn($mockDiscoverImpactedSubjects);
 
         $mockTripodUpdates->expects($this->once())
             ->method('storeChanges')
-            ->will($this->returnValue(['subjectsAndPredicatesOfChange' => $subjectsAndPredicatesOfChange, 'transaction_id' => 't1234']));
+            ->willReturn(['subjectsAndPredicatesOfChange' => $subjectsAndPredicatesOfChange, 'transaction_id' => 't1234']);
 
         $mockTripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($mockTripodUpdates));
+            ->willReturn($mockTripodUpdates);
 
         $mockDiscoverImpactedSubjects->expects($this->once())
             ->method('createJob')
@@ -986,7 +1011,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $mockTripod->saveChanges(new ExtendedGraph(), $oG, 'http://talisaspire.com/');
     }
 
-    public function testDiscoverImpactedSubjectsForDeletionsSyncOpsAreDoneAsyncJobSubmitted()
+    public function testDiscoverImpactedSubjectsForDeletionsSyncOpsAreDoneAsyncJobSubmitted(): void
     {
         $uri_1 = 'http://example.com/1';
         $uri_2 = 'http://example.com/2';
@@ -1108,7 +1133,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         ];
         $mockViews->expects($this->once())
             ->method('getImpactedSubjects')
-            ->will($this->returnValue($impactedViewSubjects));
+            ->willReturn($impactedViewSubjects);
 
         $impactedViewSubjects[0]->expects($this->once())->method('update');
         $impactedViewSubjects[1]->expects($this->once())->method('update');
@@ -1150,7 +1175,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
 
         $mockTables->expects($this->once())
             ->method('getImpactedSubjects')
-            ->will($this->returnValue($impactedTableSubjects));
+            ->willReturn($impactedTableSubjects);
 
         $impactedTableSubjects[0]->expects($this->once())->method('update');
         $impactedTableSubjects[1]->expects($this->once())->method('update');
@@ -1159,24 +1184,22 @@ class MongoTripodDriverTest extends MongoTripodTestBase
 
         $mockTripodUpdates->expects($this->once())
             ->method('getDiscoverImpactedSubjects')
-            ->will($this->returnValue($mockDiscoverImpactedSubjects));
+            ->willReturn($mockDiscoverImpactedSubjects);
 
         $mockTripodUpdates->expects($this->once())
             ->method('storeChanges')
-            ->will($this->returnValue(['subjectsAndPredicatesOfChange' => $subjectsAndPredicatesOfChange, 'transaction_id' => 't1234']));
+            ->willReturn(['subjectsAndPredicatesOfChange' => $subjectsAndPredicatesOfChange, 'transaction_id' => 't1234']);
 
         $mockTripod->expects($this->exactly(2))
             ->method('getComposite')
-            ->will($this->returnValueMap(
-                [
-                    [OP_TABLES, $mockTables],
-                    [OP_VIEWS, $mockViews],
-                ]
-            ));
+            ->willReturnMap([
+                [OP_TABLES, $mockTables],
+                [OP_VIEWS, $mockViews],
+            ]);
 
         $mockTripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($mockTripodUpdates));
+            ->willReturn($mockTripodUpdates);
 
         $mockDiscoverImpactedSubjects->expects($this->once())
             ->method('createJob')
@@ -1188,7 +1211,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $mockTripod->saveChanges($oG, new ExtendedGraph(), 'http://talisaspire.com/');
     }
 
-    public function testDiscoverImpactedSubjectsForDefaultOperationsSetting()
+    public function testDiscoverImpactedSubjectsForDefaultOperationsSetting(): void
     {
         $uri_1 = 'http://example.com/1';
         $uri_2 = 'http://example.com/2';
@@ -1295,23 +1318,23 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $mockTripod->expects($this->once())
             ->method('getComposite')
             ->with(OP_VIEWS)
-            ->will($this->returnValue($mockViews));
+            ->willReturn($mockViews);
 
         $mockTripodUpdates->expects($this->once())
             ->method('getDiscoverImpactedSubjects')
-            ->will($this->returnValue($mockDiscoverImpactedSubjects));
+            ->willReturn($mockDiscoverImpactedSubjects);
 
         $mockTripodUpdates->expects($this->once())
             ->method('storeChanges')
-            ->will($this->returnValue(['subjectsAndPredicatesOfChange' => $subjectsAndPredicatesOfChange, 'transaction_id' => 't1234']));
+            ->willReturn(['subjectsAndPredicatesOfChange' => $subjectsAndPredicatesOfChange, 'transaction_id' => 't1234']);
 
         $mockTripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($mockTripodUpdates));
+            ->willReturn($mockTripodUpdates);
 
         $mockViews->expects($this->once())
             ->method('getImpactedSubjects')
-            ->will($this->returnValue($impactedViewSubjects));
+            ->willReturn($impactedViewSubjects);
 
         $impactedViewSubjects[0]->expects($this->once())->method('update');
         $impactedViewSubjects[1]->expects($this->once())->method('update');
@@ -1329,7 +1352,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $mockTripod->saveChanges($oG, $nG, 'http://talisaspire.com/');
     }
 
-    public function testSpecifyQueueForAsyncOperations()
+    public function testSpecifyQueueForAsyncOperations(): void
     {
         $uri_1 = 'http://example.com/1';
         $uri_2 = 'http://example.com/2';
@@ -1440,23 +1463,23 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $mockTripod->expects($this->once())
             ->method('getComposite')
             ->with(OP_VIEWS)
-            ->will($this->returnValue($mockViews));
+            ->willReturn($mockViews);
 
         $mockTripodUpdates->expects($this->once())
             ->method('getDiscoverImpactedSubjects')
-            ->will($this->returnValue($mockDiscoverImpactedSubjects));
+            ->willReturn($mockDiscoverImpactedSubjects);
 
         $mockTripodUpdates->expects($this->once())
             ->method('storeChanges')
-            ->will($this->returnValue(['subjectsAndPredicatesOfChange' => $subjectsAndPredicatesOfChange, 'transaction_id' => 't1234']));
+            ->willReturn(['subjectsAndPredicatesOfChange' => $subjectsAndPredicatesOfChange, 'transaction_id' => 't1234']);
 
         $mockTripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($mockTripodUpdates));
+            ->willReturn($mockTripodUpdates);
 
         $mockViews->expects($this->once())
             ->method('getImpactedSubjects')
-            ->will($this->returnValue($impactedViewSubjects));
+            ->willReturn($impactedViewSubjects);
 
         // This shouldn't be called because ImpactedSubject->update has been mocked and isn't doing anything
         $mockViews->expects($this->never())->method('update');
@@ -1474,11 +1497,11 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $mockTripod->saveChanges($oG, $nG, 'http://talisaspire.com/');
     }
 
-    public function testWriteToUnconfiguredCollectionThrowsException()
+    public function testWriteToUnconfiguredCollectionThrowsException(): void
     {
         //        Exception: testing:SOME_COLLECTION is not referenced within config, so cannot be written to
         $this->expectException(ConfigException::class);
-        $this->expectExceptionMessage('Collection name \'SOME_COLLECTION\' not in configuration');
+        $this->expectExceptionMessage("Collection name 'SOME_COLLECTION' not in configuration");
 
         $tripod = new Driver('SOME_COLLECTION', 'tripod_php_testing');
         $tripod->saveChanges(new ExtendedGraph(), new ExtendedGraph(), 'http://talisaspire.com/');
@@ -1491,7 +1514,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
      * the cs builder should translate that into a single addition statement and apply it.
      * This builds on the previous test, by operating on data in mongo where _id.r and _id.c are namespaced.
      */
-    public function testTripodSaveChangesAddsLiteralTripleUsingEmptyOldGraphWithNamespacableIDAndContext()
+    public function testTripodSaveChangesAddsLiteralTripleUsingEmptyOldGraphWithNamespacableIDAndContext(): void
     {
         $oG = new MongoGraph();
         $nG = new MongoGraph();
@@ -1510,7 +1533,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
      * the cs builder should translate that into a single addition statement and apply it.
      * This builds on the previous test, by operating on data in mongo where _id.r and _id.c are namespaced AND passing context into the save method.
      */
-    public function testTripodSaveChangesAddsLiteralTripleUsingEmptyOldGraphWithNamespacedContext()
+    public function testTripodSaveChangesAddsLiteralTripleUsingEmptyOldGraphWithNamespacedContext(): void
     {
         $oG = new MongoGraph();
         $nG = new MongoGraph();
@@ -1524,7 +1547,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertHasLiteralTriple($uG, 'http://basedata.com/b/1', $nG->qname_to_uri('searchterms:title'), 'TEST TITLE');
     }
 
-    public function testDescribeResourceWithNamespace()
+    public function testDescribeResourceWithNamespace(): void
     {
         $noNsG = $this->tripod->describeResource('http://basedata.com/b/1', 'http://basedata.com/b/DefaultGraph');
         $nsResourceG = $this->tripod->describeResource('baseData:1', 'http://basedata.com/b/DefaultGraph');
@@ -1541,7 +1564,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertFalse($nsBothCS->has_changes(), 'Non ns and nsBoth not equal');
     }
 
-    public function testDescribeResourcesWithNamespace()
+    public function testDescribeResourcesWithNamespace(): void
     {
         $noNsG = $this->tripod->describeResources(['http://basedata.com/b/1'], 'http://basedata.com/b/DefaultGraph');
         $nsResourceG = $this->tripod->describeResources(['baseData:1'], 'http://basedata.com/b/DefaultGraph');
@@ -1558,7 +1581,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertFalse($nsBothCS->has_changes(), 'Non ns and nsBoth not equal');
     }
 
-    public function testSelectSingleValueWithNamespaceContextQueryDoesntContainID()
+    public function testSelectSingleValueWithNamespaceContextQueryDoesntContainID(): void
     {
         $expectedResult = [
             'head' => [
@@ -1570,13 +1593,15 @@ class MongoTripodDriverTest extends MongoTripodTestBase
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:1',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => 'acorn:Work',
                 ],
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:2',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => ['acorn:Work', 'acorn:Work2'],
                 ],
             ],
@@ -1585,7 +1610,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertEquals($expectedResult, $actualResult);
     }
 
-    public function testSelectSingleValueWithNamespaceContextQueryDoesContainID()
+    public function testSelectSingleValueWithNamespaceContextQueryDoesContainID(): void
     {
         $expectedResult = [
             'head' => [
@@ -1597,7 +1622,8 @@ class MongoTripodDriverTest extends MongoTripodTestBase
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:1',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => 'acorn:Work',
                 ],
             ],
@@ -1613,7 +1639,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertEquals($expectedResult, $actualResult);
     }
 
-    public function testSelectWithOperandWithNamespaceContextQueryContainsID()
+    public function testSelectWithOperandWithNamespaceContextQueryContainsID(): void
     {
         $expectedResult = [
             'head' => [
@@ -1625,15 +1651,18 @@ class MongoTripodDriverTest extends MongoTripodTestBase
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:1',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => 'acorn:Work',
                 ],
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:2',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => ['acorn:Work', 'acorn:Work2'],
-                ]],
+                ],
+            ],
         ];
         $actualResult = $this->tripod->select(
             ['_id' => ['$in' => [[_ID_RESOURCE => 'baseData:1'], [_ID_RESOURCE => 'baseData:2']]]],
@@ -1646,7 +1675,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertEquals($expectedResult, $actualResult);
     }
 
-    public function testSelectWithOperandWithNamespaceContextQueryDoesNotContainID()
+    public function testSelectWithOperandWithNamespaceContextQueryDoesNotContainID(): void
     {
         $expectedResult = [
             'head' => [
@@ -1658,13 +1687,15 @@ class MongoTripodDriverTest extends MongoTripodTestBase
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:1',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => 'acorn:Work',
                 ],
                 [
                     '_id' => [
                         _ID_RESOURCE => 'baseData:2',
-                        _ID_CONTEXT => 'baseData:DefaultGraph'],
+                        _ID_CONTEXT => 'baseData:DefaultGraph',
+                    ],
                     'rdf:type' => ['acorn:Work', 'acorn:Work2'],
                 ],
             ],
@@ -1680,7 +1711,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertEquals($expectedResult, $actualResult);
     }
 
-    public function testSelectDocumentWithSpecialFieldTypes()
+    public function testSelectDocumentWithSpecialFieldTypes(): void
     {
         $id = [
             'r' => 'http://talisaspire.com/resources/' . uniqid(),
@@ -1707,7 +1738,6 @@ class MongoTripodDriverTest extends MongoTripodTestBase
             // Special field types
             '_oid' => new ObjectId(),
             '_bin' => new Binary('foo', Binary::TYPE_OLD_BINARY),
-            '_fun' => new Javascript('function() { return 42; }'),
             '_fun' => new Regex('foo', 'i'),
         ]);
 
@@ -1736,7 +1766,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
     /**
      * Return the distinct values of a table column.
      */
-    public function testGetDistinctTableValues()
+    public function testGetDistinctTableValues(): void
     {
         // Get table rows
         $table = 't_distinct';
@@ -1749,7 +1779,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertArrayHasKey('count', $results['head']);
         $this->assertEquals(4, $results['head']['count']);
         $this->assertArrayHasKey('results', $results);
-        $this->assertEquals(4, count($results['results']));
+        $this->assertCount(4, $results['results']);
         $this->assertContains('Physics 3rd Edition: Physics for Engineers and Scientists', $results['results']);
         $this->assertContains('A document title', $results['results']);
         $this->assertContains('Another document title', $results['results']);
@@ -1760,7 +1790,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertArrayHasKey('count', $results['head']);
         $this->assertEquals(2, $results['head']['count']);
         $this->assertArrayHasKey('results', $results);
-        $this->assertEquals(2, count($results['results']));
+        $this->assertCount(2, $results['results']);
         $this->assertNotContains('Physics 3rd Edition: Physics for Engineers and Scientists', $results['results']);
         $this->assertContains('A document title', $results['results']);
         $this->assertContains('Another document title', $results['results']);
@@ -1770,7 +1800,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->assertArrayHasKey('count', $results['head']);
         $this->assertEquals(7, $results['head']['count']);
         $this->assertArrayHasKey('results', $results);
-        $this->assertEquals(7, count($results['results']));
+        $this->assertCount(7, $results['results']);
         $this->assertContains('acorn:Resource', $results['results']);
         $this->assertContains('acorn:Work', $results['results']);
         $this->assertContains('bibo:Book', $results['results']);
@@ -1780,19 +1810,19 @@ class MongoTripodDriverTest extends MongoTripodTestBase
     /**
      * Return no results for tablespec that doesn't exist.
      */
-    public function testDistinctOnTableSpecThatDoesNotExist()
+    public function testDistinctOnTableSpecThatDoesNotExist(): void
     {
         $table = 't_nothing_to_see_here';
 
         $this->expectException(ConfigException::class);
-        $this->expectExceptionMessage('Table id \'t_nothing_to_see_here\' not in configuration');
-        $results = $this->tripod->getDistinctTableColumnValues($table, 'value.foo');
+        $this->expectExceptionMessage("Table id 't_nothing_to_see_here' not in configuration");
+        $this->tripod->getDistinctTableColumnValues($table, 'value.foo');
     }
 
     /**
      * Return no results for distinct on a fieldname that is not defined in tableSpec.
      */
-    public function testDistinctOnFieldNameThatIsNotInTableSpec()
+    public function testDistinctOnFieldNameThatIsNotInTableSpec(): void
     {
         // Get table rows
         $table = 't_distinct';
@@ -1806,7 +1836,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
     /**
      * Return no results for filters that match no table rows.
      */
-    public function testDistinctForFilterWithNoMatches()
+    public function testDistinctForFilterWithNoMatches(): void
     {
         // Get table rows
         $table = 't_distinct';
@@ -1818,62 +1848,62 @@ class MongoTripodDriverTest extends MongoTripodTestBase
     }
 
     /**  START: getLockedDocuments tests */
-    public function testGetLockedDocuments()
+    public function testGetLockedDocuments(): void
     {
         $subject = 'http://talisaspire.com/works/lockedDoc';
         $this->lockDocument($subject, 'transaction_100');
 
         $docs = $this->tripod->getLockedDocuments();
-        $this->assertEquals(1, count($docs));
+        $this->assertCount(1, $docs);
         $this->assertEquals($docs[0]['_id']['r'], $subject);
-        $this->assertEquals($docs[0][_LOCKED_FOR_TRANS], 'transaction_100');
+        $this->assertEquals('transaction_100', $docs[0][_LOCKED_FOR_TRANS]);
     }
 
-    public function testGetLockedDocumentsWithFromDateOnly()
+    public function testGetLockedDocumentsWithFromDateOnly(): void
     {
         $subject = 'http://talisaspire.com/works/lockedDoc';
         $this->lockDocument($subject, 'transaction_100');
 
         $docs = $this->tripod->getLockedDocuments(date('y-m-d H:i:s', strtotime('+1 min')));
-        $this->assertEquals(0, count($docs));
+        $this->assertCount(0, $docs);
 
         $docs = $this->tripod->getLockedDocuments(date('y-m-d H:i:s', strtotime('-1 min')));
-        $this->assertEquals(1, count($docs));
+        $this->assertCount(1, $docs);
     }
 
-    public function testGetLockedDocumentsWithTillDateOnly()
+    public function testGetLockedDocumentsWithTillDateOnly(): void
     {
         $subject = 'http://talisaspire.com/works/lockedDoc';
         $this->lockDocument($subject, 'transaction_100');
 
         $docs = $this->tripod->getLockedDocuments(null, date('y-m-d H:i:s', strtotime('+1 min')));
-        $this->assertEquals(1, count($docs));
+        $this->assertCount(1, $docs);
 
         $docs = $this->tripod->getLockedDocuments(null, date('y-m-d H:i:s', strtotime('-1 min')));
-        $this->assertEquals(0, count($docs));
+        $this->assertCount(0, $docs);
     }
 
-    public function testGetLockedDocumentsWithDateRange()
+    public function testGetLockedDocumentsWithDateRange(): void
     {
         $subject = 'http://talisaspire.com/works/lockedDoc';
         $this->lockDocument($subject, 'transaction_100');
 
         $docs = $this->tripod->getLockedDocuments(date('y-m-d H:i:s', strtotime('-1 min')), date('y-m-d H:i:s', strtotime('+1 min')));
-        $this->assertEquals(1, count($docs));
+        $this->assertCount(1, $docs);
 
         $docs = $this->tripod->getLockedDocuments(date('y-m-d H:i:s', strtotime('+1 min')), date('y-m-d H:i:s', strtotime('+2 min')));
-        $this->assertEquals(0, count($docs));
+        $this->assertCount(0, $docs);
     }
 
     /** END: getLockedDocuments tests */
 
     /**  START: removeInertLocks tests */
-    public function testRemoveInertLocksNoLocksFound()
+    public function testRemoveInertLocksNoLocksFound(): void
     {
         $this->assertFalse($this->tripod->removeInertLocks('transaction_100', 'Unit tests'));
     }
 
-    public function testRemoveInertLocksNotAllLocksAreRemoved()
+    public function testRemoveInertLocksNotAllLocksAreRemoved(): void
     {
         $subjectOne = 'http://talisaspire.com/works/lockedDoc';
         $subjectTwo = 'http://basedata.com/b/1';
@@ -1882,14 +1912,14 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->lockDocument($subjectTwo, 'transaction_200');
 
         $docs = $this->tripod->getLockedDocuments();
-        $this->assertEquals(2, count($docs));
+        $this->assertCount(2, $docs);
 
         $this->tripod->removeInertLocks('transaction_200', 'Unit tests');
         $docs = $this->tripod->getLockedDocuments();
-        $this->assertEquals(1, count($docs));
+        $this->assertCount(1, $docs);
     }
 
-    public function testRemoveInertLocksCreateAuditEntryThrowsException()
+    public function testRemoveInertLocksCreateAuditEntryThrowsException(): void
     {
         $subject = 'http://basedata.com/b/1';
         $this->lockDocument($subject, 'transaction_400');
@@ -1903,7 +1933,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
             ->getMock();
         $auditManualRollbackCollection->expects($this->once())
             ->method('insertOne')
-            ->will($this->throwException(new Exception('Some unexpected error occurred.')));
+            ->willThrowException(new Exception('Some unexpected error occurred.'));
 
         $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getDataUpdater'])
@@ -1917,16 +1947,16 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $tripodUpdate
             ->expects($this->once())
             ->method('getAuditManualRollbacksCollection')
-            ->will($this->returnValue($auditManualRollbackCollection));
+            ->willReturn($auditManualRollbackCollection);
 
         $tripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($tripodUpdate));
+            ->willReturn($tripodUpdate);
 
         $tripod->removeInertLocks('transaction_400', 'Unit tests');
     }
 
-    public function testRemoveInertLocksUnlockAllDocumentsFailsVerifyErrorEntryInAuditLog()
+    public function testRemoveInertLocksUnlockAllDocumentsFailsVerifyErrorEntryInAuditLog(): void
     {
         $subject = 'http://basedata.com/b/1';
         $this->lockDocument($subject, 'transaction_400');
@@ -1949,11 +1979,11 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $mockInsert
             ->expects($this->once())
             ->method('isAcknowledged')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $auditManualRollbackCollection->expects($this->once())
             ->method('insertOne')
-            ->will($this->returnValue($mockInsert));
+            ->willReturn($mockInsert);
 
         $mockUpdate = $this->getMockBuilder(UpdateResult::class)
             ->disableOriginalConstructor()
@@ -1962,12 +1992,12 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $mockUpdate
             ->expects($this->once())
             ->method('isAcknowledged')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $auditManualRollbackCollection->expects($this->once())
             ->method('updateOne')
             ->with(['_id' => $mongoDocumentId], ['$set' => ['status' => AUDIT_STATUS_ERROR, _UPDATED_TS => $mongoDate, 'error' => 'Some unexpected error occurred.']])
-            ->will($this->returnValue($mockUpdate));
+            ->willReturn($mockUpdate);
 
         $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getDataUpdater'])
@@ -1980,28 +2010,28 @@ class MongoTripodDriverTest extends MongoTripodTestBase
 
         $tripodUpdate->expects($this->once())
             ->method('generateIdForNewMongoDocument')
-            ->will($this->returnValue($mongoDocumentId));
+            ->willReturn($mongoDocumentId);
 
         $tripodUpdate->expects($this->exactly(2))
             ->method('getMongoDate')
-            ->will($this->returnValue($mongoDate));
+            ->willReturn($mongoDate);
 
         $tripodUpdate->expects($this->once())
             ->method('getAuditManualRollbacksCollection')
-            ->will($this->returnValue($auditManualRollbackCollection));
+            ->willReturn($auditManualRollbackCollection);
 
         $tripodUpdate->expects($this->once())
             ->method('unlockAllDocuments')
-            ->will($this->throwException(new Exception('Some unexpected error occurred.')));
+            ->willThrowException(new Exception('Some unexpected error occurred.'));
 
         $tripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($tripodUpdate));
+            ->willReturn($tripodUpdate);
 
         $tripod->removeInertLocks('transaction_400', 'Unit tests');
     }
 
-    public function testRemoveInertLocksUnlockSuccessfulVerifyAuditLog()
+    public function testRemoveInertLocksUnlockSuccessfulVerifyAuditLog(): void
     {
         $subject = 'http://basedata.com/b/1';
         $subject2 = 'tenantData:1';
@@ -2023,7 +2053,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $mockInsert
             ->expects($this->once())
             ->method('isAcknowledged')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $mockUpdate = $this->getMockBuilder(UpdateResult::class)
             ->disableOriginalConstructor()
@@ -2032,7 +2062,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $mockUpdate
             ->expects($this->once())
             ->method('isAcknowledged')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $auditManualRollbackCollection->expects($this->once())
             ->method('insertOne')
@@ -2045,12 +2075,12 @@ class MongoTripodDriverTest extends MongoTripodTestBase
                 'documents' => ['baseData:1', 'tenantData:1'],
                 _CREATED_TS => $mongoDate,
             ])
-            ->will($this->returnValue($mockInsert));
+            ->willReturn($mockInsert);
 
         $auditManualRollbackCollection->expects($this->once())
             ->method('updateOne')
             ->with(['_id' => $mongoDocumentId], ['$set' => ['status' => AUDIT_STATUS_COMPLETED, _UPDATED_TS => $mongoDate]])
-            ->will($this->returnValue($mockUpdate));
+            ->willReturn($mockUpdate);
 
         $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getDataUpdater'])
@@ -2063,38 +2093,38 @@ class MongoTripodDriverTest extends MongoTripodTestBase
 
         $tripodUpdate->expects($this->once())
             ->method('generateIdForNewMongoDocument')
-            ->will($this->returnValue($mongoDocumentId));
+            ->willReturn($mongoDocumentId);
 
         $tripodUpdate->expects($this->once())
             ->method('getAuditManualRollbacksCollection')
-            ->will($this->returnValue($auditManualRollbackCollection));
+            ->willReturn($auditManualRollbackCollection);
 
         $tripodUpdate->expects($this->exactly(2))
             ->method('getMongoDate')
-            ->will($this->returnValue($mongoDate));
+            ->willReturn($mongoDate);
 
         $tripodUpdate->expects($this->once())
             ->method('unlockAllDocuments')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $tripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($tripodUpdate));
+            ->willReturn($tripodUpdate);
 
         $this->assertTrue($tripod->removeInertLocks('transaction_400', 'Unit tests'));
     }
 
-    public function testRemoveInertLocks()
+    public function testRemoveInertLocks(): void
     {
         $subject = 'http://basedata.com/b/1';
         $this->lockDocument($subject, 'transaction_100');
 
         $this->tripod->removeInertLocks('transaction_100', 'Unit tests');
         $docs = $this->tripod->getLockedDocuments();
-        $this->assertEquals(0, count($docs));
+        $this->assertCount(0, $docs);
     }
 
-    public function testStatsD()
+    public function testStatsD(): void
     {
         $mockStatsD = $this->getMockBuilder(StatsD::class)
             ->onlyMethods(['send'])
@@ -2106,9 +2136,9 @@ class MongoTripodDriverTest extends MongoTripodTestBase
             ->onlyMethods(['getStat'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing', ['defaultContext' => 'http://talisaspire.com/', 'statsDHost' => 'localhost', 'statsDPort' => '2012', 'statsDPrefix' => 'myapp']])
             ->getMock();
-        $mockTripod->expects($this->any())
+        $mockTripod
             ->method('getStat')
-            ->will($this->returnValue($mockStatsD));
+            ->willReturn($mockStatsD);
 
         $mockStatsD->expects($this->once())
             ->method('send')
@@ -2124,7 +2154,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
     /** END: removeInertLocks tests */
 
     /** START: saveChangesHooks tests */
-    public function testRegisteredHooksAreCalled()
+    public function testRegisteredHooksAreCalled(): void
     {
         $mockHookA = $this->getMockBuilder(TestSaveChangesHookA::class)
             ->onlyMethods(['pre', 'success', 'failure'])
@@ -2148,7 +2178,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->tripod->saveChanges(new ExtendedGraph(), new ExtendedGraph());
     }
 
-    public function testRegisteredSuccessHooksAreNotCalledOnException()
+    public function testRegisteredSuccessHooksAreNotCalledOnException(): void
     {
         $this->expectException(Tripod\Exceptions\Exception::class);
         $this->expectExceptionMessage('Could not validate');
@@ -2182,7 +2212,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $tripodUpdate->saveChanges(new ExtendedGraph(), new ExtendedGraph());
     }
 
-    public function testMisbehavingHookDoesNotPreventSaveOrInterfereWithOtherHooks()
+    public function testMisbehavingHookDoesNotPreventSaveOrInterfereWithOtherHooks(): void
     {
         $mockHookA = $this->getMockBuilder(TestSaveChangesHookA::class)
             ->onlyMethods(['pre', 'success', 'failure'])
@@ -2193,8 +2223,8 @@ class MongoTripodDriverTest extends MongoTripodTestBase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $mockHookA->expects($this->once())->method('pre')->will($this->throwException(new Exception('Misbehaving hook')));
-        $mockHookA->expects($this->once())->method('success')->will($this->throwException(new Exception('Misbehaving hook')));
+        $mockHookA->expects($this->once())->method('pre')->willThrowException(new Exception('Misbehaving hook'));
+        $mockHookA->expects($this->once())->method('success')->willThrowException(new Exception('Misbehaving hook'));
         $mockHookA->expects($this->never())->method('failure');
         $mockHookB->expects($this->once())->method('pre');
         $mockHookB->expects($this->once())->method('success');
@@ -2207,7 +2237,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
     }
 
     /** END: saveChangesHooks tests */
-    public function testPassStatConfigToTripodConstructor()
+    public function testPassStatConfigToTripodConstructor(): void
     {
         $statsDConfig = $this->getStatsDConfig();
         $opts = ['statsConfig' => $statsDConfig];
@@ -2221,7 +2251,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $tripod->expects($this->once())
             ->method('getStatFromStatFactory')
             ->with($opts['statsConfig'])
-            ->will($this->returnValue($mockStat));
+            ->willReturn($mockStat);
 
         /** @var StatsD */
         $stat = $tripod->getStat();
@@ -2254,14 +2284,15 @@ class MongoTripodDriverTest extends MongoTripodTestBase
     }
 
     /** START: getETag tests */
-    public function testEtagIsMicrotimeFormat()
+    public function testEtagIsMicrotimeFormat(): void
     {
         $config = Config::getInstance();
         $updatedAt = DateUtil::getMongoDate();
 
         $_id = [
             'r' => 'http://talisaspire.com/resources/testEtag',
-            'c' => 'http://talisaspire.com/'];
+            'c' => 'http://talisaspire.com/',
+        ];
         $doc = [
             '_id' => $_id,
             'dct:title' => ['l' => 'etag'],
@@ -2275,11 +2306,12 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         )->insertOne($doc, ['w' => 1]);
 
         $tripod = new Driver('CBD_testing', 'tripod_php_testing', ['defaultContext' => 'http://talisaspire.com/']);
-        $this->assertMatchesRegularExpression('/^0.[0-9]{8} [0-9]{10}/', $tripod->getETag($_id['r']));
+        $this->assertMatchesRegularExpression('/^0.\d{8} \d{10}/', $tripod->getETag($_id['r']));
     }
 
     // END: getETag tests
 }
+
 class TestSaveChangesHookA implements IEventHook
 {
     /**
@@ -2288,7 +2320,7 @@ class TestSaveChangesHookA implements IEventHook
      *
      * @param $args array of arguments
      */
-    public function pre(array $args)
+    public function pre(array $args): void
     {
         // do nothing
     }
@@ -2300,17 +2332,15 @@ class TestSaveChangesHookA implements IEventHook
      *
      * @param $args array of arguments
      */
-    public function success(array $args)
+    public function success(array $args): void
     {
         // do nothing
     }
 
     /**
      * This method gets called if the event failed for any reason. The arguments passed should be the same as IEventHook::pre.
-     *
-     * @return mixed
      */
-    public function failure(array $args)
+    public function failure(array $args): void
     {
         // do nothing
     }
@@ -2329,7 +2359,7 @@ class TripodDriverTestConfig extends Tripod\Mongo\Config
      */
     public function __construct() {}
 
-    public function loadConfig(array $config)
+    protected function loadConfig(array $config)
     {
         parent::loadConfig($config);
     }

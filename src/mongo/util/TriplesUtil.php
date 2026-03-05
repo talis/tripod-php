@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use MongoDB\Collection;
@@ -33,7 +35,7 @@ class TriplesUtil
      * @param string|null   $context
      * @param string[]|null $allowableTypes
      */
-    public function loadTriplesAbout($subject, array $triples, $storeName, $podName, $context = null, $allowableTypes = null)
+    public function loadTriplesAbout($subject, array $triples, $storeName, $podName, $context = null, $allowableTypes = null): void
     {
         $context = ($context == null) ? Config::getInstance()->getDefaultContextAlias() : $this->labeller->uri_to_alias($context);
         if (array_key_exists($podName, $this->collections)) {
@@ -57,6 +59,7 @@ class TriplesUtil
                 $graph->add_literal_triple($subject, $predicate, $object);
             }
         }
+
         if ($allowableTypes != null && is_array($allowableTypes)) {
             $types = $graph->get_resource_triple_values($subject, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
             if ($types == null || empty($types)) {
@@ -73,6 +76,7 @@ class TriplesUtil
 
             return;
         }
+
         $this->saveCBD($subject, $graph, $collection, $context);
     }
 
@@ -107,10 +111,7 @@ class TriplesUtil
         return $graph->to_tripod_array($subject, $context);
     }
 
-    /**
-     * @return array
-     */
-    public function extractMissingPredicateNs(array $triples)
+    public function extractMissingPredicateNs(array $triples): array
     {
         $missingNs = [];
         $graph = new MongoGraph();
@@ -130,10 +131,7 @@ class TriplesUtil
         return array_unique($missingNs);
     }
 
-    /**
-     * @return array
-     */
-    public function extractMissingObjectNs(array $triples)
+    public function extractMissingObjectNs(array $triples): array
     {
         $missingNs = [];
         $graph = new MongoGraph();
@@ -157,10 +155,8 @@ class TriplesUtil
 
     /**
      * @param string $ns
-     *
-     * @return string
      */
-    public function suggestPrefix($ns)
+    public function suggestPrefix($ns): string
     {
         $parts = preg_split('/[\/#]/', $ns);
         for ($i = count($parts) - 1; $i >= 0; $i--) {
@@ -209,7 +205,7 @@ class TriplesUtil
     {
         $cbdSubject = $this->labeller->uri_to_alias($cbdSubject);
         if ($cbdGraph == null || $cbdGraph->is_empty()) {
-            throw new \Exception("graph for {$cbdSubject} was null");
+            throw new \Exception(sprintf('graph for %s was null', $cbdSubject));
         }
 
         try {
@@ -224,20 +220,12 @@ class TriplesUtil
                 $existingGraph->add_tripod_array($collection->findOne($criteria));
                 $existingGraph->add_graph($cbdGraph);
 
-                try {
-                    $collection->updateOne($criteria, ['$set' => $existingGraph->to_tripod_array($cbdSubject, $context)], ['w' => 1]);
-                } catch (\Exception $e2) {
-                    throw new \Exception($e2->getMessage()); // todo: would be good to have typed exception
-                }
+                $collection->updateOne($criteria, ['$set' => $existingGraph->to_tripod_array($cbdSubject, $context)], ['w' => 1]);
             } else {
                 // retry
                 echo 'CursorException on update: ' . $e->getMessage() . ", retrying\n";
 
-                try {
-                    $collection->insertOne($cbdGraph->to_tripod_array($cbdSubject, $context), ['w' => 1]);
-                } catch (\Exception $e2) {
-                    throw new \Exception($e2->getMessage()); // todo: would be good to have typed exception
-                }
+                $collection->insertOne($cbdGraph->to_tripod_array($cbdSubject, $context), ['w' => 1]);
             }
         }
     }
@@ -253,6 +241,8 @@ class TriplesUtil
     }
 
     /**
+     * @param bool|list<string> $parts
+     *
      * @return string
      */
     private function extract_object(array $parts)
@@ -271,7 +261,7 @@ class TriplesUtil
         $json_string = '{"string":"' . str_replace('\u', '\u', $str) . '"}';
         $json = json_decode($json_string, true);
         if (!empty($json)) {
-            $str = $json['string'];
+            return $json['string'];
         }
 
         return $str;
@@ -279,15 +269,9 @@ class TriplesUtil
 
     /**
      * @param string $input
-     *
-     * @return bool
      */
-    private function is_object_literal($input)
+    private function is_object_literal($input): bool
     {
-        if ($input[0] == '"') {
-            return true;
-        }
-
-        return false;
+        return $input[0] == '"';
     }
 }

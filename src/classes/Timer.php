@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod;
 
 use Tripod\Exceptions\TimerException;
@@ -29,7 +31,7 @@ class Timer
     /**
      * Captures current microtime as time of start. Call this before start of event.
      */
-    public function start()
+    public function start(): void
     {
         $this->start_time = $this->getMicrotime();
     }
@@ -37,7 +39,7 @@ class Timer
     /**
      * Captures current microtime as end time. Call this as soon as event execution is complete.
      */
-    public function stop()
+    public function stop(): void
     {
         $this->end_time = $this->getMicrotime();
     }
@@ -54,6 +56,7 @@ class Timer
         if (is_null($this->start_time)) {
             throw new \Exception('Timer: start method not called !');
         }
+
         if (is_null($this->end_time)) {
             throw new \Exception('Timer: stop method not called !');
         }
@@ -82,6 +85,7 @@ class Timer
         if (is_null($this->start_time)) {
             throw new TimerException('Timer: start method not called !');
         }
+
         if (is_null($this->end_time)) {
             throw new TimerException('Timer: stop method not called !');
         }
@@ -101,7 +105,7 @@ class Timer
     /**
      * @return string current system time in pair of seconds microseconds
      */
-    private function getMicrotime()
+    private function getMicrotime(): string
     {
         return microtime();
     }

@@ -5,20 +5,18 @@ use Tripod\Mongo\TriplesUtil;
 use Tripod\Timer;
 
 require_once __DIR__ . '/common.inc.php';
-
 require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 /**
- * @param string $subject
  * @param string $podName
  * @param string $storeName
  */
-function load(TriplesUtil $loader, $subject, array $triples, array &$errors, $podName, $storeName)
+function load(TriplesUtil $loader, string $subject, array $triples, array &$errors, $podName, $storeName): void
 {
     try {
         $loader->loadTriplesAbout($subject, $triples, $storeName, $podName);
     } catch (Exception $e) {
-        echo "Exception for subject {$subject} failed with message: " . $e->getMessage() . "\n";
+        echo sprintf('Exception for subject %s failed with message: ', $subject) . $e->getMessage() . "\n";
         $errors[] = $subject;
     }
 }
@@ -26,11 +24,12 @@ function load(TriplesUtil $loader, $subject, array $triples, array &$errors, $po
 $timer = new Timer();
 $timer->start();
 
-if ($argc != 4) {
+if ($argc !== 4) {
     echo "usage: ./loadTriples.php storename podname tripodConfig.json < ntriplesdata\n";
 
     exit;
 }
+
 array_shift($argv);
 
 $storeName = $argv[0];
@@ -46,7 +45,7 @@ $loader = new TriplesUtil();
 while (($line = fgets(STDIN)) !== false) {
     $i++;
 
-    if (($i % 250000) == 0) {
+    if ($i % 250000 === 0) {
         echo 'Memory: ' . memory_get_usage() . "\n";
     }
 
@@ -54,13 +53,14 @@ while (($line = fgets(STDIN)) !== false) {
     $parts = preg_split('/\s/', $line);
     $subject = trim($parts[0], '><');
 
-    if (empty($currentSubject)) { // set for first iteration
+    if ($currentSubject === '' || $currentSubject === '0') { // set for first iteration
         $currentSubject = $subject;
-    } elseif ($currentSubject != $subject) { // once subject changes, we have all triples for that subject, flush to Mongo
+    } elseif ($currentSubject !== $subject) { // once subject changes, we have all triples for that subject, flush to Mongo
         load($loader, $currentSubject, $triples, $errors, $podName, $storeName);
         $currentSubject = $subject; // reset current subject to next subject
         $triples = []; // reset triples
     }
+
     $triples[] = $line;
 }
 
@@ -71,7 +71,7 @@ $timer->stop();
 echo 'This script ran in ' . $timer->result() . " milliseconds\n";
 
 echo 'Processed ' . $i . ' triples';
-if (count($errors) > 0) {
+if ($errors !== []) {
     echo 'Insert errors on ' . count($errors) . " subjects\n";
     var_dump($errors); // todo: decide what to do with errors...
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use Tripod\Config;
@@ -28,12 +30,8 @@ class Labeller extends \Tripod\Labeller
 
     /**
      * If labeller can generate a qname for this uri, it will return it. Otherwise just returns the original uri.
-     *
-     * @param string $uri
-     *
-     * @return string
      */
-    public function uri_to_alias($uri)
+    public function uri_to_alias(?string $uri): ?string
     {
         try {
             $retVal = $this->uri_to_qname($uri);
@@ -45,29 +43,21 @@ class Labeller extends \Tripod\Labeller
 
     /**
      * If labeller can generate a uri for this qname, it will return it. Otherwise just returns the original qname.
-     *
-     * @param string $qname
-     *
-     * @return string
      */
-    public function qname_to_alias($qname)
+    public function qname_to_alias(?string $qName): ?string
     {
         try {
-            $retVal = $this->qname_to_uri($qname);
+            $retVal = $this->qname_to_uri($qName);
         } catch (LabellerException $e) {
         }
 
-        return (empty($retVal)) ? $qname : $retVal;
+        return (empty($retVal)) ? $qName : $retVal;
     }
 
     /**
-     * @param string $qName
-     *
-     * @return string
-     *
      * @throws LabellerException
      */
-    public function qname_to_uri($qName)
+    public function qname_to_uri(?string $qName): ?string
     {
         $retVal = parent::qname_to_uri($qName);
         if (empty($retVal)) {
@@ -79,16 +69,12 @@ class Labeller extends \Tripod\Labeller
 
     // overrides the default behaviour of trying to return a ns even if the prefix is not registered - instead, throw exception
     /**
-     * @param string $ns
-     *
-     * @return string
-     *
      * @throws LabellerException
      */
-    public function get_prefix($ns)
+    public function get_prefix(string $ns): string
     {
-        $prefix = array_search($ns, $this->_ns);
-        if ($prefix != null && $prefix !== false) {
+        $prefix = array_search($ns, $this->_ns, true);
+        if ($prefix !== null && $prefix !== false) {
             return $prefix;
         }
 
