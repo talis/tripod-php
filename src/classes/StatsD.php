@@ -12,10 +12,10 @@ class StatsD implements ITripodStat
     /** @var int|string */
     private $port;
 
-    /** @var string */
+    /** @var string|null */
     private $prefix;
 
-    /** @var string */
+    /** @var string|null */
     private $pivotValue;
 
     /**
@@ -105,11 +105,9 @@ class StatsD implements ITripodStat
     }
 
     /**
-     * @param string $prefix
-     *
      * @throws \InvalidArgumentException
      */
-    public function setPrefix($prefix): void
+    public function setPrefix(?string $prefix): void
     {
         if ($this->isValidPathValue($prefix)) {
             $this->prefix = $prefix;
@@ -159,11 +157,9 @@ class StatsD implements ITripodStat
     }
 
     /**
-     * @param string $pivotValue
-     *
      * @throws \InvalidArgumentException
      */
-    public function setPivotValue($pivotValue): void
+    public function setPivotValue(?string $pivotValue): void
     {
         if ($this->isValidPathValue($pivotValue)) {
             $this->pivotValue = $pivotValue;
@@ -257,11 +253,9 @@ class StatsD implements ITripodStat
 
     /**
      * StatsD paths cannot start with, end with, or have more than one consecutive '.'.
-     *
-     * @param string $value
      */
-    protected function isValidPathValue($value): bool
+    protected function isValidPathValue(?string $value): bool
     {
-        return preg_match('/(^\.)|(\.\.+)|(\.$)/', $value) === 0;
+        return $value === null || preg_match('/(^\.)|(\.\.+)|(\.$)/', $value) === 0;
     }
 }
