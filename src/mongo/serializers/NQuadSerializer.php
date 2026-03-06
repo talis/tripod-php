@@ -116,7 +116,9 @@ class NQuadSerializer
     public function escape($v)
     {
         $r = '';
-        $v = (strpos(utf8_decode(str_replace('?', '', $v)), '?') === false) ? utf8_decode($v) : $v;
+        $v = (strpos(mb_convert_encoding(str_replace('?', '', $v), 'ISO-8859-1', 'UTF-8'), '?') === false)
+            ? mb_convert_encoding($v, 'ISO-8859-1', 'UTF-8')
+            : $v;
         if ($this->raw) {
             return $v;
         }
@@ -138,7 +140,7 @@ class NQuadSerializer
      */
     public function getCharNo($c): int
     {
-        $c_utf = utf8_encode($c);
+        $c_utf = mb_convert_encoding($c, 'UTF-8', 'ISO-8859-1');
         $bl = strlen($c_utf); // binary length
         $r = 0;
 
