@@ -18,7 +18,11 @@ class DateUtil
     public static function getMongoDate($milliseconds = null): UTCDateTime
     {
         if (is_null($milliseconds)) {
-            $milliseconds = floor(microtime(true) * 1000);
+            $milliseconds = microtime(true) * 1000;
+        }
+
+        if (is_float($milliseconds)) {
+            $milliseconds = (int) floor($milliseconds);
         }
 
         return new UTCDateTime($milliseconds);
