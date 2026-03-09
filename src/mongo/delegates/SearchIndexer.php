@@ -181,14 +181,16 @@ class SearchIndexer extends CompositeBase
         $from = $spec['from'] ?? $this->podName;
 
         $types = [];
-        if (is_array($spec['type'])) {
-            foreach ($spec['type'] as $type) {
-                $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($type)];
-                $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($type)];
+        if (isset($spec['type'])) {
+            if (is_array($spec['type'])) {
+                foreach ($spec['type'] as $type) {
+                    $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($type)];
+                    $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($type)];
+                }
+            } else {
+                $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($spec['type'])];
+                $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($spec['type'])];
             }
-        } else {
-            $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($spec['type'])];
-            $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($spec['type'])];
         }
 
         $filter = ['$or' => $types];
@@ -245,7 +247,7 @@ class SearchIndexer extends CompositeBase
 
         $t->stop();
         $this->timingLog(MONGO_CREATE_TABLE, [
-            'type' => $spec['type'],
+            'type' => $spec['type'] ?? null,
             'duration' => $t->result(),
             'filter' => $filter,
             'from' => $from,
