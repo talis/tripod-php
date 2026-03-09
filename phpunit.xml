@@ -5,11 +5,11 @@
     </php>
 
     <testsuites>
-        <testsuite name="Tripod_Performance_Tests">
-            <directory>test/performance</directory>
-        </testsuite>
         <testsuite name="Tripod_Unit_Tests">
             <directory>test/unit</directory>
+        </testsuite>
+        <testsuite name="Tripod_Performance_Tests">
+            <directory>test/performance</directory>
         </testsuite>
     </testsuites>
 </phpunit>
