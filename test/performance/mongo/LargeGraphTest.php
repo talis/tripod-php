@@ -35,10 +35,9 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
     {
         $uri = 'http://largegraph/1';
 
-        $profiler = $this->getProfiler();
-
         $testStartTime = microtime();
-        $profiler->start();
+
+        $this->startProfiler();
 
         $graph = new ExtendedGraph();
         $graph->add_literal_triple($uri, 'http://rdfs.org/sioc/spec/name', 'new name');
@@ -46,7 +45,6 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
         $this->tripod->saveChanges(new ExtendedGraph(), $graph);
 
         $testEndTime = microtime();
-        $profiler->stop();
 
         $this->assertLessThan(
             self::BENCHMARK_SAVE_TIME,
@@ -59,10 +57,9 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
     {
         $uri = 'http://largegraph/1';
 
-        $profiler = $this->getProfiler();
-
         $testStartTime = microtime();
-        $profiler->start();
+
+        $this->startProfiler();
 
         $graph = new ExtendedGraph();
         $graph->add_literal_triple($uri, 'http://rdfs.org/sioc/spec/name', 'new name');
@@ -70,7 +67,6 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
         $this->tripod->describeResource($uri);
 
         $testEndTime = microtime();
-        $profiler->stop();
 
         $this->assertLessThan(
             self::BENCHMARK_DESCRIBE_TIME,
