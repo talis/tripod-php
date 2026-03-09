@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Xhgui\Profiler\Profiler;
+
 abstract class MongoTripodPerformanceTestBase extends MongoTripodTestBase
 {
     /**
@@ -20,5 +22,20 @@ abstract class MongoTripodPerformanceTestBase extends MongoTripodTestBase
         $differenceInMilliSeconds = ((float) $endTimeSeconds - (float) $startTimeSeconds) * 1000;
 
         return round(($differenceInMilliSeconds + ((float) $endTimeMicroSeconds * 1000)) - (float) $startTimeMicroSeconds * 1000);
+    }
+
+    protected function getProfiler(): Profiler
+    {
+        $profilerDir = __DIR__ . '/../../../profiler';
+        if (!is_dir($profilerDir)) {
+            mkdir($profilerDir, 0777, true);
+        }
+
+        return new Profiler([
+            'save.handler' => Profiler::SAVER_FILE,
+            'save.handler.file' => [
+                'filename' => $profilerDir . '/xhgui.data.jsonl',
+            ],
+        ]);
     }
 }

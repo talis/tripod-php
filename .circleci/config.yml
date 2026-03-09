@@ -57,6 +57,8 @@ commands:
           path: test-results/junit.xml
       - store_artifacts:
           path: test-results/junit.xml
+      - store_artifacts:
+          path: profiler
 
 jobs:
   lint:

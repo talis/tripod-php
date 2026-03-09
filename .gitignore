@@ -8,6 +8,7 @@ tags
 atlassian-ide-plugin.xml
 
 composer.lock
+profiler
 test-results
 .phpunit.result.cache
 .php-cs-fixer.cache
