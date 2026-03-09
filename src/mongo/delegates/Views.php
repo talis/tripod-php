@@ -290,10 +290,7 @@ class Views extends CompositeBase
         $filter = [];
         foreach ($resources as $resource) {
             $resourceAlias = $this->labeller->uri_to_alias($resource);
-            $this->getLogger()->warning(
-                'Generating views',
-                ['store' => $this->storeName, '_id' => $resourceAlias]
-            );
+            $this->debugLog('Generating views', ['store' => $this->storeName, '_id' => $resourceAlias]);
             // delete any views this resource is involved in. It's type may have changed so it's not enough just to regen it with it's new type below.
             foreach ($this->getConfigInstance()->getViewSpecifications($this->storeName) as $type => $spec) {
                 if ($spec['from'] == $this->podName) {
