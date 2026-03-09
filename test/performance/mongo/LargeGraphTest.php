@@ -37,6 +37,8 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
 
         $testStartTime = microtime();
 
+        $this->startProfiler();
+
         $graph = new ExtendedGraph();
         $graph->add_literal_triple($uri, 'http://rdfs.org/sioc/spec/name', 'new name');
 
@@ -56,6 +58,8 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
         $uri = 'http://largegraph/1';
 
         $testStartTime = microtime();
+
+        $this->startProfiler();
 
         $graph = new ExtendedGraph();
         $graph->add_literal_triple($uri, 'http://rdfs.org/sioc/spec/name', 'new name');
