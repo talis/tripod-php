@@ -704,7 +704,7 @@ class Driver extends DriverBase implements IDriver
     protected function getDataUpdater()
     {
         if (!property_exists($this, 'updates') || $this->updates === null) {
-            $readPreference = $this->collection->__debugInfo()['readPreference']->getMode();
+            $readPreference = $this->collection->getReadPreference()->getMode();
 
             $opts = [
                 'defaultContext' => $this->defaultContext,
