@@ -431,8 +431,7 @@ class Updates extends DriverBase
      */
     protected function resetOriginalReadPreference()
     {
-        /** @var ReadPreference $dbReadPref */
-        $dbReadPref = $this->db->__debugInfo()['readPreference'];
+        $dbReadPref = $this->db->getReadPreference();
         if ($this->originalDbReadPreference !== $dbReadPref->getMode()) {
             $pref = $this->originalDbReadPreference ?? $this->readPreference;
             $dbTagsets = $dbReadPref->getTagsets();
@@ -443,8 +442,7 @@ class Updates extends DriverBase
         }
 
         // Reset collection object
-        /** @var ReadPreference $collReadPref */
-        $collReadPref = $this->getCollection()->__debugInfo()['readPreference'];
+        $collReadPref = $this->getCollection()->getReadPreference();
         if ($this->originalCollectionReadPreference !== $collReadPref->getMode()) {
             $pref = $this->originalCollectionReadPreference ?? $this->readPreference;
             $collTagsets = $collReadPref->getTagsets();
