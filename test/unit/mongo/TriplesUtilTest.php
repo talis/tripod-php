@@ -33,7 +33,7 @@ class TriplesUtilTest extends MongoTripodTestBase
                 'l' => '1548-774X',
             ],
         ];
-        $this->assertEquals($expectedDoc, $tu->getTArrayAbout('http://serials.talisaspire.com/issn/0893-0465', $triples, 'http://talisaspire.com/'));
+        $this->assertSame($expectedDoc, $tu->getTArrayAbout('http://serials.talisaspire.com/issn/0893-0465', $triples, 'http://talisaspire.com/'));
     }
 
     // todo: add triples test

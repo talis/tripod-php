@@ -123,7 +123,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
     public function testSearchConfig(): void
     {
         $config = Config::getInstance();
-        $this->assertEquals(MongoSearchProvider::class, $config->getSearchProviderClassName('tripod_php_testing'));
+        $this->assertSame(MongoSearchProvider::class, $config->getSearchProviderClassName('tripod_php_testing'));
 
         $this->assertCount(3, $config->getSearchDocumentSpecifications('tripod_php_testing'));
     }
@@ -253,7 +253,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
     {
         $expectedSpec = [];
         $actualSpec = Config::getInstance()->getSearchDocumentSpecifications('something:doesntexist');
-        $this->assertEquals($expectedSpec, $actualSpec);
+        $this->assertSame($expectedSpec, $actualSpec);
     }
 
     public function testViewSpecCountWithoutTTLThrowsException(): void
@@ -725,7 +725,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $this->assertNull($mtc->getReplicaSetName($mtc->getDefaultDataSourceForStore('testing_2')));
     }
 
-    public function testGetReplicaSetNameNonExistingDatasource()
+    public function testGetReplicaSetNameNonExistingDatasource(): void
     {
         Config::setConfig([
             'defaultContext' => 'http://talisaspire.com/',
@@ -871,7 +871,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::setConfig($config);
         $mtc = Config::getInstance();
         $this->assertNull($mtc->getSearchProviderClassName('tripod_php_testing'));
-        $this->assertEquals([], $mtc->getSearchDocumentSpecifications('tripod_php_testing'));
+        $this->assertSame([], $mtc->getSearchDocumentSpecifications('tripod_php_testing'));
     }
 
     public function testGetAllTypesInSpecifications(): void

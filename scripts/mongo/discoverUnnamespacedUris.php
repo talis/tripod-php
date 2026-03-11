@@ -72,9 +72,11 @@ foreach ($db->listCollections() as $collectionInfo) {
                         if (!isset($v['u'])) {
                             continue;
                         }
+
                         if (!isUnNamespaced($v['u'], $argv[2] ?? null)) {
                             continue;
                         }
+
                         echo sprintf('  Un-namespaced object uri (multiple value): %s%s', $v['u'], PHP_EOL);
                         $count++;
                     }

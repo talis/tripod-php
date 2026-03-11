@@ -136,6 +136,7 @@ class ExtendedGraphTest extends TestCase
         } catch (TypeError $typeError) {
             $addResult = false;
         }
+
         $this->assertFalse($addResult, 'The triple should not have been added for this value');
 
         $hasPropertyResult = $graph->subject_has_property('http://some/subject/1', 'http://some/predicate');
@@ -227,9 +228,9 @@ class ExtendedGraphTest extends TestCase
         $graph->add_literal_triple('http://some/subject/1', 'http://some/predicate', 'value 1');
         $graph->add_resource_triple('http://some/subject/1', 'http://some/predicate', 'http://value/2');
 
-        $this->assertEquals('http://value/2', $graph->get_first_resource('http://some/subject/1', 'http://some/predicate'), 'should have returned first resource');
+        $this->assertSame('http://value/2', $graph->get_first_resource('http://some/subject/1', 'http://some/predicate'), 'should have returned first resource');
         $this->assertEquals(null, $graph->get_first_resource('http://some/subject/2', 'http://other/predicate'), 'should have returned default value');
-        $this->assertEquals('my default', $graph->get_first_resource('http://some/subject/3', 'http://other/predicate', 'my default'), 'should have returned default value');
+        $this->assertSame('my default', $graph->get_first_resource('http://some/subject/3', 'http://other/predicate', 'my default'), 'should have returned default value');
     }
 
     public function testRemoveResourceTriple(): void
@@ -239,22 +240,22 @@ class ExtendedGraphTest extends TestCase
         // Add some triples
         $graph->add_resource_triple('http://some/subject/1', 'http://some/predicate', 'http://value/1');
         $graph->add_resource_triple('http://some/subject/2', 'http://some/predicate', 'http://value/2');
-        $this->assertEquals(2, $graph->get_triple_count(), 'should have 2 triples');
+        $this->assertSame(2, $graph->get_triple_count(), 'should have 2 triples');
 
         // Try to remove triples that don't exist
         $graph->remove_resource_triple('http://some/subject/3', 'http://some/predicate', 'http://value/3');
         $graph->remove_literal_triple('http://some/subject/3', 'http://some/predicate', 'value 3');
-        $this->assertEquals(2, $graph->get_triple_count(), 'should have 2 triples');
+        $this->assertSame(2, $graph->get_triple_count(), 'should have 2 triples');
 
         // Remove a triple that does exist
         $graph->remove_resource_triple('http://some/subject/1', 'http://some/predicate', 'http://value/1');
-        $this->assertEquals(1, $graph->get_triple_count(), 'should have 1 triple');
+        $this->assertSame(1, $graph->get_triple_count(), 'should have 1 triple');
 
         // Remove the last triple
         $graph->remove_resource_triple('http://some/subject/2', 'http://some/predicate', 'http://value/2');
-        $this->assertEquals(0, $graph->get_triple_count(), 'should have 0 triples');
+        $this->assertSame(0, $graph->get_triple_count(), 'should have 0 triples');
         $this->assertTrue($graph->is_empty(), 'should be empty');
-        $this->assertEquals([], $graph->get_index(), 'should have empty index');
+        $this->assertSame([], $graph->get_index(), 'should have empty index');
     }
 
     public function testRemoveLiteralTriple(): void
@@ -264,22 +265,22 @@ class ExtendedGraphTest extends TestCase
         // Add some triples
         $graph->add_literal_triple('http://some/subject/1', 'http://some/predicate', 'value 1');
         $graph->add_literal_triple('http://some/subject/2', 'http://some/predicate', 'value 2');
-        $this->assertEquals(2, $graph->get_triple_count(), 'should have 2 triples');
+        $this->assertSame(2, $graph->get_triple_count(), 'should have 2 triples');
 
         // Try to remove triples that don't exist
         $graph->remove_literal_triple('http://some/subject/3', 'http://some/predicate', 'value 3');
         $graph->remove_resource_triple('http://some/subject/3', 'http://some/predicate', 'http://value/3');
-        $this->assertEquals(2, $graph->get_triple_count(), 'should have 2 triples');
+        $this->assertSame(2, $graph->get_triple_count(), 'should have 2 triples');
 
         // Remove a triple that does exist
         $graph->remove_literal_triple('http://some/subject/1', 'http://some/predicate', 'value 1');
-        $this->assertEquals(1, $graph->get_triple_count(), 'should have 1 triple');
+        $this->assertSame(1, $graph->get_triple_count(), 'should have 1 triple');
 
         // Remove the last triple
         $graph->remove_literal_triple('http://some/subject/2', 'http://some/predicate', 'value 2');
-        $this->assertEquals(0, $graph->get_triple_count(), 'should have 0 triples');
+        $this->assertSame(0, $graph->get_triple_count(), 'should have 0 triples');
         $this->assertTrue($graph->is_empty(), 'should be empty');
-        $this->assertEquals([], $graph->get_index(), 'should have empty index');
+        $this->assertSame([], $graph->get_index(), 'should have empty index');
     }
 
     public function testGetResourceProperties(): void
@@ -320,7 +321,7 @@ class ExtendedGraphTest extends TestCase
         $graph->add_resource_triple('http://some/subject/1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_1', 'http://value/1');
 
         $expectedArray = ['http://value/1', 'http://value/2', 'http://value/3', 'http://value/4', 'http://value/5'];
-        $this->assertEquals($expectedArray, $graph->get_sequence_values('http://some/subject/1'));
+        $this->assertSame($expectedArray, $graph->get_sequence_values('http://some/subject/1'));
     }
 
     public function testAddResourceToSequence(): void
@@ -333,20 +334,20 @@ class ExtendedGraphTest extends TestCase
         $graph->add_resource_to_sequence($testSubject, $testObject1);
 
         $objects = $graph->get_sequence_values('http://some/subject/s1');
-        $this->assertEquals([$testObject1], $objects);
+        $this->assertSame([$testObject1], $objects);
 
         $graph->add_resource_to_sequence($testSubject, $testObject2);
 
         $objects = $graph->get_sequence_values('http://some/subject/s1');
-        $this->assertEquals([$testObject1, $testObject2], $objects);
+        $this->assertSame([$testObject1, $testObject2], $objects);
 
         $graph->add_resource_to_sequence('http://some/other/subject', 'http://some/other/object');
 
         $objects = $graph->get_sequence_values('http://some/subject/s1');
-        $this->assertEquals([$testObject1, $testObject2], $objects);
+        $this->assertSame([$testObject1, $testObject2], $objects);
 
         $objects = $graph->get_sequence_values('http://some/other/subject');
-        $this->assertEquals(['http://some/other/object'], $objects);
+        $this->assertSame(['http://some/other/object'], $objects);
     }
 
     public function testAddResourceToSequenceInPosition(): void
@@ -362,27 +363,27 @@ class ExtendedGraphTest extends TestCase
         $graph->add_resource_to_sequence_in_position($testSubject, $testObject1, 1);
 
         $objects = $graph->get_sequence_values('http://some/subject/s1');
-        $this->assertEquals([$testObject1], $objects);
+        $this->assertSame([$testObject1], $objects);
 
         $graph->add_resource_to_sequence_in_position($testSubject, $testObject2, 1);
 
         $objects = $graph->get_sequence_values('http://some/subject/s1');
-        $this->assertEquals([$testObject2, $testObject1], $objects);
+        $this->assertSame([$testObject2, $testObject1], $objects);
 
         $graph->add_resource_to_sequence_in_position($testSubject, $testObject3, 1);
 
         $objects = $graph->get_sequence_values('http://some/subject/s1');
-        $this->assertEquals([$testObject3, $testObject2, $testObject1], $objects);
+        $this->assertSame([$testObject3, $testObject2, $testObject1], $objects);
 
         $graph->add_resource_to_sequence_in_position($testSubject, $testObject4, 3);
 
         $objects = $graph->get_sequence_values('http://some/subject/s1');
-        $this->assertEquals([$testObject3, $testObject2, $testObject4, $testObject1], $objects);
+        $this->assertSame([$testObject3, $testObject2, $testObject4, $testObject1], $objects);
 
         $graph->add_resource_to_sequence_in_position($testSubject, $testObject5, count($objects) + 1);
 
         $objects = $graph->get_sequence_values('http://some/subject/s1');
-        $this->assertEquals([$testObject3, $testObject2, $testObject4, $testObject1, $testObject5], $objects);
+        $this->assertSame([$testObject3, $testObject2, $testObject4, $testObject1, $testObject5], $objects);
     }
 
     public function testAddToSequenceInPositionAgain(): void
@@ -412,20 +413,20 @@ class ExtendedGraphTest extends TestCase
         $graph->add_literal_to_sequence($testSubject, $testObject1);
 
         $objects = $graph->get_sequence_values('http://some/subject/s1');
-        $this->assertEquals([$testObject1], $objects);
+        $this->assertSame([$testObject1], $objects);
 
         $graph->add_literal_to_sequence($testSubject, $testObject2);
 
         $objects = $graph->get_sequence_values('http://some/subject/s1');
-        $this->assertEquals([$testObject1, $testObject2], $objects);
+        $this->assertSame([$testObject1, $testObject2], $objects);
 
         $graph->add_literal_to_sequence('http://some/other/subject', 'bar');
 
         $objects = $graph->get_sequence_values('http://some/subject/s1');
-        $this->assertEquals([$testObject1, $testObject2], $objects);
+        $this->assertSame([$testObject1, $testObject2], $objects);
 
         $objects = $graph->get_sequence_values('http://some/other/subject');
-        $this->assertEquals(['bar'], $objects);
+        $this->assertSame(['bar'], $objects);
     }
 
     public function testGetTripleCountWithNoParams(): void
@@ -438,7 +439,7 @@ class ExtendedGraphTest extends TestCase
 
         $expected = 3;
         $actual = $graph->get_triple_count();
-        $this->assertEquals($expected, $actual);
+        $this->assertSame($expected, $actual);
     }
 
     public function testGetTripleCountWithSubject(): void
@@ -451,7 +452,7 @@ class ExtendedGraphTest extends TestCase
 
         $expected = 1;
         $actual = $graph->get_triple_count('http://some/subject/1');
-        $this->assertEquals($expected, $actual);
+        $this->assertSame($expected, $actual);
     }
 
     public function testGetTripleCountWithPredicate(): void
@@ -464,7 +465,7 @@ class ExtendedGraphTest extends TestCase
 
         $expected = 3;
         $actual = $graph->get_triple_count(null, 'http://some/predicate');
-        $this->assertEquals($expected, $actual);
+        $this->assertSame($expected, $actual);
     }
 
     public function testGetTripleCountWithObject(): void
@@ -477,7 +478,7 @@ class ExtendedGraphTest extends TestCase
 
         $expected = 3;
         $actual = $graph->get_triple_count(null, null, 'some object');
-        $this->assertEquals($expected, $actual);
+        $this->assertSame($expected, $actual);
     }
 
     public function testGetTripleCountWithSubjectandPredicate(): void
@@ -491,7 +492,7 @@ class ExtendedGraphTest extends TestCase
 
         $expected = 2;
         $actual = $graph->get_triple_count('http://some/subject/1', 'http://some/predicate');
-        $this->assertEquals($expected, $actual);
+        $this->assertSame($expected, $actual);
     }
 
     public function testGetTripleCountWithSubjectPredicateAndObject(): void
@@ -505,7 +506,7 @@ class ExtendedGraphTest extends TestCase
 
         $expected = 1;
         $actual = $graph->get_triple_count('http://some/subject/1', 'http://some/predicate', 'some object');
-        $this->assertEquals($expected, $actual);
+        $this->assertSame($expected, $actual);
     }
 
     public function testGetTripleCountWithEmptyGraph(): void
@@ -513,7 +514,7 @@ class ExtendedGraphTest extends TestCase
         $graph = new ExtendedGraph();
         $expected = 0;
         $actual = $graph->get_triple_count();
-        $this->assertEquals($expected, $actual);
+        $this->assertSame($expected, $actual);
     }
 
     public function testGetTripleCountWithNonExistentSubject(): void
@@ -521,7 +522,7 @@ class ExtendedGraphTest extends TestCase
         $graph = new ExtendedGraph();
         $expected = 0;
         $actual = $graph->get_triple_count('http://example.com/subject');
-        $this->assertEquals($expected, $actual);
+        $this->assertSame($expected, $actual);
     }
 
     public function testReplaceUris(): void
@@ -604,7 +605,7 @@ class ExtendedGraphTest extends TestCase
 
         ExtendedGraph::initProperties(['labelProperties' => ['http://www.w3.org/2000/01/rdf-schema#label']]);
 
-        $this->assertEquals($graph->get_label_for_uri($s1), $label, 'get_label_for_uri(uri) should return the value of a label property');
+        $this->assertSame($graph->get_label_for_uri($s1), $label, 'get_label_for_uri(uri) should return the value of a label property');
     }
 
     public function testGetLabelForUriLabelPropsNotInitialised(): void
@@ -637,7 +638,7 @@ class ExtendedGraphTest extends TestCase
 
         ExtendedGraph::initProperties(['labelProperties' => ['http://www.w3.org/2000/01/rdf-schema#label']]);
 
-        $this->assertEquals('', $graph->get_label_for_uri('http://example.com/1'));
+        $this->assertSame('', $graph->get_label_for_uri('http://example.com/1'));
     }
 
     public function testGetLabelForUriReturnsEmptyStringLabelNotFound(): void
@@ -653,7 +654,7 @@ class ExtendedGraphTest extends TestCase
 
         ExtendedGraph::initProperties(['labelProperties' => ['http://www.w3.org/2000/01/rdf-schema#label2']]);
 
-        $this->assertEquals('', $graph->get_label_for_uri($s1));
+        $this->assertSame('', $graph->get_label_for_uri($s1));
     }
 
     public function testIsEqualToReturnsTrueForIdenticalGraphs(): void
@@ -749,7 +750,7 @@ class ExtendedGraphTest extends TestCase
         $graph->remove_resource_from_sequence($s, $sub2);
 
         $sequenceValues = $graph->get_sequence_values($s);
-        $this->assertEquals([$sub1, $sub3], $sequenceValues, 'There should be two sequence values, in the correct order');
+        $this->assertSame([$sub1, $sub3], $sequenceValues, 'There should be two sequence values, in the correct order');
         $this->assertTrue($graph->has_resource_triple($s, ExtendedGraph::rdf . '_1', $sub1));
         $this->assertTrue($graph->has_resource_triple($s, ExtendedGraph::rdf . '_2', $sub3));
     }
@@ -818,8 +819,8 @@ class ExtendedGraphTest extends TestCase
         }');
 
         $this->assertCount(3, $graph->get_subjects());
-        $this->assertEquals(['http://subject/1', 'http://subject/2', 'http://subject/3'], $graph->get_subjects());
-        $this->assertEquals(['http://value/1', 'http://value/2', 'http://value/3'], $graph->get_resource_properties('http://predicate'));
+        $this->assertSame(['http://subject/1', 'http://subject/2', 'http://subject/3'], $graph->get_subjects());
+        $this->assertSame(['http://value/1', 'http://value/2', 'http://value/3'], $graph->get_resource_properties('http://predicate'));
     }
 
     public function testFromInvalidJson(): void
@@ -845,8 +846,8 @@ class ExtendedGraphTest extends TestCase
         }');
 
         $this->assertCount(1, $graph->get_subjects());
-        $this->assertEquals(['http://subject/1'], $graph->get_subjects());
-        $this->assertEquals(['http://value/1'], $graph->get_resource_properties('http://predicate'));
+        $this->assertSame(['http://subject/1'], $graph->get_subjects());
+        $this->assertSame(['http://value/1'], $graph->get_resource_properties('http://predicate'));
 
         $graph->add_json('{
             "http://subject/2": {
@@ -857,8 +858,8 @@ class ExtendedGraphTest extends TestCase
         }');
 
         $this->assertCount(2, $graph->get_subjects());
-        $this->assertEquals(['http://subject/1', 'http://subject/2'], $graph->get_subjects());
-        $this->assertEquals(['http://value/1', 'http://value/2'], $graph->get_resource_properties('http://predicate'));
+        $this->assertSame(['http://subject/1', 'http://subject/2'], $graph->get_subjects());
+        $this->assertSame(['http://value/1', 'http://value/2'], $graph->get_resource_properties('http://predicate'));
     }
 
     public function testAddInvalidJson(): void
@@ -872,16 +873,16 @@ class ExtendedGraphTest extends TestCase
             }
         }');
 
-        $this->assertEquals(1, $graph->get_triple_count());
+        $this->assertSame(1, $graph->get_triple_count());
         $this->assertCount(1, $graph->get_subjects());
-        $this->assertEquals(['http://subject/1'], $graph->get_subjects());
-        $this->assertEquals(['http://value/1'], $graph->get_resource_properties('http://predicate'));
+        $this->assertSame(['http://subject/1'], $graph->get_subjects());
+        $this->assertSame(['http://value/1'], $graph->get_resource_properties('http://predicate'));
         $index = $graph->get_index();
 
         $graph->add_json('not a valid json');
 
         // Should not have changed
         $this->assertEquals($index, $graph->get_index());
-        $this->assertEquals(1, $graph->get_triple_count());
+        $this->assertSame(1, $graph->get_triple_count());
     }
 }

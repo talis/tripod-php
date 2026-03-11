@@ -71,7 +71,7 @@ while (($line = fgets(STDIN)) !== false) {
         $currentSubject = $subject;
     } elseif ($currentSubject != $subject) { // once subject changes, we have all triples for that subject, flush to Mongo
         $ns = $util->extractMissingPredicateNs($triples);
-        if (count($ns) > 0) {
+        if ($ns !== []) {
             $newNsConfig = [];
             foreach ($ns as $n) {
                 $prefix = $util->suggestPrefix($n);
@@ -87,7 +87,7 @@ while (($line = fgets(STDIN)) !== false) {
         }
 
         $ns = $util->extractMissingObjectNs($triples);
-        if (count($ns) > 0) {
+        if ($ns !== []) {
             $newNsConfig = [];
             foreach ($ns as $n) {
                 if (array_key_exists($n, $objectNs)) {
@@ -118,60 +118,4 @@ while (($line = fgets(STDIN)) !== false) {
 }
 
 echo "Suggested namespace configuration:\n\n";
-
-/**
- * @param string $json
- */
-function indent($json): string
-{
-    $result = '';
-    $pos = 0;
-    $strLen = strlen($json);
-    $indentStr = '  ';
-    $newLine = "\n";
-    $prevChar = '';
-    $outOfQuotes = true;
-
-    for ($i = 0; $i <= $strLen; $i++) {
-        // Grab the next character in the string.
-        $char = substr($json, $i, 1);
-
-        // Are we inside a quoted string?
-        if ($char === '"' && $prevChar !== '\\') {
-            $outOfQuotes = !$outOfQuotes;
-
-        // If this character is the end of an element,
-        // output a new line and indent the next line.
-        } elseif (($char === '}' || $char === ']') && $outOfQuotes) {
-            $result .= $newLine;
-            $pos--;
-            for ($j = 0; $j < $pos; $j++) {
-                $result .= $indentStr;
-            }
-        }
-
-        // Add the character to the result string.
-        $result .= $char;
-
-        // If the last character was the beginning of an element,
-        // output a new line and indent the next line.
-        if (in_array($char, [',', '{', '[']) && $outOfQuotes) {
-            $result .= $newLine;
-            if ($char === '{' || $char === '[') {
-                $pos++;
-            }
-
-            for ($j = 0; $j < $pos; $j++) {
-                $result .= $indentStr;
-            }
-        }
-
-        $prevChar = $char;
-    }
-
-    return $result;
-}
-
-$json = json_encode(['namespaces' => $config['namespaces']]);
-
-echo indent($json);
+echo json_encode(['namespaces' => $config['namespaces']], JSON_PRETTY_PRINT);

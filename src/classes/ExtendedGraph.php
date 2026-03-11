@@ -326,85 +326,83 @@ class ExtendedGraph
             $subjects = $this->get_subjects();
         }
 
-        if (count($subjects) > 0) {
-            foreach ($subjects as $subject) {
-                if (count($subjects) > 1) {
-                    $h .= '<h1><a href="' . htmlspecialchars($subject) . '">' . htmlspecialchars($this->get_label($subject)) . '</a></h1>' . "\n";
-                }
+        foreach ($subjects as $subject) {
+            if (count($subjects) > 1) {
+                $h .= '<h1><a href="' . htmlspecialchars($subject) . '">' . htmlspecialchars($this->get_label($subject)) . '</a></h1>' . "\n";
+            }
 
-                $h .= '<table>' . "\n";
+            $h .= '<table>' . "\n";
 
-                $properties = $this->get_subject_properties($subject, true);
-                $priority_properties = array_intersect($properties, $this->_property_order);
-                $properties = array_merge($priority_properties, array_diff($properties, $priority_properties));
+            $properties = $this->get_subject_properties($subject, true);
+            $priority_properties = array_intersect($properties, $this->_property_order);
+            $properties = array_merge($priority_properties, array_diff($properties, $priority_properties));
 
-                foreach ($properties as $p) {
-                    $h .= '<tr><th valign="top"><a href="' . htmlspecialchars($p) . '">' . htmlspecialchars($this->get_label($p, true)) . '</a></th>';
-                    $h .= '<td valign="top">';
-                    $counter = count($this->_index[$subject][$p]);
-                    for ($i = 0; $i < $counter; $i++) {
-                        if ($i > 0) {
-                            $h .= '<br />';
-                        }
-
-                        if ($this->_index[$subject][$p][$i]['type'] === 'literal') {
-                            $h .= htmlspecialchars($this->_index[$subject][$p][$i]['value']);
-                        } else {
-                            $h .= '<a href="' . htmlspecialchars($this->_index[$subject][$p][$i]['value']) . '">';
-                            if ($guess_labels) {
-                                $h .= htmlspecialchars($this->get_label($this->_index[$subject][$p][$i]['value']));
-                            } else {
-                                $h .= htmlspecialchars($this->_index[$subject][$p][$i]['value']);
-                            }
-
-                            $h .= '</a>';
-                        }
+            foreach ($properties as $p) {
+                $h .= '<tr><th valign="top"><a href="' . htmlspecialchars($p) . '">' . htmlspecialchars($this->get_label($p, true)) . '</a></th>';
+                $h .= '<td valign="top">';
+                $counter = count($this->_index[$subject][$p]);
+                for ($i = 0; $i < $counter; $i++) {
+                    if ($i > 0) {
+                        $h .= '<br />';
                     }
 
-                    $h .= '</td>';
-                    $h .= '</tr>' . "\n";
-                }
-
-                $backlinks = [];
-                foreach ($this->_index as $rev_subj => $rev_subj_info) {
-                    foreach ($rev_subj_info as $rev_subj_p => $rev_subj_p_list) {
-                        foreach ($rev_subj_p_list as $rev_value) {
-                            if (($rev_value['type'] == 'uri' || $rev_value['type'] == 'bnode') && $rev_value['value'] === $subject) {
-                                if (!isset($backlinks[$rev_subj_p])) {
-                                    $backlinks[$rev_subj_p] = [];
-                                }
-
-                                $backlinks[$rev_subj_p][] = $rev_subj;
-                            }
-                        }
-                    }
-                }
-
-                foreach ($backlinks as $backlink_p => $backlink_values) {
-                    $h .= '<tr><th valign="top"><a href="' . htmlspecialchars($backlink_p) . '">' . htmlspecialchars($this->get_inverse_label($backlink_p, true)) . '</a></th>';
-                    $h .= '<td valign="top">';
-                    $counter = count($backlink_values);
-                    for ($i = 0; $i < $counter; $i++) {
-                        if ($i > 0) {
-                            $h .= '<br />';
-                        }
-
-                        $h .= '<a href="' . htmlspecialchars($backlink_values[$i]) . '">';
+                    if ($this->_index[$subject][$p][$i]['type'] === 'literal') {
+                        $h .= htmlspecialchars($this->_index[$subject][$p][$i]['value']);
+                    } else {
+                        $h .= '<a href="' . htmlspecialchars($this->_index[$subject][$p][$i]['value']) . '">';
                         if ($guess_labels) {
-                            $h .= htmlspecialchars($this->get_label($backlink_values[$i]));
+                            $h .= htmlspecialchars($this->get_label($this->_index[$subject][$p][$i]['value']));
                         } else {
-                            $h .= htmlspecialchars($backlink_values[$i]);
+                            $h .= htmlspecialchars($this->_index[$subject][$p][$i]['value']);
                         }
 
                         $h .= '</a>';
                     }
-
-                    $h .= '</td>';
-                    $h .= '</tr>' . "\n";
                 }
 
-                $h .= '</table>' . "\n";
+                $h .= '</td>';
+                $h .= '</tr>' . "\n";
             }
+
+            $backlinks = [];
+            foreach ($this->_index as $rev_subj => $rev_subj_info) {
+                foreach ($rev_subj_info as $rev_subj_p => $rev_subj_p_list) {
+                    foreach ($rev_subj_p_list as $rev_value) {
+                        if (($rev_value['type'] == 'uri' || $rev_value['type'] == 'bnode') && $rev_value['value'] === $subject) {
+                            if (!isset($backlinks[$rev_subj_p])) {
+                                $backlinks[$rev_subj_p] = [];
+                            }
+
+                            $backlinks[$rev_subj_p][] = $rev_subj;
+                        }
+                    }
+                }
+            }
+
+            foreach ($backlinks as $backlink_p => $backlink_values) {
+                $h .= '<tr><th valign="top"><a href="' . htmlspecialchars($backlink_p) . '">' . htmlspecialchars($this->get_inverse_label($backlink_p, true)) . '</a></th>';
+                $h .= '<td valign="top">';
+                $counter = count($backlink_values);
+                for ($i = 0; $i < $counter; $i++) {
+                    if ($i > 0) {
+                        $h .= '<br />';
+                    }
+
+                    $h .= '<a href="' . htmlspecialchars($backlink_values[$i]) . '">';
+                    if ($guess_labels) {
+                        $h .= htmlspecialchars($this->get_label($backlink_values[$i]));
+                    } else {
+                        $h .= htmlspecialchars($backlink_values[$i]);
+                    }
+
+                    $h .= '</a>';
+                }
+
+                $h .= '</td>';
+                $h .= '</tr>' . "\n";
+            }
+
+            $h .= '</table>' . "\n";
         }
 
         return $h;
@@ -555,7 +553,7 @@ class ExtendedGraph
      */
     public function from_rdfxml(string $rdfxml, string $base = ''): void
     {
-        if ($rdfxml) {
+        if ($rdfxml !== '' && $rdfxml !== '0') {
             $this->remove_all_triples();
             $this->add_rdfxml($rdfxml, $base);
         }
@@ -570,7 +568,7 @@ class ExtendedGraph
      */
     public function from_json(string $json): void
     {
-        if ($json) {
+        if ($json !== '' && $json !== '0') {
             $this->remove_all_triples();
             $index = json_decode($json, true);
             if (is_array($index)) {
@@ -588,7 +586,7 @@ class ExtendedGraph
      */
     public function add_json(string $json): void
     {
-        if ($json) {
+        if ($json !== '' && $json !== '0') {
             $json_index = json_decode($json, true);
             if (is_array($json_index)) {
                 $this->_index = $this->merge($this->_index, $json_index);
@@ -638,7 +636,7 @@ class ExtendedGraph
      */
     public function add_rdfxml(string $rdfxml, string $base = ''): void
     {
-        if ($rdfxml) {
+        if ($rdfxml !== '' && $rdfxml !== '0') {
             /** @var \ARC2_RDFXMLParser $parser */
             $parser = \ARC2::getRDFXMLParser();
             $parser->parse($base, $rdfxml);
@@ -658,7 +656,7 @@ class ExtendedGraph
      */
     public function from_turtle(string $turtle, string $base = ''): void
     {
-        if ($turtle) {
+        if ($turtle !== '' && $turtle !== '0') {
             $this->remove_all_triples();
             $this->add_turtle($turtle, $base);
         }
@@ -674,7 +672,7 @@ class ExtendedGraph
      */
     public function add_turtle(string $turtle, string $base = ''): void
     {
-        if ($turtle) {
+        if ($turtle !== '' && $turtle !== '0') {
             /** @var \ARC2_TurtleParser $parser */
             $parser = \ARC2::getTurtleParser();
             $parser->parse($base, $turtle);
@@ -692,7 +690,7 @@ class ExtendedGraph
      */
     public function from_rdfa(string $html, string $base = ''): void
     {
-        if ($html) {
+        if ($html !== '' && $html !== '0') {
             $this->remove_all_triples();
             $this->add_rdfa($html, $base);
         }
@@ -706,7 +704,7 @@ class ExtendedGraph
      */
     public function add_rdfa(string $html, string $base = ''): void
     {
-        if ($html) {
+        if ($html !== '' && $html !== '0') {
             /** @var \ARC2_SemHTMLParser $parser */
             $parser = \ARC2::getSemHTMLParser();
             $parser->parse($base, $html);
@@ -1278,7 +1276,7 @@ class ExtendedGraph
     public function get_list_values(string $listUri): array
     {
         $array = [];
-        while (!empty($listUri) && $listUri != RDF_NIL) {
+        while (!empty($listUri) && $listUri !== RDF_NIL) {
             $array[] = $this->get_first_resource($listUri, RDF_FIRST);
             $listUri = $this->get_first_resource($listUri, RDF_REST);
         }
@@ -1333,7 +1331,7 @@ class ExtendedGraph
     {
         $index = $this->get_index();
 
-        if (empty($index)) {
+        if ($index === []) {
             return 0;
         }
 
@@ -1508,7 +1506,7 @@ class ExtendedGraph
     {
         $sequenceValues = $this->get_sequence_values($s);
 
-        if (empty($sequenceValues) || $position > count($sequenceValues)) {
+        if ($sequenceValues === [] || $position > count($sequenceValues)) {
             $this->add_resource_to_sequence($s, $o);
         } else {
             array_splice($sequenceValues, $position - 1, 1, [$o, $sequenceValues[$position - 1]]);
@@ -1594,7 +1592,7 @@ class ExtendedGraph
         $diffThisAndThat = $this->diff($this->get_index(), $otherGraph->get_index());
         $diffThatAndThis = $this->diff($otherGraph->get_index(), $this->get_index());
 
-        return empty($diffThisAndThat) && empty($diffThatAndThis);
+        return $diffThisAndThat === [] && $diffThatAndThis === [];
     }
 
     public function remove_subjects_of_type(string $type): void

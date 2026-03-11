@@ -86,10 +86,9 @@ class SearchIndexer extends CompositeBase
      *
      * @param string            $resourceUri
      * @param string            $context
-     * @param string            $podName
      * @param array|string|null $specType
      */
-    public function generateAndIndexSearchDocuments($resourceUri, $context, $podName, $specType = []): void
+    public function generateAndIndexSearchDocuments($resourceUri, $context, string $podName, $specType = []): void
     {
         $mongoCollection = $this->config->getCollectionForCBD($this->storeName, $podName);
 

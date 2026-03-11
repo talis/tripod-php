@@ -535,7 +535,7 @@ class MongoSearchProvider implements ISearchProvider
      *
      * @return int
      */
-    public function count($searchSpec, array $filters = [])
+    public function count(string $searchSpec, array $filters = [])
     {
         $filters['_id.type'] = $searchSpec;
 
@@ -544,12 +544,8 @@ class MongoSearchProvider implements ISearchProvider
 
     /**
      * Returns the search document specification for the supplied type.
-     *
-     * @param string $typeId
-     *
-     * @return array|null
      */
-    protected function getSearchDocumentSpecification($typeId)
+    protected function getSearchDocumentSpecification(string $typeId): ?array
     {
         return $this->config->getSearchDocumentSpecification($this->storeName, $typeId);
     }
@@ -558,10 +554,8 @@ class MongoSearchProvider implements ISearchProvider
      * For mocking.
      *
      * @param string $searchSpecId Search spec ID
-     *
-     * @return Collection
      */
-    protected function getCollectionForSearchSpec($searchSpecId)
+    protected function getCollectionForSearchSpec(string $searchSpecId): Collection
     {
         return $this->config->getCollectionForSearchDocument($this->storeName, $searchSpecId);
     }

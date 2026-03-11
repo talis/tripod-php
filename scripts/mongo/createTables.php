@@ -59,13 +59,10 @@ $configLocation = $options['c'] ?? $options['config'];
 require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 /**
- * @param string|null      $id
- * @param string|null      $tableId
- * @param string|null      $storeName
- * @param ITripodStat|null $stat
- * @param string|null      $queue
+ * @param string|null $tableId
+ * @param string|null $storeName
  */
-function generateTables($id, $tableId, $storeName, $stat = null, $queue = null): void
+function generateTables(?string $id, string $tableId, string $storeName, ?ITripodStat $stat = null, ?string $queue = null): void
 {
     $tableSpec = Config::getInstance()->getTableSpecification($storeName, $tableId);
     if (array_key_exists('from', $tableSpec)) {

@@ -34,7 +34,7 @@ class MongoGraph extends ExtendedGraph
      *
      * @throws \InvalidArgumentException if you do not specify a context
      */
-    public function to_nquads($context)
+    public function to_nquads($context): string
     {
         if (empty($context)) {
             throw new \InvalidArgumentException('You must specify the context when serializing to nquads');
@@ -75,10 +75,8 @@ class MongoGraph extends ExtendedGraph
      *
      * @param mixed $docId
      * @param mixed $context
-     *
-     * @return array
      */
-    public function to_tripod_array($docId, $context)
+    public function to_tripod_array($docId, ?string $context): ?array
     {
         $docId = $this->_labeller->qname_to_alias($docId);
         $contextAlias = $this->_labeller->uri_to_alias($context);
@@ -103,9 +101,9 @@ class MongoGraph extends ExtendedGraph
      * @param mixed $docId
      * @param mixed $context
      *
-     * @return array<string, array<string, mixed>|array<string, mixed[]>>
+     * @return array<string, mixed>
      */
-    public function to_tripod_view_array($docId, $context): array
+    public function to_tripod_view_array($docId, ?string $context): array
     {
         $subjects = $this->get_subjects();
         $contextAlias = $this->_labeller->uri_to_alias($context);
@@ -142,7 +140,7 @@ class MongoGraph extends ExtendedGraph
                 $predicate = $this->qname_to_uri($key);
                 $graphValueObject = $this->toGraphValueObject($value);
                 // Only add if valid values have been found
-                if (!empty($graphValueObject)) {
+                if ($graphValueObject !== []) {
                     $predObjects[$predicate] = $graphValueObject;
                 }
             } elseif ($key == '_id') {

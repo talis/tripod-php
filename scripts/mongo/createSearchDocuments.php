@@ -1,7 +1,7 @@
 <?php
 
 use Tripod\Config;
-use Tripod\iTripodStat;
+use Tripod\ITripodStat;
 use Tripod\Mongo\Driver;
 use Tripod\Timer;
 
@@ -56,14 +56,7 @@ $configLocation = $options['c'] ?? $options['config'];
 
 require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
-/**
- * @param string|null      $id
- * @param string|null      $specId
- * @param string|null      $storeName
- * @param iTripodStat|null $stat
- * @param string|null      $queue
- */
-function generateSearchDocuments($id, $specId, $storeName, $stat = null, $queue = null): void
+function generateSearchDocuments(?string $id, string $specId, string $storeName, ?ITripodStat $stat = null, ?string $queue = null): void
 {
     $spec = Config::getInstance()->getSearchDocumentSpecification($storeName, $specId);
     if (array_key_exists('from', $spec)) {

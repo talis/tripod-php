@@ -842,7 +842,7 @@ class MongoTripodTablesTest extends MongoTripodTestBase
 
     public function testTableRowsGenerateWhenDefinedPredicateChanges(): void
     {
-        foreach (Config::getInstance()->getTableSpecifications($this->tripod->getStoreName()) as $specId => $spec) {
+        foreach (array_keys(Config::getInstance()->getTableSpecifications($this->tripod->getStoreName())) as $specId) {
             $this->generateTableRows($specId);
         }
 
@@ -950,7 +950,7 @@ class MongoTripodTablesTest extends MongoTripodTestBase
 
     public function testTableRowsNotGeneratedWhenUndefinedPredicateChanges(): void
     {
-        foreach (Config::getInstance()->getTableSpecifications($this->tripod->getStoreName()) as $specId => $spec) {
+        foreach (array_keys(Config::getInstance()->getTableSpecifications($this->tripod->getStoreName())) as $specId) {
             $this->generateTableRows($specId);
         }
 
@@ -1547,7 +1547,7 @@ class MongoTripodTablesTest extends MongoTripodTestBase
 
     public function testRemoveTableSpecDoesNotAffectInvalidation(): void
     {
-        foreach (Config::getInstance()->getTableSpecifications($this->tripod->getStoreName()) as $specId => $spec) {
+        foreach (array_keys(Config::getInstance()->getTableSpecifications($this->tripod->getStoreName())) as $specId) {
             $this->generateTableRows($specId);
         }
 
@@ -1835,12 +1835,8 @@ class MongoTripodTablesTest extends MongoTripodTestBase
 
     /**
      * Generate table rows based off an id.
-     *
-     * @param string $id
-     *
-     * @return array
      */
-    private function generateTableRows($id)
+    private function generateTableRows(string $id): array
     {
         $this->tripodTables->generateTableRows($id);
 

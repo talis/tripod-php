@@ -265,12 +265,11 @@ class Updates extends DriverBase
     /**
      * Remove locks that are there forever, creates a audit entry to keep track who and why removed these locks.
      *
-     * @param string $transaction_id
      * @param string $reason
      *
      * @throws \Exception, if something goes wrong when unlocking documents, or creating audit entries
      */
-    public function removeInertLocks($transaction_id, $reason): bool
+    public function removeInertLocks(string $transaction_id, $reason): bool
     {
         $query = [_LOCKED_FOR_TRANS => $transaction_id];
         $docs = $this->getLocksCollection()->find($query);
@@ -828,10 +827,8 @@ class Updates extends DriverBase
 
     /**
      * Processes each subject synchronously.
-     *
-     * @param string $contextAlias
      */
-    protected function processSyncOperations(array $subjectsAndPredicatesOfChange, $contextAlias)
+    protected function processSyncOperations(array $subjectsAndPredicatesOfChange, string $contextAlias)
     {
         foreach ($this->getSyncOperations() as $op) {
             /** @var IComposite $composite */
@@ -871,7 +868,7 @@ class Updates extends DriverBase
     protected function queueASyncOperations(array $subjectsAndPredicatesOfChange, $contextAlias)
     {
         $operations = $this->getAsyncOperations();
-        if (!empty($operations)) {
+        if ($operations !== []) {
             $data = [
                 'changes' => $subjectsAndPredicatesOfChange,
                 'operations' => $operations,
@@ -1024,7 +1021,7 @@ class Updates extends DriverBase
      *
      * @return array
      */
-    protected function lockSingleDocument($s, $transaction_id, $contextAlias)
+    protected function lockSingleDocument(?string $s, $transaction_id, $contextAlias)
     {
         $countEntriesInLocksCollection = $this->getLocksCollection()
             ->count(
@@ -1102,11 +1099,7 @@ class Updates extends DriverBase
     }
 
     // / Collection methods
-
-    /**
-     * @return Collection
-     */
-    protected function getAuditManualRollbacksCollection()
+    protected function getAuditManualRollbacksCollection(): Collection
     {
         return $this->config->getCollectionForManualRollbackAudit($this->storeName);
     }
@@ -1116,10 +1109,7 @@ class Updates extends DriverBase
         return new ObjectId();
     }
 
-    /**
-     * @return UTCDateTime
-     */
-    protected function getMongoDate()
+    protected function getMongoDate(): UTCDateTime
     {
         return DateUtil::getMongoDate();
     }
@@ -1169,9 +1159,9 @@ class Updates extends DriverBase
     /**
      * This proxy method allows us to mock updates against $this->collection.
      *
-     * @param mixed $query
-     * @param mixed $update
-     * @param mixed $options
+     * @param mixed                $query
+     * @param mixed                $update
+     * @param array<string, mixed> $options
      *
      * @return bool
      */
@@ -1223,7 +1213,7 @@ class Updates extends DriverBase
      *
      * @param mixed $changeUri
      */
-    private function getAdditionsRemovalsGroupedByNsPredicate(ChangeSet $cs, $changeUri): array
+    private function getAdditionsRemovalsGroupedByNsPredicate(ChangeSet $cs, string $changeUri): array
     {
         $additionsGroupedByNsPredicate = $this->getChangesGroupedByNsPredicate($cs, $changeUri, $this->labeller->qname_to_uri('cs:addition'));
         $removalsGroupedByNsPredicate = $this->getChangesGroupedByNsPredicate($cs, $changeUri, $this->labeller->qname_to_uri('cs:removal'));
@@ -1256,7 +1246,7 @@ class Updates extends DriverBase
      *
      * @throws Exception
      */
-    private function getChangesGroupedByNsPredicate(ChangeSet $cs, $changeUri, $changePredicate): array
+    private function getChangesGroupedByNsPredicate(ChangeSet $cs, string $changeUri, $changePredicate): array
     {
         $changes = $cs->get_subject_property_values($changeUri, $changePredicate);
 

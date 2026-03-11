@@ -16,7 +16,7 @@ class MongoGraphTest extends MongoTripodTestBase
     public function testUriToQNameOnRegisteredNS(): void
     {
         $g = new MongoGraph();
-        $this->assertEquals('dct:title', $g->uri_to_qname('http://purl.org/dc/terms/title'));
+        $this->assertSame('dct:title', $g->uri_to_qname('http://purl.org/dc/terms/title'));
     }
 
     public function testUriToQNameOnUnRegisteredNS(): void
@@ -51,7 +51,7 @@ class MongoGraphTest extends MongoTripodTestBase
 
         $expected = "<http://example.com/1> <http://purl.org/dc/terms/title> \"some literal title\" <http://talisaspire.com/> .
 <http://example.com/1> <http://purl.org/dc/terms/source> <http://www.google.com> <http://talisaspire.com/> .\n";
-        $this->assertEquals($expected, $g->to_nquads(Config::getInstance()->getDefaultContextAlias()));
+        $this->assertSame($expected, $g->to_nquads(Config::getInstance()->getDefaultContextAlias()));
     }
 
     public function testToNQuadsTwoGraphsWithDifferentContext(): void
@@ -62,7 +62,7 @@ class MongoGraphTest extends MongoTripodTestBase
 
         $expected = "<http://example.com/1> <http://purl.org/dc/terms/title> \"some literal title\" <http://talisaspire.com/> .
 <http://example.com/1> <http://purl.org/dc/terms/source> <http://www.google.com> <http://talisaspire.com/> .\n";
-        $this->assertEquals($expected, $g->to_nquads('http://talisaspire.com/'));
+        $this->assertSame($expected, $g->to_nquads('http://talisaspire.com/'));
 
         $g = new MongoGraph();
         $g->add_literal_triple('http://example.com/2', $g->qname_to_uri('dct:title'), 'some literal title');
@@ -70,7 +70,7 @@ class MongoGraphTest extends MongoTripodTestBase
 
         $expected = "<http://example.com/2> <http://purl.org/dc/terms/title> \"some literal title\" <http://wibble.talisaspire.com/> .
 <http://example.com/2> <http://purl.org/dc/terms/source> <http://www.google.com> <http://wibble.talisaspire.com/> .\n";
-        $this->assertEquals($expected, $g->to_nquads('http://wibble.talisaspire.com/'));
+        $this->assertSame($expected, $g->to_nquads('http://wibble.talisaspire.com/'));
     }
 
     public function testAddTripodArrayThrowsException(): void
@@ -424,7 +424,7 @@ class MongoGraphTest extends MongoTripodTestBase
         $g->add_resource_triple('http://example.com/things/2', $g->qname_to_uri('rdf:type'), 'http://talisaspire.com/schema#Work');
 
         $actual = $g->to_tripod_view_array('http://example.com/things/1', 'http://example.com/');
-        $this->assertEquals($expected, $actual);
+        $this->assertSame($expected, $actual);
     }
 
     public function testWriteLockedDocDoesNotExposeVersionOrLockPropertyInGraph(): void

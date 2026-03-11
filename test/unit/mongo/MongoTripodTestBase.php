@@ -138,7 +138,7 @@ abstract class MongoTripodTestBase extends TestCase
      */
     protected function getDocument($_id, $collection = null, bool $fromTransactionLog = false): ?array
     {
-        if ($fromTransactionLog == true) {
+        if ($fromTransactionLog) {
             return $this->tripodTransactionLog->getTransaction($_id);
         }
 
@@ -166,9 +166,11 @@ abstract class MongoTripodTestBase extends TestCase
             if (strpos($c['_id']['r'], '_:cs') === false) {
                 continue;
             }
+
             if ($c['cs:subjectOfChange']['u'] != $subjectOfChange) {
                 continue;
             }
+
             $changeSet = $c;
         }
 
@@ -212,9 +214,8 @@ abstract class MongoTripodTestBase extends TestCase
      * @param int|null    $expectedValue
      * @param bool        $hasVersion
      * @param Driver|null $tripod
-     * @param bool        $fromTransactionLog
      */
-    protected function assertDocumentVersion(array $_id, $expectedValue = null, $hasVersion = true, $tripod = null, $fromTransactionLog = false): void
+    protected function assertDocumentVersion(array $_id, $expectedValue = null, $hasVersion = true, $tripod = null, bool $fromTransactionLog = false): void
     {
         // just make sure $_id is aliased
         $labeller = new Labeller();
@@ -242,7 +243,7 @@ abstract class MongoTripodTestBase extends TestCase
      * @param Collection|IDriver|null $tripod             where to retrieve the document from
      * @param bool                    $fromTransactionLog if you want to retrieve the document from transaction log
      */
-    protected function assertDocumentHasProperty(array $_id, $property, $expectedValue = null, $tripod = null, $fromTransactionLog = false): void
+    protected function assertDocumentHasProperty(array $_id, $property, $expectedValue = null, $tripod = null, bool $fromTransactionLog = false): void
     {
         // just make sure $_id is aliased
         $labeller = new Labeller();
@@ -264,7 +265,7 @@ abstract class MongoTripodTestBase extends TestCase
      * @param Collection|IDriver|null $tripod             where to retrieve the document from
      * @param bool                    $fromTransactionLog if you want to retrieve the document from transaction log
      */
-    protected function assertDocumentDoesNotHaveProperty(array $_id, string $property, $tripod = null, $fromTransactionLog = false): void
+    protected function assertDocumentDoesNotHaveProperty(array $_id, string $property, $tripod = null, bool $fromTransactionLog = false): void
     {
         // just make sure $_id is aliased
         $labeller = new Labeller();
@@ -278,6 +279,7 @@ abstract class MongoTripodTestBase extends TestCase
 
             return; // if document doesn't exist then it doesn't have the property, so assertion is successful
         }
+
         $this->assertArrayNotHasKey($property, $doc, 'Document for ' . var_export($_id, true) . sprintf(' should not have property [%s], but propert was found', $property));
     }
 
@@ -311,46 +313,41 @@ abstract class MongoTripodTestBase extends TestCase
     }
 
     /**
-     * @param string $p
      * @param string $o
      */
-    protected function assertHasLiteralTriple(ExtendedGraph $graph, string $s, $p, $o): void
+    protected function assertHasLiteralTriple(ExtendedGraph $graph, string $s, string $p, $o): void
     {
         $this->assertTrue($graph->has_literal_triple($s, $p, $o), sprintf('Graph did not contain the literal triple: <%s> <%s> "%s"', $s, $p, $o));
     }
 
     /**
-     * @param string $p
      * @param string $o
      */
-    protected function assertHasResourceTriple(ExtendedGraph $graph, string $s, $p, $o): void
+    protected function assertHasResourceTriple(ExtendedGraph $graph, string $s, string $p, $o): void
     {
         $this->assertTrue($graph->has_resource_triple($s, $p, $o), sprintf('Graph did not contain the resource triple: <%s> <%s> <%s>', $s, $p, $o));
     }
 
     /**
-     * @param string $p
      * @param string $o
      */
-    protected function assertDoesNotHaveLiteralTriple(ExtendedGraph $graph, string $s, $p, $o): void
+    protected function assertDoesNotHaveLiteralTriple(ExtendedGraph $graph, string $s, string $p, $o): void
     {
         $this->assertFalse($graph->has_literal_triple($s, $p, $o), sprintf('Graph should not contain the literal triple: <%s> <%s> "%s"', $s, $p, $o));
     }
 
     /**
-     * @param string $p
      * @param string $o
      */
-    protected function assertDoesNotHaveResourceTriple(ExtendedGraph $graph, string $s, $p, $o): void
+    protected function assertDoesNotHaveResourceTriple(ExtendedGraph $graph, string $s, string $p, $o): void
     {
         $this->assertFalse($graph->has_resource_triple($s, $p, $o), sprintf('Graph should not contain the resource triple: <%s> <%s> <%s>', $s, $p, $o));
     }
 
     /**
-     * @param string $subject
      * @param string $transaction_id
      */
-    protected function lockDocument($subject, $transaction_id): void
+    protected function lockDocument(?string $subject, $transaction_id): void
     {
         $collection = Config::getInstance()->getCollectionForLocks('tripod_php_testing');
         $labeller = new Labeller();

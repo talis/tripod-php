@@ -15,8 +15,6 @@ interface IDriver
      *
      * @param array $filter            conditions to filter by
      * @param array $includeProperties only include these predicates, empty array means return all predicates
-     *
-     * @return mixed
      */
     public function graph(array $filter, array $includeProperties = []): ExtendedGraph;
 

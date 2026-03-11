@@ -127,7 +127,7 @@ class IndexUtils
             }
 
             // index search documents
-            foreach ($config->getSearchDocumentSpecifications($storeName) as $searchId => $spec) {
+            foreach (array_keys($config->getSearchDocumentSpecifications($storeName)) as $searchId) {
                 $collection = $config->getCollectionForSearchDocument($storeName, $searchId);
                 if ($collection) {
                     $indexes = [

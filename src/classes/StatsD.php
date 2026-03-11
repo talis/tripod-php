@@ -21,9 +21,8 @@ class StatsD implements ITripodStat
     /**
      * @param string     $host
      * @param int|string $port
-     * @param string     $prefix
      */
-    public function __construct($host, $port, $prefix = '')
+    public function __construct($host, $port, ?string $prefix = '')
     {
         $this->host = $host;
         $this->port = $port;
@@ -33,10 +32,8 @@ class StatsD implements ITripodStat
     /**
      * @param string $operation
      * @param int    $inc
-     *
-     * @return void
      */
-    public function increment($operation, $inc = 1)
+    public function increment($operation, $inc = 1): void
     {
         $this->send(
             $this->generateStatData($operation, $inc . '|c')
@@ -46,10 +43,8 @@ class StatsD implements ITripodStat
     /**
      * @param string $operation
      * @param number $duration
-     *
-     * @return void
      */
-    public function timer($operation, $duration)
+    public function timer($operation, $duration): void
     {
         $this->send(
             $this->generateStatData($operation, ['1|c', $duration . '|ms'])
@@ -58,10 +53,8 @@ class StatsD implements ITripodStat
 
     /**
      * Record an arbitrary value.
-     *
-     * @param string $operation
      */
-    public function gauge($operation, string $value): void
+    public function gauge(string $operation, string $value): void
     {
         $this->send(
             $this->generateStatData($operation, $value . '|g')
@@ -71,7 +64,7 @@ class StatsD implements ITripodStat
     /**
      * @return array<string, array<string, int|string>|class-string<StatsD>>
      */
-    public function getConfig()
+    public function getConfig(): array
     {
         return [
             'class' => get_class($this),
@@ -83,7 +76,7 @@ class StatsD implements ITripodStat
         ];
     }
 
-    public static function createFromConfig(array $config)
+    public static function createFromConfig(array $config): self
     {
         if (isset($config['config'])) {
             $config = $config['config'];

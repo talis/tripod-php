@@ -489,10 +489,8 @@ final class NoStat implements ITripodStat
     /**
      * @param string     $operation
      * @param int|number $inc
-     *
-     * @return void
      */
-    public function increment($operation, $inc = 1)
+    public function increment($operation, $inc = 1): void
     {
         // do nothing
     }
@@ -500,10 +498,8 @@ final class NoStat implements ITripodStat
     /**
      * @param string $operation
      * @param number $duration
-     *
-     * @return void
      */
-    public function timer($operation, $duration)
+    public function timer($operation, $duration): void
     {
         // do nothing
     }
