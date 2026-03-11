@@ -531,10 +531,11 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
         $configInstance->expects($this->atLeastOnce())->method('getCollectionForCBD')->willReturn($collection);
 
         $tripod = $this->getMockBuilder(Driver::class)
-            ->onlyMethods(['getConfigInstance'])
-            ->setConstructorArgs(['tripod_php_testing', 'CBD_testing'])
+            ->onlyMethods(['getStoreName'])
+            ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
             ->disableOriginalConstructor()
             ->getMock();
+        $tripod->expects($this->atLeastOnce())->method('getStoreName')->willReturn('tripod_php_testing');
 
         $search = $this->getMockBuilder(SearchIndexer::class)
             ->onlyMethods(['setSearchProvider', 'getConfigInstance', 'queueApplyJob', 'getJobGroup'])
