@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo\Documents;
 
 use MongoDB\Model\BSONDocument;
@@ -16,7 +18,7 @@ class Tables extends BSONDocument
      *
      * @param array $data DB document array
      */
-    public function bsonUnserialize(array $data)
+    public function bsonUnserialize(array $data): void
     {
         $this->exchangeArray($this->toTableRow($data));
     }
@@ -24,7 +26,7 @@ class Tables extends BSONDocument
     /**
      * Models the table row from the source data.
      *
-     * @param array $doc Database document
+     * @param array<string, mixed> $doc Database document
      *
      * @return array
      */

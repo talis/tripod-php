@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use MongoDB\BSON\UTCDateTime;
@@ -12,13 +14,15 @@ class DateUtil
      * it will create an object based on the current time.
      *
      * @param float|int|null $milliseconds - time in milliseconds since the epoch
-     *
-     * @return UTCDateTime
      */
-    public static function getMongoDate($milliseconds = null)
+    public static function getMongoDate($milliseconds = null): UTCDateTime
     {
         if (is_null($milliseconds)) {
-            $milliseconds = floor(microtime(true) * 1000);
+            $milliseconds = microtime(true) * 1000;
+        }
+
+        if (is_float($milliseconds)) {
+            $milliseconds = (int) floor($milliseconds);
         }
 
         return new UTCDateTime($milliseconds);

@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
-// @noinspection PhpIncludeInspection
-
+use MongoDB\BSON\PackedArray;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Driver\ReadPreference;
 use Tripod\Exceptions\Exception;
@@ -12,7 +13,6 @@ use Tripod\ExtendedGraph;
 use Tripod\IDriver;
 use Tripod\IEventHook;
 use Tripod\ISearchProvider;
-use Tripod\Mongo\Composites\IComposite;
 use Tripod\Mongo\Composites\SearchIndexer;
 use Tripod\Mongo\Composites\Tables;
 use Tripod\Mongo\Composites\Views;
@@ -33,7 +33,7 @@ class Driver extends DriverBase implements IDriver
     /**
      * @var SearchIndexer
      */
-    private $search_indexer;
+    private $searchIndexer;
 
     /**
      * @var array
@@ -48,21 +48,19 @@ class Driver extends DriverBase implements IDriver
     /**
      * @var Updates
      */
-    private $dataUpdater;
+    private $updates;
 
     /**
      * Constructor for Driver.
      *
-     * @param string $podName
-     * @param string $storeName
-     * @param array  $opts      an Array of options: <ul>
-     *                          <li>defaultContext: (string) to use where a specific default context is not defined. Default is Null</li>
-     *                          <li>async: (array) determines the async behaviour of views, tables and search. For each of these array keys, if set to true, generation of these elements will be done asyncronously on save. Default is array(OP_VIEWS=>false,OP_TABLES=>true,OP_SEARCH=>true)</li>
-     *                          <li>stat: this sets the stats object to use to record statistics around operations performed by Driver. Default is null</li>
-     *                          <li>readPreference: The Read preference to set for Mongo: Default is ReadPreference::RP_PRIMARY_PREFERRED</li>
-     *                          <li>retriesToGetLock: Retries to do when unable to get lock on a document, default is 20</li></ul>
+     * @param array<string, mixed> $opts an Array of options: <ul>
+     *                                   <li>defaultContext: (string) to use where a specific default context is not defined. Default is Null</li>
+     *                                   <li>async: (array) determines the async behaviour of views, tables and search. For each of these array keys, if set to true, generation of these elements will be done asyncronously on save. Default is array(OP_VIEWS=>false,OP_TABLES=>true,OP_SEARCH=>true)</li>
+     *                                   <li>stat: this sets the stats object to use to record statistics around operations performed by Driver. Default is null</li>
+     *                                   <li>readPreference: The Read preference to set for Mongo: Default is ReadPreference::RP_PRIMARY_PREFERRED</li>
+     *                                   <li>retriesToGetLock: Retries to do when unable to get lock on a document, default is 20</li></ul>
      */
-    public function __construct($podName, $storeName, $opts = [])
+    public function __construct(string $podName, string $storeName, array $opts = [])
     {
         $opts = array_merge([
             'defaultContext' => null,
@@ -91,6 +89,7 @@ class Driver extends DriverBase implements IDriver
         if (!array_key_exists(OP_VIEWS, $async)) {
             $async[OP_VIEWS] = false;
         }
+
         if (!array_key_exists(OP_TABLES, $async)) {
             $async[OP_TABLES] = true;
         }
@@ -124,10 +123,8 @@ class Driver extends DriverBase implements IDriver
      *
      * @param string      $resource uri resource you'd like to describe
      * @param string|null $context  string uri of the context, or named graph, you'd like to describe from
-     *
-     * @return MongoGraph
      */
-    public function describeResource($resource, $context = null)
+    public function describeResource(string $resource, ?string $context = null): MongoGraph
     {
         $resource = $this->labeller->uri_to_alias($resource);
         $query = [
@@ -142,12 +139,8 @@ class Driver extends DriverBase implements IDriver
 
     /**
      * Pass subjects as to $resources and have mongo return a DESCRIBE <?resource[0]> <?resource[1]> <?resource[2]> etc.
-     *
-     * @param string|null $context
-     *
-     * @return MongoGraph
      */
-    public function describeResources(array $resources, $context = null)
+    public function describeResources(array $resources, ?string $context = null): MongoGraph
     {
         $ids = [];
         foreach ($resources as $resource) {
@@ -157,57 +150,38 @@ class Driver extends DriverBase implements IDriver
                 _ID_CONTEXT => $this->getContextAlias($context),
             ];
         }
+
         $query = ['_id' => ['$in' => $ids]];
 
         return $this->fetchGraph($query, MONGO_MULTIDESCRIBE);
     }
 
-    /**
-     * @param string $resource
-     * @param string $viewType
-     *
-     * @return MongoGraph
-     */
-    public function getViewForResource($resource, $viewType)
+    public function getViewForResource(?string $resource, string $viewType): MongoGraph
     {
         return $this->getTripodViews()->getViewForResource($resource, $viewType);
     }
 
     /**
-     * @param string $viewType
-     *
-     * @return MongoGraph
+     * @param string[] $resources
      */
-    public function getViewForResources(array $resources, $viewType)
+    public function getViewForResources(array $resources, string $viewType): MongoGraph
     {
         return $this->getTripodViews()->getViewForResources($resources, $viewType);
     }
 
-    /**
-     * @param string $viewType
-     *
-     * @return MongoGraph
-     */
-    public function getViews(array $filter, $viewType)
+    public function getViews(array $filter, string $viewType): MongoGraph
     {
         return $this->getTripodViews()->getViews($filter, $viewType);
     }
 
-    /**
-     * @param string $tableType
-     * @param int    $offset
-     * @param int    $limit
-     *
-     * @return array
-     */
     public function getTableRows(
-        $tableType,
+        string $tableType,
         array $filter = [],
         array $sortBy = [],
-        $offset = 0,
-        $limit = 10,
+        int $offset = 0,
+        int $limit = 10,
         array $options = []
-    ) {
+    ): array {
         return $this->getTripodTables()->getTableRows(
             $tableType,
             $filter,
@@ -218,23 +192,12 @@ class Driver extends DriverBase implements IDriver
         );
     }
 
-    /**
-     * @param string      $tableType
-     * @param string|null $resource
-     * @param string|null $context
-     */
-    public function generateTableRows($tableType, $resource = null, $context = null)
+    public function generateTableRows(string $tableType, ?string $resource = null, ?string $context = null): void
     {
         $this->getTripodTables()->generateTableRows($tableType, $resource, $context);
     }
 
-    /**
-     * @param string $tableType
-     * @param string $fieldName
-     *
-     * @return array
-     */
-    public function getDistinctTableColumnValues($tableType, $fieldName, array $filter = [])
+    public function getDistinctTableColumnValues(string $tableType, string $fieldName, array $filter = []): array
     {
         return $this->getTripodTables()->distinct($tableType, $fieldName, $filter);
     }
@@ -242,31 +205,21 @@ class Driver extends DriverBase implements IDriver
     /**
      * Create and apply a changeset which is the delta between $oldGraph and $newGraph.
      *
-     * @param string      $context
-     * @param string|null $description
-     *
-     * @return bool
-     *
      * @throws Exception
      */
     public function saveChanges(
         ExtendedGraph $oldGraph,
         ExtendedGraph $newGraph,
-        $context = null,
-        $description = null
-    ) {
+        ?string $context = null,
+        ?string $description = null
+    ): bool {
         return $this->getDataUpdater()->saveChanges($oldGraph, $newGraph, $context, $description);
     }
 
     /**
      * Get locked documents for a date range or all documents if no date range is given.
-     *
-     * @param string $fromDateTime
-     * @param string $tillDateTime
-     *
-     * @return array
      */
-    public function getLockedDocuments($fromDateTime = null, $tillDateTime = null)
+    public function getLockedDocuments(?string $fromDateTime = null, ?string $tillDateTime = null): array
     {
         return $this->getDataUpdater()->getLockedDocuments($fromDateTime, $tillDateTime);
     }
@@ -274,14 +227,9 @@ class Driver extends DriverBase implements IDriver
     /**
      * Remove locks that are there forever, creates a audit entry to keep track who and why removed these locks.
      *
-     * @param string $transaction_id
-     * @param string $reason
-     *
-     * @return bool
-     *
      * @throws \Exception, if something goes wrong when unlocking documents, or creating audit entries
      */
-    public function removeInertLocks($transaction_id, $reason)
+    public function removeInertLocks(string $transaction_id, string $reason): bool
     {
         return $this->getDataUpdater()->removeInertLocks($transaction_id, $reason);
     }
@@ -304,7 +252,7 @@ class Driver extends DriverBase implements IDriver
      * @throws Exception       - if search provider cannot be found
      * @throws SearchException - if something goes wrong
      */
-    public function search(array $params)
+    public function search(array $params): array
     {
         $q = $params['q'];
         $type = $params['type'];
@@ -330,19 +278,18 @@ class Driver extends DriverBase implements IDriver
             return $results;
         }
 
-        throw new Exception("Unknown Search Provider: {$provider}");
+        throw new Exception('Unknown Search Provider: ' . $provider);
     }
 
     /**
      * Returns a count according to the $query and $groupBy conditions.
      *
-     * @param array       $query   Mongo query object
-     * @param string|null $groupBy
-     * @param int|null    $ttl     acceptable time to live if you're willing to accept a cached version of this request
+     * @param array    $query Mongo query object
+     * @param int|null $ttl   acceptable time to live if you're willing to accept a cached version of this request
      *
      * @return array|int
      */
-    public function getCount(array $query, $groupBy = null, $ttl = null)
+    public function getCount(array $query, ?string $groupBy = null, ?int $ttl = null)
     {
         $t = new Timer();
         $t->start();
@@ -368,6 +315,7 @@ class Driver extends DriverBase implements IDriver
                 }
             }
         }
+
         if (empty($results)) {
             if ($groupBy) {
                 $ops = [
@@ -403,7 +351,7 @@ class Driver extends DriverBase implements IDriver
         $t->stop();
         $op = ($groupBy) ? MONGO_GROUP : MONGO_COUNT;
         $this->timingLog($op, ['duration' => $t->result(), 'query' => $query]);
-        $this->getStat()->timer("{$op}.{$this->podName}", $t->result());
+        $this->getStat()->timer(sprintf('%s.%s', $op, $this->podName), $t->result());
 
         return $results;
     }
@@ -412,14 +360,11 @@ class Driver extends DriverBase implements IDriver
      * Selects $fields from the result set determined by $query.
      * Returns an array of all results, each array element is a CBD graph, keyed by r.
      *
-     * @param array       $fields  array of fields, in the same format as prescribed by MongoPHP
-     * @param int|null    $limit
-     * @param int         $offset
-     * @param string|null $context
+     * @param array<string, mixed>|PackedArray $fields array of fields, in the same format as prescribed by MongoPHP
      *
-     * @return array
+     * @return array<string, array<int|string, int|mixed[]|null>>
      */
-    public function select(array $query, array $fields, ?array $sortBy = null, $limit = null, $offset = 0, $context = null)
+    public function select(array $query, array $fields, ?array $sortBy = null, ?int $limit = null, int $offset = 0, ?string $context = null): array
     {
         $t = new Timer();
         $t->start();
@@ -453,17 +398,19 @@ class Driver extends DriverBase implements IDriver
             'projection' => $fields,
         ];
         if (!empty($limit)) {
-            $findOptions['skip'] = (int) $offset;
+            $findOptions['skip'] = $offset;
             $findOptions['limit'] = (int) $limit;
         }
+
         if (isset($sortBy)) {
             $findOptions['sort'] = $sortBy;
         }
+
         $results = $this->collection->find($query, $findOptions);
 
         $t->stop();
         $this->timingLog(MONGO_SELECT, ['duration' => $t->result(), 'query' => $query]);
-        $this->getStat()->timer(MONGO_SELECT . ".{$this->podName}", $t->result());
+        $this->getStat()->timer(MONGO_SELECT . ('.' . $this->podName), $t->result());
 
         $rows = [];
         $count = $this->collection->count($query);
@@ -491,6 +438,7 @@ class Driver extends DriverBase implements IDriver
                     }
                 }
             }
+
             $rows[] = $row;
         }
 
@@ -508,12 +456,8 @@ class Driver extends DriverBase implements IDriver
      * Returns a graph as the result of $query. Useful replacement for DESCRIBE ... WHERE.
      *
      * @deprecated use getGraph
-     *
-     * @param $query array
-     *
-     * @return MongoGraph
      */
-    public function describe($query)
+    public function describe(array $query): MongoGraph
     {
         return $this->fetchGraph($query, MONGO_DESCRIBE_WITH_CONDITION);
     }
@@ -526,23 +470,16 @@ class Driver extends DriverBase implements IDriver
      *
      * @param array $filter            conditions to filter by
      * @param array $includeProperties only include these predicates, empty array means return all predicates
-     *
-     * @return MongoGraph
      */
-    public function graph(array $filter, array $includeProperties = [])
+    public function graph(array $filter, array $includeProperties = []): MongoGraph
     {
         return $this->fetchGraph($filter, MONGO_GET_GRAPH, null, $includeProperties);
     }
 
     /**
-     * Retuns the eTag of the $resource, useful for cache control or optimistic concurrency control.
-     *
-     * @param string      $resource
-     * @param string|null $context
-     *
-     * @return string
+     * Returns the eTag of the $resource, useful for cache control or optimistic concurrency control.
      */
-    public function getETag($resource, $context = null)
+    public function getETag(string $resource, ?string $context = null): string
     {
         $this->getStat()->increment(MONGO_GET_ETAG);
         $resource = $this->labeller->uri_to_alias($resource);
@@ -556,26 +493,21 @@ class Driver extends DriverBase implements IDriver
 
         /** @var UTCDateTime|null $lastUpdatedDate */
         $lastUpdatedDate = $doc[_UPDATED_TS] ?? null;
-
         if ($lastUpdatedDate === null) {
-            $eTag = '';
-        } else {
-            // PHP 5.3 used MongoDate::__toString() to generate the etag.
-            // This is incompatible with UTCDate::__toString() so we convert it into a microtime representation.
-            // This ensures that if it is required to dual run 2 PHP versions, there are no etag compatibility issues.
-            // Note that MongoDate doesn't go to 8 decimal place precision but still returns it so we go to 6 and pad
-            // with an extra 2
-            $seconds = $lastUpdatedDate->__toString() / 1000;
-            $eTag = str_pad(number_format($seconds - floor($seconds), 6), 10, '0', STR_PAD_RIGHT) . ' ' . floor($seconds);
+            return '';
         }
 
-        return $eTag;
+        // PHP 5.3 used MongoDate::__toString() to generate the etag.
+        // This is incompatible with UTCDate::__toString() so we convert it into a microtime representation.
+        // This ensures that if it is required to dual run 2 PHP versions, there are no etag compatibility issues.
+        // Note that MongoDate doesn't go to 8 decimal place precision but still returns it so we go to 6 and pad
+        // with an extra 2
+        $seconds = $lastUpdatedDate->__toString() / 1000;
+
+        return str_pad(number_format($seconds - floor($seconds), 6), 10, '0', STR_PAD_RIGHT) . ' ' . floor($seconds);
     }
 
-    /**
-     * @return Views
-     */
-    public function getTripodViews()
+    public function getTripodViews(): Views
     {
         if ($this->tripod_views == null) {
             $this->tripod_views = new Views(
@@ -590,10 +522,7 @@ class Driver extends DriverBase implements IDriver
         return $this->tripod_views;
     }
 
-    /**
-     * @return Tables
-     */
-    public function getTripodTables()
+    public function getTripodTables(): Tables
     {
         if ($this->tripod_tables == null) {
             $this->tripod_tables = new Tables(
@@ -608,19 +537,16 @@ class Driver extends DriverBase implements IDriver
         return $this->tripod_tables;
     }
 
-    /**
-     * @return SearchIndexer
-     */
-    public function getSearchIndexer()
+    public function getSearchIndexer(): SearchIndexer
     {
-        if ($this->search_indexer == null) {
-            $this->search_indexer = new SearchIndexer($this, $this->readPreference);
+        if ($this->searchIndexer == null) {
+            $this->searchIndexer = new SearchIndexer($this, $this->readPreference);
         }
 
-        return $this->search_indexer;
+        return $this->searchIndexer;
     }
 
-    public function setTransactionLog(TransactionLog $transactionLog)
+    public function setTransactionLog(TransactionLog $transactionLog): void
     {
         $this->getDataUpdater()->setTransactionLog($transactionLog);
     }
@@ -631,10 +557,8 @@ class Driver extends DriverBase implements IDriver
      *
      * @param string|null $fromDate only transactions after this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
      * @param string|null $toDate   only transactions before this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
-     *
-     * @return bool
      */
-    public function replayTransactionLog($fromDate = null, $toDate = null)
+    public function replayTransactionLog(?string $fromDate = null, ?string $toDate = null): bool
     {
         return $this->getDataUpdater()->replayTransactionLog($fromDate, $toDate);
     }
@@ -642,11 +566,9 @@ class Driver extends DriverBase implements IDriver
     /**
      * Register an event hook, which will be executed when the event fires.
      *
-     * @param string $eventType
-     *
      * @throws Exception when an unrecognised event type is given
      */
-    public function registerHook($eventType, IEventHook $hook)
+    public function registerHook(string $eventType, IEventHook $hook): void
     {
         switch ($eventType) {
             case IEventHook::EVENT_SAVE_CHANGES:
@@ -655,7 +577,7 @@ class Driver extends DriverBase implements IDriver
                 break;
 
             default:
-                throw new Exception("Unrecognised type {$eventType} whilst registering event hook");
+                throw new Exception(sprintf('Unrecognised type %s whilst registering event hook', $eventType));
         }
     }
 
@@ -664,11 +586,11 @@ class Driver extends DriverBase implements IDriver
      *
      * @param $operation string must be either OP_VIEWS, OP_TABLES or OP_SEARCH
      *
-     * @return IComposite
+     * @return SearchIndexer|Tables|Views
      *
      * @throws Exception when an unsupported operation is requested
      */
-    public function getComposite($operation)
+    public function getComposite(string $operation)
     {
         switch ($operation) {
             case OP_VIEWS:
@@ -681,29 +603,25 @@ class Driver extends DriverBase implements IDriver
                 return $this->getSearchIndexer();
 
             default:
-                throw new Exception("Undefined operation '{$operation}' requested");
+                throw new Exception(sprintf("Undefined operation '%s' requested", $operation));
         }
     }
 
     /**
      * For mocking.
-     *
-     * @return Labeller
      */
-    protected function getLabeller()
+    protected function getLabeller(): Labeller
     {
         return new Labeller();
     }
 
     /**
      * Returns the delegate object for saving data in Mongo.
-     *
-     * @return Updates
      */
-    protected function getDataUpdater()
+    protected function getDataUpdater(): Updates
     {
-        if (!isset($this->dataUpdater)) {
-            $readPreference = $this->collection->__debugInfo()['readPreference']->getMode();
+        if ($this->updates === null) {
+            $readPreference = $this->collection->getReadPreference()->getMode();
 
             $opts = [
                 'defaultContext' => $this->defaultContext,
@@ -714,9 +632,9 @@ class Driver extends DriverBase implements IDriver
                 'statsConfig' => $this->statsConfig,
             ];
 
-            $this->dataUpdater = new Updates($this, $opts);
+            $this->updates = new Updates($this, $opts);
         }
 
-        return $this->dataUpdater;
+        return $this->updates;
     }
 }

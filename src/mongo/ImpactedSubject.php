@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use MongoDB\Driver\ReadPreference;
@@ -40,7 +42,7 @@ class ImpactedSubject
     /**
      * @var ITripodStat|null
      */
-    private $stat;
+    private $tripodStat;
 
     /**
      * @param string $operation
@@ -60,15 +62,15 @@ class ImpactedSubject
         if (in_array($operation, [OP_VIEWS, OP_TABLES, OP_SEARCH])) {
             $this->operation = $operation;
         } else {
-            throw new Exception("Invalid operation: {$operation}");
+            throw new Exception('Invalid operation: ' . $operation);
         }
 
         $this->storeName = $storeName;
         $this->podName = $podName;
         $this->specTypes = $specTypes;
 
-        if ($stat) {
-            $this->stat = $stat;
+        if ($stat instanceof ITripodStat) {
+            $this->tripodStat = $stat;
         }
     }
 
@@ -115,9 +117,9 @@ class ImpactedSubject
     /**
      * Serialises the data as an array.
      *
-     * @return array
+     * @return array<string, mixed[]|string>
      */
-    public function toArray()
+    public function toArray(): array
     {
         return [
             'resourceId' => $this->resourceId,
@@ -131,21 +133,20 @@ class ImpactedSubject
     /**
      * Perform the update on the composite defined by the operation.
      */
-    public function update()
+    public function update(): void
     {
         $tripod = $this->getTripod();
-        if (isset($this->stat)) {
-            $tripod->setStat($this->stat);
+        if (property_exists($this, 'tripodStat') && $this->tripodStat !== null) {
+            $tripod->setStat($this->tripodStat);
         }
+
         $tripod->getComposite($this->operation)->update($this);
     }
 
     /**
      * For mocking.
-     *
-     * @return Driver
      */
-    protected function getTripod()
+    protected function getTripod(): Driver
     {
         return new Driver($this->getPodName(), $this->getStoreName(), [
             'readPreference' => ReadPreference::RP_PRIMARY,

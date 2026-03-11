@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo\Composites;
 
 use Tripod\Exceptions\LabellerException;
@@ -18,11 +20,9 @@ abstract class CompositeBase extends DriverBase implements IComposite
     /**
      * Returns an array of ImpactedSubjects based on the subjects and predicates of change.
      *
-     * @param string $contextAlias
-     *
      * @return ImpactedSubject[]
      */
-    public function getImpactedSubjects(array $subjectsAndPredicatesOfChange, $contextAlias)
+    public function getImpactedSubjects(array $subjectsAndPredicatesOfChange, string $contextAlias): array
     {
         $candidates = [];
         $filter = [];
@@ -33,6 +33,7 @@ abstract class CompositeBase extends DriverBase implements IComposite
             // build $filter for queries to impact index
             $filter[] = [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias];
         }
+
         $query = [_ID_KEY => ['$in' => $filter]];
         $docs = $this->getCollection()->find(
             $query,
@@ -63,15 +64,16 @@ abstract class CompositeBase extends DriverBase implements IComposite
                 $currentSubjectProperties = [];
                 if (isset($subjectsAndPredicatesOfChange[$docResource])) {
                     $currentSubjectProperties = $subjectsAndPredicatesOfChange[$docResource];
-                } elseif (isset($subjectsToAlias[$docResource], $subjectsAndPredicatesOfChange[$subjectsToAlias[$docResource]])
-                ) {
+                } elseif (isset($subjectsToAlias[$docResource], $subjectsAndPredicatesOfChange[$subjectsToAlias[$docResource]])) {
                     $currentSubjectProperties = $subjectsAndPredicatesOfChange[$subjectsToAlias[$docResource]];
                 }
+
                 foreach ($docTypes as $type) {
                     if ($this->checkIfTypeShouldTriggerOperation($type, $types, $currentSubjectProperties)) {
                         if (!array_key_exists($this->getPodName(), $candidates)) {
                             $candidates[$this->getPodName()] = [];
                         }
+
                         if (!array_key_exists($docHash, $candidates[$this->getPodName()])) {
                             $candidates[$this->getPodName()][$docHash] = ['id' => $doc[_ID_KEY]];
                         }
@@ -87,6 +89,7 @@ abstract class CompositeBase extends DriverBase implements IComposite
                 if (!array_key_exists($spec['from'], $candidates)) {
                     $candidates[$spec['from']] = [];
                 }
+
                 $docHash = md5($doc[_ID_KEY][_ID_RESOURCE] . $doc[_ID_KEY][_ID_CONTEXT]);
 
                 if (!array_key_exists($docHash, $candidates[$spec['from']])) {
@@ -97,9 +100,11 @@ abstract class CompositeBase extends DriverBase implements IComposite
                         ],
                     ];
                 }
+
                 if (!array_key_exists('specTypes', $candidates[$spec['from']][$docHash])) {
                     $candidates[$spec['from']][$docHash]['specTypes'] = [];
                 }
+
                 // Save the specification type so we only have to regen resources in that table type
                 if (!in_array($doc[_ID_KEY][_ID_TYPE], $candidates[$spec['from']][$docHash]['specTypes'])) {
                     $candidates[$spec['from']][$docHash]['specTypes'][] = $doc[_ID_KEY][_ID_TYPE];
@@ -121,37 +126,26 @@ abstract class CompositeBase extends DriverBase implements IComposite
 
     /**
      * Returns an array of the rdf types that will trigger the specification.
-     *
-     * @return array
      */
-    abstract public function getTypesInSpecifications();
+    abstract public function getTypesInSpecifications(): array;
 
     /**
-     * @param string $contextAlias
-     *
-     * @return mixed
+     * @return mixed[]
      */
-    abstract public function findImpactedComposites(array $resourcesAndPredicates, $contextAlias);
+    abstract public function findImpactedComposites(array $resourcesAndPredicates, string $contextAlias): array;
 
     /**
      * Returns the specification config.
-     *
-     * @param string $storeName
-     * @param string $specId    The specification id
-     *
-     * @return array|null
      */
-    abstract public function getSpecification($storeName, $specId);
+    abstract public function getSpecification(string $storeName, string $specId): ?array;
 
     /**
      * Test if the a particular type appears in the array of types associated with a particular spec and that the changeset
      * includes rdf:type (or is empty, meaning addition or deletion vs. update).
      *
-     * @param string $rdfType
-     *
      * @return bool
      */
-    protected function checkIfTypeShouldTriggerOperation($rdfType, array $validTypes, array $subjectPredicates)
+    protected function checkIfTypeShouldTriggerOperation(?string $rdfType, array $validTypes, array $subjectPredicates)
     {
         // We don't know if this is an alias or a fqURI, nor what is in the valid types, necessarily
         $types = [$rdfType];
@@ -171,7 +165,7 @@ abstract class CompositeBase extends DriverBase implements IComposite
         $intersectingTypes = array_unique(array_intersect($types, $validTypes));
 
         // If views have a matching type *at all*, the operation is triggered
-        return !empty($intersectingTypes);
+        return $intersectingTypes !== [];
     }
 
     /**
@@ -181,7 +175,7 @@ abstract class CompositeBase extends DriverBase implements IComposite
      */
     protected function getApplyOperation()
     {
-        if (!isset($this->applyOperation)) {
+        if ($this->applyOperation === null) {
             $this->applyOperation = new ApplyOperation();
         }
 

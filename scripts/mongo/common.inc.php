@@ -13,11 +13,9 @@ foreach ([__DIR__ . '/../../../../autoload.php', __DIR__ . '/../../vendor/autolo
 }
 
 if (!defined('TRIPOD_COMPOSER_INSTALL')) {
-    exit(
-        'You need to set up the project dependencies using the following commands:' . PHP_EOL
+    exit('You need to set up the project dependencies using the following commands:' . PHP_EOL
         . 'curl -sS https://getcomposer.org/installer | php' . PHP_EOL
-        . 'php composer.phar install' . PHP_EOL
-    );
+        . 'php composer.phar install' . PHP_EOL);
 }
 
 require TRIPOD_COMPOSER_INSTALL;

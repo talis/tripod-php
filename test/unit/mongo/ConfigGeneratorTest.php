@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Tripod\Config;
 use Tripod\ExtendedGraph;
 use Tripod\ITripodConfigSerializer;
@@ -24,33 +26,34 @@ class ConfigGeneratorTest extends MongoTripodTestBase
         Config::setConfig($this->config);
     }
 
-    public function testCreateFromConfig()
+    public function testCreateFromConfig(): void
     {
         /** @var TestConfigGenerator $instance */
         $instance = Config::getInstance();
         $this->assertInstanceOf(TestConfigGenerator::class, $instance);
         $this->assertInstanceOf(Tripod\Mongo\Config::class, $instance);
         $this->assertInstanceOf(ITripodConfigSerializer::class, $instance);
-        $this->assertEquals(
+        $this->assertSame(
             ['CBD_testing', 'CBD_test_related_content', 'CBD_testing_2'],
             $instance->getPods('tripod_php_testing')
         );
     }
 
-    public function testSerializeConfig()
+    public function testSerializeConfig(): void
     {
         /** @var TestConfigGenerator $instance */
         $instance = Config::getInstance();
         $this->assertEquals($this->config, $instance->serialize());
     }
 
-    public function testConfigGeneratorsSerializedInDiscoverJobs()
+    public function testConfigGeneratorsSerializedInDiscoverJobs(): void
     {
         $originalGraph = new ExtendedGraph();
         $originalGraph->add_resource_triple('http://example.com/1', RDF_TYPE, RDFS_CLASS);
 
         $newGraph = new ExtendedGraph();
         $newGraph->add_resource_triple('http://example.com/1', RDF_TYPE, OWL_CLASS);
+
         $subjectsAndPredicatesOfChange = ['http://example.com/1' => [RDF_TYPE]];
 
         $tripod = $this->getMockBuilder(Driver::class)
@@ -78,13 +81,11 @@ class ConfigGeneratorTest extends MongoTripodTestBase
             ->onlyMethods(['createJob'])
             ->getMock();
 
-        $tripod->expects($this->once())->method('getDataUpdater')->will($this->returnValue($updates));
-        $updates->expects($this->once())->method('getDiscoverImpactedSubjects')->will($this->returnValue($discoverJob));
+        $tripod->expects($this->once())->method('getDataUpdater')->willReturn($updates);
+        $updates->expects($this->once())->method('getDiscoverImpactedSubjects')->willReturn($discoverJob);
 
-        $updates->expects($this->once())->method('storeChanges')->will(
-            $this->returnValue(
-                ['transaction_id' => uniqid(), 'subjectsAndPredicatesOfChange' => $subjectsAndPredicatesOfChange]
-            )
+        $updates->expects($this->once())->method('storeChanges')->willReturn(
+            ['transaction_id' => uniqid(), 'subjectsAndPredicatesOfChange' => $subjectsAndPredicatesOfChange]
         );
 
         $discoverJob->expects($this->once())->method('createJob')
@@ -103,7 +104,7 @@ class ConfigGeneratorTest extends MongoTripodTestBase
         );
     }
 
-    public function testSerializedConfigGeneratorsSentToApplyJobs()
+    public function testSerializedConfigGeneratorsSentToApplyJobs(): void
     {
         $subjectsAndPredicatesOfChange = ['http://example.com/1' => [RDF_TYPE]];
         $impactedSubjects = [
@@ -136,9 +137,9 @@ class ConfigGeneratorTest extends MongoTripodTestBase
 
         $tripod->expects($this->once())->method('getComposite')
             ->with(OP_VIEWS)
-            ->will($this->returnValue($views));
+            ->willReturn($views);
 
-        $views->expects($this->once())->method('getImpactedSubjects')->will($this->returnValue($impactedSubjects));
+        $views->expects($this->once())->method('getImpactedSubjects')->willReturn($impactedSubjects);
 
         $discoverJob = $this->getMockBuilder(DiscoverImpactedSubjects::class)
             ->onlyMethods(['getTripod', 'getApplyOperation'])
@@ -150,8 +151,8 @@ class ConfigGeneratorTest extends MongoTripodTestBase
             ->getMock();
         $discoverJob->args = $jobArgs;
         $discoverJob->job = (object) ['payload' => ['id' => uniqid()]];
-        $discoverJob->expects($this->once())->method('getTripod')->will($this->returnValue($tripod));
-        $discoverJob->expects($this->once())->method('getApplyOperation')->will($this->returnValue($applyJob));
+        $discoverJob->expects($this->once())->method('getTripod')->willReturn($tripod);
+        $discoverJob->expects($this->once())->method('getApplyOperation')->willReturn($applyJob);
         $configInstance = Config::getInstance();
         $applyJob->expects($this->once())->method('submitJob')
             ->with(

@@ -15,12 +15,12 @@ class TestJobBase extends JobBase
 
     public function perform() {}
 
-    protected function getStatTimerSuccessKey()
+    protected function getStatTimerSuccessKey(): string
     {
         return 'TEST_SUCCESS';
     }
 
-    protected function getStatFailureIncrementKey()
+    protected function getStatFailureIncrementKey(): string
     {
         return 'TEST_FAIL';
     }

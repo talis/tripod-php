@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo\Jobs;
 
 use MongoDB\BSON\ObjectId;
@@ -13,9 +15,11 @@ use Tripod\Timer;
 class ApplyOperation extends JobBase
 {
     public const SUBJECTS_KEY = 'subjects';
+
     public const TRACKING_KEY = 'batchId';
 
     protected $configRequired = true;
+
     protected $mandatoryArgs = [self::SUBJECTS_KEY];
 
     /**
@@ -23,7 +27,7 @@ class ApplyOperation extends JobBase
      *
      * @throws \Exception
      */
-    public function perform()
+    public function perform(): void
     {
         $this->getStat()->increment(
             MONGO_QUEUE_APPLY_OPERATION_JOB . '.' . SUBJECT_COUNT,
@@ -51,8 +55,7 @@ class ApplyOperation extends JobBase
                 $jobGroup = $this->getJobGroup($subject['storeName'], $this->args[self::TRACKING_KEY]);
                 $jobCount = $jobGroup->incrementJobCount(-1);
                 if ($jobCount <= 0) {
-                    // @todo Replace this with ObjectId->getTimestamp() if we upgrade Mongo driver to 1.2
-                    $timestamp = new UTCDateTime(hexdec(substr($jobGroup->getId(), 0, 8)) * 1000);
+                    $timestamp = new UTCDateTime($jobGroup->getId()->getTimestamp() * 1000);
                     $tripod = $this->getTripod($subject['storeName'], $subject['podName']);
                     $count = 0;
                     foreach ($subject['specTypes'] as $specId) {
@@ -74,9 +77,10 @@ class ApplyOperation extends JobBase
                                 break;
                         }
                     }
+
                     $this->infoLog(
                         '[JobGroupId ' . $jobGroup->getId()->__toString() . '] composite cleanup for '
-                        . $subject['operation'] . ' removed ' . $count . ' stale composite documents'
+                            . $subject['operation'] . ' removed ' . $count . ' stale composite documents'
                     );
                 }
             }
@@ -88,7 +92,7 @@ class ApplyOperation extends JobBase
      * @param string|null       $queueName
      * @param array             $otherData
      */
-    public function createJob(array $subjects, $queueName = null, $otherData = [])
+    public function createJob(array $subjects, $queueName = null, $otherData = []): void
     {
         $configInstance = $this->getConfigInstance();
         if (!$queueName) {
@@ -99,7 +103,7 @@ class ApplyOperation extends JobBase
 
         $data = [
             self::SUBJECTS_KEY => array_map(
-                function (ImpactedSubject $subject) {
+                function (ImpactedSubject $subject): array {
                     return $subject->toArray();
                 },
                 $subjects
@@ -116,20 +120,16 @@ class ApplyOperation extends JobBase
 
     /**
      * Stat string for successful job timer.
-     *
-     * @return string
      */
-    protected function getStatTimerSuccessKey()
+    protected function getStatTimerSuccessKey(): string
     {
         return MONGO_QUEUE_APPLY_OPERATION_SUCCESS;
     }
 
     /**
      * Stat string for failed job increment.
-     *
-     * @return string
      */
-    protected function getStatFailureIncrementKey()
+    protected function getStatFailureIncrementKey(): string
     {
         return MONGO_QUEUE_APPLY_OPERATION_FAIL;
     }
@@ -137,9 +137,9 @@ class ApplyOperation extends JobBase
     /**
      * For mocking.
      *
-     * @return ImpactedSubject
+     * @param array<string, mixed> $args
      */
-    protected function createImpactedSubject(array $args)
+    protected function createImpactedSubject(array $args): ImpactedSubject
     {
         return new ImpactedSubject(
             $args['resourceId'],
@@ -155,20 +155,16 @@ class ApplyOperation extends JobBase
      *
      * @param string          $storeName   Tripod store (database) name
      * @param ObjectId|string $trackingKey JobGroup ID
-     *
-     * @return JobGroup
      */
-    protected function getJobGroup($storeName, $trackingKey)
+    protected function getJobGroup($storeName, $trackingKey): JobGroup
     {
         return new JobGroup($storeName, $trackingKey);
     }
 
     /**
      * For mocking.
-     *
-     * @return MongoSearchProvider
      */
-    protected function getSearchProvider(Driver $tripod)
+    protected function getSearchProvider(Driver $tripod): MongoSearchProvider
     {
         return new MongoSearchProvider($tripod);
     }

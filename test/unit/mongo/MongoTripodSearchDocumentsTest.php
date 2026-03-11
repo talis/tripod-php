@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Tripod\Config;
 use Tripod\ExtendedGraph;
 use Tripod\Mongo\Composites\SearchIndexer;
@@ -29,7 +31,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
         }
     }
 
-    public function testGenerateSearchDocumentBasedOnSpecIdThrowsExceptionWithEmptyResource()
+    public function testGenerateSearchDocumentBasedOnSpecIdThrowsExceptionWithEmptyResource(): void
     {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Resource must be specified');
@@ -37,7 +39,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
         $searchDocuments->generateSearchDocumentBasedOnSpecId('i_search_resource', null, 'http://talisaspire.com/');
     }
 
-    public function testGenerateSearchDocumentBasedOnSpecIdThrowsExceptionWithEmptyContext()
+    public function testGenerateSearchDocumentBasedOnSpecIdThrowsExceptionWithEmptyContext(): void
     {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Context must be specified');
@@ -45,7 +47,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
         $searchDocuments->generateSearchDocumentBasedOnSpecId('i_search_resource', 'http://talisaspire.com/resource/1', null);
     }
 
-    public function testGenerateSearchDocumentBasedOnSpecIdReturnNullForInvalidSearchSpecId()
+    public function testGenerateSearchDocumentBasedOnSpecIdReturnNullForInvalidSearchSpecId(): void
     {
         $mockSearchDocuments = $this->getMockBuilder(SearchDocuments::class)
             ->onlyMethods(['getSearchDocumentSpecification'])
@@ -54,26 +56,26 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
 
         $mockSearchDocuments->expects($this->once())
             ->method('getSearchDocumentSpecification')
-            ->will($this->returnValue(null));
+            ->willReturn(null);
         $generatedDocuments = $mockSearchDocuments->generateSearchDocumentBasedOnSpecId('i_search_something', 'http://talisaspire.com/resource/1', 'http://talisaspire.com/');
         $this->assertNull($generatedDocuments);
     }
 
-    public function testGenerateSearchDocumentBasedOnSpecIdReturnNullIfNoMatchForResourceFound()
+    public function testGenerateSearchDocumentBasedOnSpecIdReturnNullIfNoMatchForResourceFound(): void
     {
         $searchDocuments = $this->getSearchDocuments($this->tripod);
         $generatedDocuments = $searchDocuments->generateSearchDocumentBasedOnSpecId('i_search_resource', 'http://talisaspire.com/resource/1', 'http://talisaspire.com/');
         $this->assertNull($generatedDocuments);
     }
 
-    public function testGenerateSearchDocumentBasedOnSpecId()
+    public function testGenerateSearchDocumentBasedOnSpecId(): void
     {
         $searchDocuments = $this->getSearchDocuments($this->tripod);
         $generatedDocuments = $searchDocuments->generateSearchDocumentBasedOnSpecId('i_search_resource', 'http://talisaspire.com/resources/doc1', 'http://talisaspire.com/');
         $this->assertEquals('http://talisaspire.com/resources/doc1', $generatedDocuments['_id']['r']);
     }
 
-    public function testGenerateSearchDocumentPreservesDiacritics()
+    public function testGenerateSearchDocumentPreservesDiacritics(): void
     {
         $searchDocuments = $this->getSearchDocuments($this->tripod);
         $generatedDocuments = $searchDocuments->generateSearchDocumentBasedOnSpecId('i_search_resource', 'http://talisaspire.com/resources/doc13', 'http://talisaspire.com/');
@@ -82,9 +84,12 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
         $this->assertEquals('http://talisaspire.com/resources/doc13', $generatedDocuments['_id']['r']);
     }
 
-    public function testGenerateSearchDocumentBasedOnSpecIdWithFieldNamePredicatesHavingNoValueInCollection()
+    public function testGenerateSearchDocumentBasedOnSpecIdWithFieldNamePredicatesHavingNoValueInCollection(): void
     {
-        $searchSpecs = json_decode('{"_id":"i_search_resource","type":["bibo:Book"],"from":"CBD_testing","filter":[{"condition":{"dct:title.l":{"$exists":true}}}],"indices":[{"fieldName":"search_terms","predicates":["dct:title","dct:subject"]},{"fieldName":"other_terms","predicates":["rdf:type"]}],"fields":[{"fieldName":"result.title","predicates":["dct:title"],"limit":1},{"fieldName":"result.link","value":"link"},{"fieldName":"rdftype","predicates":["rdf:type"],"limit":1}],"joins":{"dct:creator":{"indices":[{"fieldName":"search_terms","predicates":["foaf:name"]}],"fields":[{"fieldName":"result.author","predicates":["foaf:name"],"limit":1}, {"fieldName":"result.role","predicates":["siocAccess:Role"], "limit":1}] } }}', true);
+        $searchSpecs = json_decode(
+            '{"_id":"i_search_resource","type":["bibo:Book"],"from":"CBD_testing","filter":[{"condition":{"dct:title.l":{"$exists":true}}}],"indices":[{"fieldName":"search_terms","predicates":["dct:title","dct:subject"]},{"fieldName":"other_terms","predicates":["rdf:type"]}],"fields":[{"fieldName":"result.title","predicates":["dct:title"],"limit":1},{"fieldName":"result.link","value":"link"},{"fieldName":"rdftype","predicates":["rdf:type"],"limit":1}],"joins":{"dct:creator":{"indices":[{"fieldName":"search_terms","predicates":["foaf:name"]}],"fields":[{"fieldName":"result.author","predicates":["foaf:name"],"limit":1}, {"fieldName":"result.role","predicates":["siocAccess:Role"], "limit":1}] } }}',
+            true
+        );
 
         $mockSearchDocuments = $this->getMockBuilder(SearchDocuments::class)
             ->onlyMethods(['getSearchDocumentSpecification'])
@@ -93,14 +98,14 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
 
         $mockSearchDocuments->expects($this->once())
             ->method('getSearchDocumentSpecification')
-            ->will($this->returnValue($searchSpecs));
+            ->willReturn($searchSpecs);
 
         $generatedDocuments = $mockSearchDocuments->generateSearchDocumentBasedOnSpecId('i_search_resource', 'http://talisaspire.com/resources/doc1', 'http://talisaspire.com/');
         $this->assertNotNull($generatedDocuments);
         $this->assertEquals('http://talisaspire.com/resources/doc1', $generatedDocuments['_id']['r']);
     }
 
-    public function testSearchDocumentsGenerateWhenDefinedPredicateChanges()
+    public function testSearchDocumentsGenerateWhenDefinedPredicateChanges(): void
     {
         $uri = 'http://talisaspire.com/resources/doc1';
 
@@ -128,7 +133,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
 
         $searchIndexer->expects($this->once())
             ->method('getSearchDocumentGenerator')
-            ->will($this->returnValue($searchDocuments));
+            ->willReturn($searchDocuments);
 
         $searchDocuments->expects($this->once())
             ->method('generateSearchDocumentBasedOnSpecId')
@@ -156,7 +161,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
         }
     }
 
-    public function testSearchDocsShouldRegenerateWhenUndefinedPredicateChangesButFilterExistsInSpec()
+    public function testSearchDocsShouldRegenerateWhenUndefinedPredicateChangesButFilterExistsInSpec(): void
     {
         $uri = 'http://talisaspire.com/resources/doc1';
 
@@ -180,7 +185,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
         $this->assertEmpty($impactedSubjects[0]->getSpecTypes());
     }
 
-    public function testUpdateOfResourceInImpactIndexTriggersRegenerationOfSearchDocs()
+    public function testUpdateOfResourceInImpactIndexTriggersRegenerationOfSearchDocs(): void
     {
         $uri = 'http://talisaspire.com/authors/2';
         $labeller = new Labeller();
@@ -212,7 +217,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
 
         $searchIndexer->expects($this->once())
             ->method('getSearchDocumentGenerator')
-            ->will($this->returnValue($searchDocuments));
+            ->willReturn($searchDocuments);
 
         $searchDocuments->expects($this->once())
             ->method('generateSearchDocumentBasedOnSpecId')
@@ -240,7 +245,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
         }
     }
 
-    public function testRdfTypeTriggersGenerationOfSearchDocuments()
+    public function testRdfTypeTriggersGenerationOfSearchDocuments(): void
     {
         $uri = 'http://example.com/resources/' . uniqid();
 
@@ -252,7 +257,8 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
 
         $subjectsAndPredicatesOfChange = [
             $labeller->uri_to_alias($uri) => [
-                'rdf:type', 'bibo:issn',
+                'rdf:type',
+                'bibo:issn',
             ],
         ];
 
@@ -293,7 +299,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
 
         $mockTripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($mockTripodUpdates));
+            ->willReturn($mockTripodUpdates);
 
         $mockTripodUpdates->expects($this->once())
             ->method('processSyncOperations')
@@ -326,7 +332,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
 
         $searchIndexer->expects($this->once())
             ->method('getSearchDocumentGenerator')
-            ->will($this->returnValue($searchDocuments));
+            ->willReturn($searchDocuments);
 
         $searchDocuments->expects($this->once())
             ->method('generateSearchDocumentBasedOnSpecId')
@@ -356,7 +362,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
         }
     }
 
-    public function testNewResourceThatDoesNotMatchAnythingCreatesNoImpactedSubjects()
+    public function testNewResourceThatDoesNotMatchAnythingCreatesNoImpactedSubjects(): void
     {
         $uri = 'http://example.com/resources/' . uniqid();
         $labeller = new Labeller();
@@ -405,7 +411,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
 
         $mockTripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($mockTripodUpdates));
+            ->willReturn($mockTripodUpdates);
 
         $mockTripodUpdates->expects($this->once())
             ->method('processSyncOperations')
@@ -428,7 +434,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
         $this->assertEmpty($searchIndexer->getImpactedSubjects($subjectsAndPredicatesOfChange, $this->defaultContext));
     }
 
-    public function testDeleteResourceCreatesImpactedSubjects()
+    public function testDeleteResourceCreatesImpactedSubjects(): void
     {
         $uri = 'http://example.com/resources/' . uniqid();
         $labeller = new Labeller();
@@ -586,7 +592,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
 
         $mockTripod->expects($this->once())
             ->method('getDataUpdater')
-            ->will($this->returnValue($mockTripodUpdates));
+            ->willReturn($mockTripodUpdates);
 
         $expectedSubjectsAndPredicatesOfChange = [
             $creatorUriAlias => ['rdf:type', 'foaf:name'],
@@ -664,10 +670,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
         $this->assertEquals(0, $collection->count($impactQuery));
     }
 
-    /**
-     * @return SearchDocuments
-     */
-    protected function getSearchDocuments(Driver $tripod)
+    protected function getSearchDocuments(Driver $tripod): SearchDocuments
     {
         return new SearchDocuments(
             $tripod->getStoreName(),

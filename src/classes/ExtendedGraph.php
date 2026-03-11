@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod;
 
 use Tripod\Exceptions\Exception;
@@ -16,18 +18,40 @@ class ExtendedGraph
     // Modifications start here
 
     public const rdf = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+
     public const rdf_type = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
+
     public const rdf_seq = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq';
+
     // FROM SimpleGraph
     public $_index = [];
-    public $_image_properties = ['http://xmlns.com/foaf/0.1/depiction', 'http://xmlns.com/foaf/0.1/img'];
-    public $_property_order = ['http://www.w3.org/2004/02/skos/core#prefLabel', RDFS_LABEL, 'http://purl.org/dc/terms/title', DC_TITLE, FOAF_NAME, 'http://www.w3.org/2004/02/skos/core#definition', RDFS_COMMENT, 'http://purl.org/dc/terms/description', DC_DESCRIPTION, 'http://purl.org/vocab/bio/0.1/olb', RDF_TYPE];
+
+    public $_image_properties = [
+        'http://xmlns.com/foaf/0.1/depiction',
+        'http://xmlns.com/foaf/0.1/img',
+    ];
+
+    public $_property_order = [
+        'http://www.w3.org/2004/02/skos/core#prefLabel',
+        RDFS_LABEL,
+        'http://purl.org/dc/terms/title',
+        DC_TITLE,
+        FOAF_NAME,
+        'http://www.w3.org/2004/02/skos/core#definition',
+        RDFS_COMMENT,
+        'http://purl.org/dc/terms/description',
+        DC_DESCRIPTION,
+        'http://purl.org/vocab/bio/0.1/olb',
+        RDF_TYPE,
+    ];
+
     public $parser_errors = [];
 
     /**
      * @var Labeller
      */
     public $_labeller;
+
     protected $_ns = [
         'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
         'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
@@ -95,7 +119,7 @@ class ExtendedGraph
      * @param string $prefix the namespace prefix to associate with the URI
      * @param string $uri    the URI to associate with the prefix
      */
-    public function set_namespace_mapping($prefix, $uri)
+    public function set_namespace_mapping(string $prefix, string $uri): void
     {
         $this->_labeller->set_namespace_mapping($prefix, $uri);
     }
@@ -103,41 +127,33 @@ class ExtendedGraph
     /**
      * Convert a QName to a URI using registered namespace prefixes.
      *
-     * @param string $qname the QName to convert
+     * @param string|null $qName the QName to convert
      *
-     * @return string the URI corresponding to the QName if a suitable prefix exists, null otherwise
+     * @return string|null the URI corresponding to the QName if a suitable prefix exists, null otherwise
      */
-    public function qname_to_uri($qname)
+    public function qname_to_uri(?string $qName): ?string
     {
-        return $this->_labeller->qname_to_uri($qname);
+        return $this->_labeller->qname_to_uri($qName);
     }
 
     /**
      * Convert a URI to a QName using registered namespace prefixes.
      *
-     * @param string $uri the URI to convert
+     * @param string|null $uri the URI to convert
      *
-     * @return string the QName corresponding to the URI if a suitable prefix exists, null otherwise
+     * @return string|null the QName corresponding to the URI if a suitable prefix exists, null otherwise
      */
-    public function uri_to_qname($uri)
+    public function uri_to_qname(?string $uri): ?string
     {
         return $this->_labeller->uri_to_qname($uri);
     }
 
-    /**
-     * @param string $ns
-     *
-     * @return string
-     */
-    public function get_prefix($ns)
+    public function get_prefix(string $ns): string
     {
         return $this->_labeller->get_prefix($ns);
     }
 
-    /**
-     * @param string $p
-     */
-    public function add_labelling_property($p)
+    public function add_labelling_property(string $p): void
     {
         $this->_labeller->add_labelling_property($p);
     }
@@ -147,9 +163,9 @@ class ExtendedGraph
      *
      * @param string $resource a URI or blank node identifier (prefixed with _: e.g. _:name)
      *
-     * @return array an associative array with two keys: 'type' and 'value'. Type is either bnode or uri
+     * @return array<string, string> an associative array with two keys: 'type' and 'value'. Type is either bnode or uri
      */
-    public function make_resource_array($resource)
+    public function make_resource_array(string $resource): array
     {
         $resource_type = strpos($resource, '_:') === 0 ? 'bnode' : 'uri';
 
@@ -159,13 +175,13 @@ class ExtendedGraph
     /**
      * Adds a triple with a resource object to the graph.
      *
-     * @param string $s the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string $p the predicate URI of the triple
-     * @param string $o the object of the triple, either a URI or a blank node in the format _:name
+     * @param string      $s the subject of the triple, either a URI or a blank node in the format _:name
+     * @param string      $p the predicate URI of the triple
+     * @param string|null $o the object of the triple, either a URI or a blank node in the format _:name
      *
      * @return bool true if the triple was new, false if it already existed in the graph
      */
-    public function add_resource_triple($s, $p, $o)
+    public function add_resource_triple(string $s, string $p, ?string $o): bool
     {
         if ($this->isValidResource($o)) {
             return $this->_add_triple($s, $p, ['type' => strpos($o, '_:') === 0 ? 'bnode' : 'uri', 'value' => $o]);
@@ -177,21 +193,22 @@ class ExtendedGraph
     /**
      * Adds a triple with a literal object to the graph.
      *
-     * @param string $s    the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string $p    the predicate of the triple as a URI
-     * @param string $o    the object of the triple as a string
-     * @param string $lang the language code of the triple's object (optional)
-     * @param string $dt   the datatype URI of the triple's object (optional)
+     * @param string                $s    the subject of the triple, either a URI or a blank node in the format _:name
+     * @param string                $p    the predicate of the triple as a URI
+     * @param bool|float|int|string $o    the object of the triple as a scalar value
+     * @param string|null           $lang the language code of the triple's object (optional)
+     * @param string|null           $dt   the datatype URI of the triple's object (optional)
      *
      * @return bool true if the triple was new, false if it already existed in the graph
      */
-    public function add_literal_triple($s, $p, $o, $lang = null, $dt = null)
+    public function add_literal_triple(string $s, string $p, $o, ?string $lang = null, ?string $dt = null): bool
     {
         if ($this->isValidLiteral($o)) {
             $o_info = ['type' => 'literal', 'value' => $o];
             if ($lang != null) {
                 $o_info['lang'] = $lang;
             }
+
             if ($dt != null) {
                 $o_info['datatype'] = $dt;
             }
@@ -205,7 +222,7 @@ class ExtendedGraph
     /**
      * @deprecated this is deprecated
      */
-    public function get_triples()
+    public function get_triples(): array
     {
         return \ARC2::getTriplesFromIndex($this->_to_arc_index($this->_index));
     }
@@ -215,7 +232,7 @@ class ExtendedGraph
      *
      * @see http://n2.talis.com/wiki/RDF_PHP_Specification
      */
-    public function get_index()
+    public function get_index(): array
     {
         return $this->_index;
     }
@@ -225,7 +242,7 @@ class ExtendedGraph
      *
      * @return string the RDF/XML version of the graph
      */
-    public function to_rdfxml()
+    public function to_rdfxml(): string
     {
         /** @var \ARC2_RDFSerializer $serializer */
         $serializer = \ARC2::getRDFXMLSerializer(
@@ -244,7 +261,7 @@ class ExtendedGraph
      *
      * @return string the Turtle version of the graph
      */
-    public function to_turtle()
+    public function to_turtle(): string
     {
         /** @var \ARC2_RDFSerializer $serializer */
         $serializer = \ARC2::getTurtleSerializer(
@@ -263,7 +280,7 @@ class ExtendedGraph
      *
      * @return string the N-Triples version of the graph
      */
-    public function to_ntriples()
+    public function to_ntriples(): string
     {
         /** @var \ARC2_RDFSerializer $serializer */
         $serializer = \ARC2::getComponent('NTriplesSerializer', []);
@@ -278,7 +295,7 @@ class ExtendedGraph
      *
      * @return string the JSON version of the graph
      */
-    public function to_json()
+    public function to_json(): string
     {
         return json_encode($this->_index);
     }
@@ -287,103 +304,105 @@ class ExtendedGraph
      * Serialise the graph to HTML.
      *
      * @param array|string|null $s
-     * @param bool              $guess_labels
      *
      * @return string a HTML version of the graph
      */
-    public function to_html($s = null, $guess_labels = true)
+    public function to_html($s = null, bool $guess_labels = true): string
     {
         $h = '';
 
         if ($s) {
             if (is_array($s)) {
                 $subjects = array_intersect($s, $this->get_subjects());
-                if (count($subjects) == 0) {
+                if ($subjects === []) {
                     return '';
                 }
+            } elseif (array_key_exists($s, $this->_index)) {
+                $subjects = [$s];
             } else {
-                if (array_key_exists($s, $this->_index)) {
-                    $subjects = [$s];
-                } else {
-                    return '';
-                }
+                return '';
             }
         } else {
             $subjects = $this->get_subjects();
         }
 
-        if (count($subjects) > 0) {
-            foreach ($subjects as $subject) {
-                if (count($subjects) > 1) {
-                    $h .= '<h1><a href="' . htmlspecialchars($subject) . '">' . htmlspecialchars($this->get_label($subject)) . '</a></h1>' . "\n";
-                }
-                $h .= '<table>' . "\n";
+        foreach ($subjects as $subject) {
+            if (count($subjects) > 1) {
+                $h .= '<h1><a href="' . htmlspecialchars($subject) . '">' . htmlspecialchars($this->get_label($subject)) . '</a></h1>' . "\n";
+            }
 
-                $properties = $this->get_subject_properties($subject, true);
-                $priority_properties = array_intersect($properties, $this->_property_order);
-                $properties = array_merge($priority_properties, array_diff($properties, $priority_properties));
+            $h .= '<table>' . "\n";
 
-                foreach ($properties as $p) {
-                    $h .= '<tr><th valign="top"><a href="' . htmlspecialchars($p) . '">' . htmlspecialchars($this->get_label($p, true)) . '</a></th>';
-                    $h .= '<td valign="top">';
-                    for ($i = 0; $i < count($this->_index[$subject][$p]); $i++) {
-                        if ($i > 0) {
-                            $h .= '<br />';
-                        }
-                        if ($this->_index[$subject][$p][$i]['type'] === 'literal') {
-                            $h .= htmlspecialchars($this->_index[$subject][$p][$i]['value']);
-                        } else {
-                            $h .= '<a href="' . htmlspecialchars($this->_index[$subject][$p][$i]['value']) . '">';
-                            if ($guess_labels) {
-                                $h .= htmlspecialchars($this->get_label($this->_index[$subject][$p][$i]['value']));
-                            } else {
-                                $h .= htmlspecialchars($this->_index[$subject][$p][$i]['value']);
-                            }
+            $properties = $this->get_subject_properties($subject, true);
+            $priority_properties = array_intersect($properties, $this->_property_order);
+            $properties = array_merge($priority_properties, array_diff($properties, $priority_properties));
 
-                            $h .= '</a>';
-                        }
+            foreach ($properties as $p) {
+                $h .= '<tr><th valign="top"><a href="' . htmlspecialchars($p) . '">' . htmlspecialchars($this->get_label($p, true)) . '</a></th>';
+                $h .= '<td valign="top">';
+                $counter = count($this->_index[$subject][$p]);
+                for ($i = 0; $i < $counter; $i++) {
+                    if ($i > 0) {
+                        $h .= '<br />';
                     }
-                    $h .= '</td>';
-                    $h .= '</tr>' . "\n";
-                }
 
-                $backlinks = [];
-                foreach ($this->_index as $rev_subj => $rev_subj_info) {
-                    foreach ($rev_subj_info as $rev_subj_p => $rev_subj_p_list) {
-                        foreach ($rev_subj_p_list as $rev_value) {
-                            if (($rev_value['type'] == 'uri' || $rev_value['type'] == 'bnode') && $rev_value['value'] === $subject) {
-                                if (!isset($backlinks[$rev_subj_p])) {
-                                    $backlinks[$rev_subj_p] = [];
-                                }
-                                $backlinks[$rev_subj_p][] = $rev_subj;
-                            }
-                        }
-                    }
-                }
-
-                foreach ($backlinks as $backlink_p => $backlink_values) {
-                    $h .= '<tr><th valign="top"><a href="' . htmlspecialchars($backlink_p) . '">' . htmlspecialchars($this->get_inverse_label($backlink_p, true)) . '</a></th>';
-                    $h .= '<td valign="top">';
-                    for ($i = 0; $i < count($backlink_values); $i++) {
-                        if ($i > 0) {
-                            $h .= '<br />';
-                        }
-
-                        $h .= '<a href="' . htmlspecialchars($backlink_values[$i]) . '">';
+                    if ($this->_index[$subject][$p][$i]['type'] === 'literal') {
+                        $h .= htmlspecialchars($this->_index[$subject][$p][$i]['value']);
+                    } else {
+                        $h .= '<a href="' . htmlspecialchars($this->_index[$subject][$p][$i]['value']) . '">';
                         if ($guess_labels) {
-                            $h .= htmlspecialchars($this->get_label($backlink_values[$i]));
+                            $h .= htmlspecialchars($this->get_label($this->_index[$subject][$p][$i]['value']));
                         } else {
-                            $h .= htmlspecialchars($backlink_values[$i]);
+                            $h .= htmlspecialchars($this->_index[$subject][$p][$i]['value']);
                         }
 
                         $h .= '</a>';
                     }
-                    $h .= '</td>';
-                    $h .= '</tr>' . "\n";
                 }
 
-                $h .= '</table>' . "\n";
+                $h .= '</td>';
+                $h .= '</tr>' . "\n";
             }
+
+            $backlinks = [];
+            foreach ($this->_index as $rev_subj => $rev_subj_info) {
+                foreach ($rev_subj_info as $rev_subj_p => $rev_subj_p_list) {
+                    foreach ($rev_subj_p_list as $rev_value) {
+                        if (($rev_value['type'] == 'uri' || $rev_value['type'] == 'bnode') && $rev_value['value'] === $subject) {
+                            if (!isset($backlinks[$rev_subj_p])) {
+                                $backlinks[$rev_subj_p] = [];
+                            }
+
+                            $backlinks[$rev_subj_p][] = $rev_subj;
+                        }
+                    }
+                }
+            }
+
+            foreach ($backlinks as $backlink_p => $backlink_values) {
+                $h .= '<tr><th valign="top"><a href="' . htmlspecialchars($backlink_p) . '">' . htmlspecialchars($this->get_inverse_label($backlink_p, true)) . '</a></th>';
+                $h .= '<td valign="top">';
+                $counter = count($backlink_values);
+                for ($i = 0; $i < $counter; $i++) {
+                    if ($i > 0) {
+                        $h .= '<br />';
+                    }
+
+                    $h .= '<a href="' . htmlspecialchars($backlink_values[$i]) . '">';
+                    if ($guess_labels) {
+                        $h .= htmlspecialchars($this->get_label($backlink_values[$i]));
+                    } else {
+                        $h .= htmlspecialchars($backlink_values[$i]);
+                    }
+
+                    $h .= '</a>';
+                }
+
+                $h .= '</td>';
+                $h .= '</tr>' . "\n";
+            }
+
+            $h .= '</table>' . "\n";
         }
 
         return $h;
@@ -392,14 +411,13 @@ class ExtendedGraph
     /**
      * Fetch the first literal value for a given subject and predicate. If there are multiple possible values then one is selected at random.
      *
-     * @param string $s                  the subject to search for
-     * @param string $p                  the predicate to search for, or an array of predicates
-     * @param string $default            a default value to use if no literal values are found
-     * @param string $preferred_language
+     * @param string                     $s       the subject to search for
+     * @param string|string[]            $p       the predicate to search for, or an array of predicates
+     * @param bool|float|int|string|null $default a default value to use if no literal values are found
      *
-     * @return string the first literal value found or the supplied default if no values were found
+     * @return bool|float|int|string|null the first literal value found or the supplied default if no values were found
      */
-    public function get_first_literal($s, $p, $default = null, $preferred_language = null)
+    public function get_first_literal(string $s, $p, $default = null, ?string $preferred_language = null)
     {
         $best_literal = $default;
         if (array_key_exists($s, $this->_index)) {
@@ -448,9 +466,9 @@ class ExtendedGraph
      * @param string $p       the predicate to search for
      * @param string $default a default value to use if no literal values are found
      *
-     * @return string the first resource value found or the supplied default if no values were found
+     * @return string|null the first resource value found or the supplied default if no values were found
      */
-    public function get_first_resource($s, $p, $default = null)
+    public function get_first_resource(string $s, string $p, ?string $default = null): ?string
     {
         if (isset($this->_index[$s][$p])) {
             foreach ($this->_index[$s][$p] as $value) {
@@ -466,11 +484,11 @@ class ExtendedGraph
     /**
      * Remove a triple with a resource object from the graph.
      *
-     * @param string $s the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string $p the predicate URI of the triple
-     * @param string $o the object of the triple, either a URI or a blank node in the format _:name
+     * @param string                $s the subject of the triple, either a URI or a blank node in the format _:name
+     * @param string                $p the predicate URI of the triple
+     * @param bool|float|int|string $o the object of the triple, either a URI or a blank node in the format _:name
      */
-    public function remove_resource_triple($s, $p, $o)
+    public function remove_resource_triple(string $s, string $p, $o): void
     {
         // Already removed
         if (!isset($this->_index[$s]) || !isset($this->_index[$s][$p])) {
@@ -483,21 +501,19 @@ class ExtendedGraph
             }
         }
 
-        if (count($this->_index[$s][$p]) == 0) {
+        if (count($this->_index[$s][$p]) === 0) {
             unset($this->_index[$s][$p]);
         }
 
-        if (count($this->_index[$s]) == 0) {
+        if (count($this->_index[$s]) === 0) {
             unset($this->_index[$s]);
         }
     }
 
     /**
-     * @param string $s
-     * @param string $p
-     * @param string $o
+     * @param bool|float|int|string $o
      */
-    public function remove_literal_triple($s, $p, $o)
+    public function remove_literal_triple(string $s, string $p, $o): void
     {
         // Already removed
         if (!isset($this->_index[$s]) || !isset($this->_index[$s][$p])) {
@@ -510,11 +526,11 @@ class ExtendedGraph
             }
         }
 
-        if (count($this->_index[$s][$p]) == 0) {
+        if (count($this->_index[$s][$p]) === 0) {
             unset($this->_index[$s][$p]);
         }
 
-        if (count($this->_index[$s]) == 0) {
+        if (count($this->_index[$s]) === 0) {
             unset($this->_index[$s]);
         }
     }
@@ -524,7 +540,7 @@ class ExtendedGraph
      *
      * @param string $s the subject of the triple, either a URI or a blank node in the format _:name
      */
-    public function remove_triples_about($s)
+    public function remove_triples_about(string $s): void
     {
         unset($this->_index[$s]);
     }
@@ -535,9 +551,9 @@ class ExtendedGraph
      * @param string $rdfxml the RDF/XML to parse
      * @param string $base   the base URI against which relative URIs in the RDF/XML document will be resolved
      */
-    public function from_rdfxml($rdfxml, $base = '')
+    public function from_rdfxml(string $rdfxml, string $base = ''): void
     {
-        if ($rdfxml) {
+        if ($rdfxml !== '' && $rdfxml !== '0') {
             $this->remove_all_triples();
             $this->add_rdfxml($rdfxml, $base);
         }
@@ -550,9 +566,9 @@ class ExtendedGraph
      *
      * @param string $json the JSON to parse
      */
-    public function from_json($json)
+    public function from_json(string $json): void
     {
-        if ($json) {
+        if ($json !== '' && $json !== '0') {
             $this->remove_all_triples();
             $index = json_decode($json, true);
             if (is_array($index)) {
@@ -568,9 +584,9 @@ class ExtendedGraph
      *
      * @param string $json the JSON to parse
      */
-    public function add_json($json)
+    public function add_json(string $json): void
     {
-        if ($json) {
+        if ($json !== '' && $json !== '0') {
             $json_index = json_decode($json, true);
             if (is_array($json_index)) {
                 $this->_index = $this->merge($this->_index, $json_index);
@@ -578,10 +594,7 @@ class ExtendedGraph
         }
     }
 
-    /**
-     * @return array
-     */
-    public function get_parser_errors()
+    public function get_parser_errors(): array
     {
         return $this->parser_errors;
     }
@@ -594,7 +607,7 @@ class ExtendedGraph
      *
      * @author Keith Alexander
      */
-    public function add_rdf($rdf, $base = '')
+    public function add_rdf(string $rdf, string $base = ''): void
     {
         $trimRdf = trim($rdf);
         if ($trimRdf[0] == '{') { // lazy is-this-json assessment  - might be better to try json_decode - but more costly
@@ -608,6 +621,7 @@ class ExtendedGraph
             if (!empty($errors)) {
                 $this->parser_errors[] = $errors;
             }
+
             $triples = $parser->getTriples();
             $this->_add_arc2_triple_list($triples);
             unset($parser);
@@ -620,9 +634,9 @@ class ExtendedGraph
      * @param string $rdfxml the RDF/XML to parse
      * @param string $base   the base URI against which relative URIs in the RDF/XML document will be resolved
      */
-    public function add_rdfxml($rdfxml, $base = '')
+    public function add_rdfxml(string $rdfxml, string $base = ''): void
     {
-        if ($rdfxml) {
+        if ($rdfxml !== '' && $rdfxml !== '0') {
             /** @var \ARC2_RDFXMLParser $parser */
             $parser = \ARC2::getRDFXMLParser();
             $parser->parse($base, $rdfxml);
@@ -640,9 +654,9 @@ class ExtendedGraph
      * @param string $turtle the Turtle to parse
      * @param string $base   the base URI against which relative URIs in the Turtle document will be resolved
      */
-    public function from_turtle($turtle, $base = '')
+    public function from_turtle(string $turtle, string $base = ''): void
     {
-        if ($turtle) {
+        if ($turtle !== '' && $turtle !== '0') {
             $this->remove_all_triples();
             $this->add_turtle($turtle, $base);
         }
@@ -656,9 +670,9 @@ class ExtendedGraph
      * @param string $turtle the Turtle to parse
      * @param string $base   the base URI against which relative URIs in the Turtle document will be resolved
      */
-    public function add_turtle($turtle, $base = '')
+    public function add_turtle(string $turtle, string $base = ''): void
     {
-        if ($turtle) {
+        if ($turtle !== '' && $turtle !== '0') {
             /** @var \ARC2_TurtleParser $parser */
             $parser = \ARC2::getTurtleParser();
             $parser->parse($base, $turtle);
@@ -672,11 +686,11 @@ class ExtendedGraph
      * Replace the triples in the graph with those parsed from the supplied RDFa.
      *
      * @param string $html the HTML containing RDFa to parse
-     * @param string $base the base URI against which relative URIs in the Turtle document will be resolved
+     * @param string $base the base URI against which relative URIs in the RDFa document will be resolved
      */
-    public function from_rdfa($html, $base = '')
+    public function from_rdfa(string $html, string $base = ''): void
     {
-        if ($html) {
+        if ($html !== '' && $html !== '0') {
             $this->remove_all_triples();
             $this->add_rdfa($html, $base);
         }
@@ -686,11 +700,11 @@ class ExtendedGraph
      * Add the triples parsed from the supplied RDFa to the graph.
      *
      * @param string $html the HTML containing RDFa to parse
-     * @param string $base the base URI against which relative URIs in the Turtle document will be resolved
+     * @param string $base the base URI against which relative URIs in the RDFa document will be resolved
      */
-    public function add_rdfa($html, $base = '')
+    public function add_rdfa(string $html, string $base = ''): void
     {
-        if ($html) {
+        if ($html !== '' && $html !== '0') {
             /** @var \ARC2_SemHTMLParser $parser */
             $parser = \ARC2::getSemHTMLParser();
             $parser->parse($base, $html);
@@ -705,10 +719,8 @@ class ExtendedGraph
      * Add the triples in the supplied graph to the current graph.
      *
      * @param ExtendedGraph $g the graph to read
-     *
-     * @return bool
      */
-    public function add_graph(ExtendedGraph $g)
+    public function add_graph(ExtendedGraph $g): bool
     {
         $triples_were_added = false;
         $index = $g->get_index();
@@ -728,20 +740,18 @@ class ExtendedGraph
     /**
      * Tests whether the graph contains the given triple.
      *
-     * @param string $s the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string $p the predicate URI of the triple
-     * @param string $o the object of the triple, either a URI or a blank node in the format _:name
+     * @param string                $s the subject of the triple, either a URI or a blank node in the format _:name
+     * @param string                $p the predicate URI of the triple
+     * @param bool|float|int|string $o the object of the triple, either a URI or a blank node in the format _:name
      *
      * @return bool true if the triple exists in the graph, false otherwise
      */
-    public function has_resource_triple($s, $p, $o)
+    public function has_resource_triple(string $s, string $p, $o): bool
     {
-        if (array_key_exists($s, $this->_index)) {
-            if (array_key_exists($p, $this->_index[$s])) {
-                foreach ($this->_index[$s][$p] as $value) {
-                    if (($value['type'] == 'uri' || $value['type'] == 'bnode') && $value['value'] === $o) {
-                        return true;
-                    }
+        if (array_key_exists($s, $this->_index) && array_key_exists($p, $this->_index[$s])) {
+            foreach ($this->_index[$s][$p] as $value) {
+                if (($value['type'] == 'uri' || $value['type'] == 'bnode') && $value['value'] === $o) {
+                    return true;
                 }
             }
         }
@@ -752,30 +762,28 @@ class ExtendedGraph
     /**
      * Tests whether the graph contains the given triple.
      *
-     * @param string      $s    the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string      $p    the predicate URI of the triple
-     * @param string      $o    the object of the triple as a literal value
-     * @param string|null $lang the language of the object
-     * @param string|null $dt   the datatype of the object
+     * @param string                $s    the subject of the triple, either a URI or a blank node in the format _:name
+     * @param string                $p    the predicate URI of the triple
+     * @param bool|float|int|string $o    the object of the triple as a literal value
+     * @param string|null           $lang the language of the object
+     * @param string|null           $dt   the datatype of the object
      *
      * @return bool true if the triple exists in the graph, false otherwise
      */
-    public function has_literal_triple($s, $p, $o, $lang = null, $dt = null)
+    public function has_literal_triple(string $s, string $p, $o, ?string $lang = null, ?string $dt = null): bool
     {
-        if (array_key_exists($s, $this->_index)) {
-            if (array_key_exists($p, $this->_index[$s])) {
-                foreach ($this->_index[$s][$p] as $value) {
-                    if (($value['type'] == 'literal') && $value['value'] === $o) {
-                        if ($lang !== null) {
-                            return array_key_exists('lang', $value) && $value['lang'] === $lang;
-                        }
-
-                        if ($dt !== null) {
-                            return array_key_exists('datatype', $value) && $value['datatype'] === $dt;
-                        }
-
-                        return true;
+        if (array_key_exists($s, $this->_index) && array_key_exists($p, $this->_index[$s])) {
+            foreach ($this->_index[$s][$p] as $value) {
+                if (($value['type'] == 'literal') && $value['value'] === $o) {
+                    if ($lang !== null) {
+                        return array_key_exists('lang', $value) && $value['lang'] === $lang;
                     }
+
+                    if ($dt !== null) {
+                        return array_key_exists('datatype', $value) && $value['datatype'] === $dt;
+                    }
+
+                    return true;
                 }
             }
         }
@@ -791,15 +799,13 @@ class ExtendedGraph
      *
      * @return array list of URIs and blank nodes that are the objects of triples with the supplied subject and predicate
      */
-    public function get_resource_triple_values($s, $p)
+    public function get_resource_triple_values(string $s, string $p): array
     {
         $values = [];
-        if (array_key_exists($s, $this->_index)) {
-            if (array_key_exists($p, $this->_index[$s])) {
-                foreach ($this->_index[$s][$p] as $value) {
-                    if ($value['type'] == 'uri' || $value['type'] == 'bnode') {
-                        $values[] = $value['value'];
-                    }
+        if (array_key_exists($s, $this->_index) && array_key_exists($p, $this->_index[$s])) {
+            foreach ($this->_index[$s][$p] as $value) {
+                if ($value['type'] == 'uri' || $value['type'] == 'bnode') {
+                    $values[] = $value['value'];
                 }
             }
         }
@@ -810,12 +816,12 @@ class ExtendedGraph
     /**
      * Fetch the literal values for a given subject and predicate.
      *
-     * @param string $s the subject to search for
-     * @param string $p the predicate to search for
+     * @param string       $s the subject to search for
+     * @param array|string $p the predicate to search for or an array of predicates
      *
      * @return array list of literals that are the objects of triples with the supplied subject and predicate
      */
-    public function get_literal_triple_values($s, $p)
+    public function get_literal_triple_values(string $s, $p): array
     {
         $values = [];
         if (array_key_exists($s, $this->_index)) {
@@ -844,17 +850,18 @@ class ExtendedGraph
     /**
      * Fetch the values for a given subject and predicate.
      *
-     * @param string $s the subject to search for
-     * @param string $p the predicate to search for
+     * @param string       $s the subject to search for
+     * @param array|string $p the predicate to search for, or an array of predicates
      *
      * @return array list of values of triples with the supplied subject and predicate
      */
-    public function get_subject_property_values($s, $p)
+    public function get_subject_property_values(string $s, $p): array
     {
         $values = [];
         if (!is_array($p)) {
             $p = [$p];
         }
+
         if (array_key_exists($s, $this->_index)) {
             foreach ($p as $pinst) {
                 if (array_key_exists($pinst, $this->_index[$s])) {
@@ -875,7 +882,7 @@ class ExtendedGraph
      *
      * @return ExtendedGraph triples with the supplied subject
      */
-    public function get_subject_subgraph($s)
+    public function get_subject_subgraph(string $s): ExtendedGraph
     {
         $sub = new ExtendedGraph();
         if (array_key_exists($s, $this->_index)) {
@@ -888,9 +895,9 @@ class ExtendedGraph
     /**
      * Fetch an array of all the subjects.
      *
-     * @return array
+     * @return string[] list of all the subjects in the graph
      */
-    public function get_subjects()
+    public function get_subjects(): array
     {
         return array_keys($this->_index);
     }
@@ -899,10 +906,8 @@ class ExtendedGraph
      * Fetch an array of all the subject that have and rdf type that matches that given.
      *
      * @param string $t the type to match
-     *
-     * @return array
      */
-    public function get_subjects_of_type($t)
+    public function get_subjects_of_type(string $t): array
     {
         return $this->get_subjects_where_resource('http://www.w3.org/1999/02/22-rdf-syntax-ns#type', $t);
     }
@@ -912,10 +917,8 @@ class ExtendedGraph
      *
      * @param string $p the predicate to match
      * @param string $o the resource object to match
-     *
-     * @return array
      */
-    public function get_subjects_where_resource($p, $o)
+    public function get_subjects_where_resource(string $p, string $o): array
     {
         return array_merge($this->get_subjects_where($p, $o, 'uri'), $this->get_subjects_where($p, $o, 'bnode'));
     }
@@ -923,12 +926,10 @@ class ExtendedGraph
     /**
      * Fetch an array of all the subjects where the predicate and object match a ?s $p $o triple in the graph and the object is a literal value.
      *
-     * @param string $p the predicate to match
-     * @param string $o the resource object to match
-     *
-     * @return array
+     * @param string                $p the predicate to match
+     * @param bool|float|int|string $o the literal object to match
      */
-    public function get_subjects_where_literal($p, $o)
+    public function get_subjects_where_literal(string $p, $o): array
     {
         return $this->get_subjects_where($p, $o, 'literal');
     }
@@ -941,7 +942,7 @@ class ExtendedGraph
      *
      * @return array list of property URIs
      */
-    public function get_subject_properties($s, $distinct = true)
+    public function get_subject_properties(string $s, bool $distinct = true): array
     {
         $values = [];
         if (array_key_exists($s, $this->_index)) {
@@ -949,7 +950,8 @@ class ExtendedGraph
                 if ($distinct) {
                     $values[] = $prop;
                 } else {
-                    for ($i = 0; $i < count($prop_values); $i++) {
+                    $counter = count($prop_values);
+                    for ($i = 0; $i < $counter; $i++) {
                         $values[] = $prop;
                     }
                 }
@@ -967,7 +969,7 @@ class ExtendedGraph
      *
      * @return bool true if a matching triple exists in the graph, false otherwise
      */
-    public function subject_has_property($s, $p)
+    public function subject_has_property(string $s, string $p): bool
     {
         if (array_key_exists($s, $this->_index)) {
             return array_key_exists($p, $this->_index[$s]);
@@ -983,7 +985,7 @@ class ExtendedGraph
      *
      * @return bool true if the graph contains any triples with the specified subject, false otherwise
      */
-    public function has_triples_about($s)
+    public function has_triples_about(string $s): bool
     {
         return array_key_exists($s, $this->_index);
     }
@@ -994,7 +996,7 @@ class ExtendedGraph
      * @param string $s the subject of the triple, either a URI or a blank node in the format _:name
      * @param string $p the predicate URI of the triple
      */
-    public function remove_property_values($s, $p)
+    public function remove_property_values(string $s, string $p): void
     {
         unset($this->_index[$s][$p]);
     }
@@ -1002,7 +1004,7 @@ class ExtendedGraph
     /**
      * Clears all triples out of the graph.
      */
-    public function remove_all_triples()
+    public function remove_all_triples(): void
     {
         $this->_index = [];
     }
@@ -1012,41 +1014,25 @@ class ExtendedGraph
      *
      * @return bool true if the graph contains no triples, false otherwise
      */
-    public function is_empty()
+    public function is_empty(): bool
     {
-        return count($this->_index) == 0;
+        return count($this->_index) === 0;
     }
 
-    /**
-     * @param string $resource_uri
-     * @param bool   $capitalize
-     * @param bool   $use_qnames
-     *
-     * @return string
-     */
-    public function get_label($resource_uri, $capitalize = false, $use_qnames = false)
+    public function get_label(string $resource_uri, bool $capitalize = false, bool $use_qnames = false): string
     {
         return $this->_labeller->get_label($resource_uri, $this, $capitalize, $use_qnames);
     }
 
-    /**
-     * @param string $resource_uri
-     * @param bool   $capitalize
-     * @param bool   $use_qnames
-     *
-     * @return string
-     */
-    public function get_inverse_label($resource_uri, $capitalize = false, $use_qnames = false)
+    public function get_inverse_label(string $resource_uri, bool $capitalize = false, bool $use_qnames = false): string
     {
         return $this->_labeller->get_inverse_label($resource_uri, $this, $capitalize, $use_qnames);
     }
 
     /**
-     * @param string $nodeID_prefix
-     *
-     * @return array
+     * @param array<string, mixed> $resources
      */
-    public function reify(array $resources, $nodeID_prefix = 'Statement')
+    public function reify(array $resources, string $nodeID_prefix = 'Statement'): array
     {
         $RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
         $reified = [];
@@ -1054,9 +1040,10 @@ class ExtendedGraph
         foreach ($resources as $uri => $properties) {
             foreach ($properties as $property => $objects) {
                 foreach ($objects as $object) {
-                    while (!isset($statement_nodeID) or isset($resources[$statement_nodeID]) or isset($reified[$statement_nodeID])) {
+                    while (!isset($statement_nodeID) || isset($resources[$statement_nodeID]) || isset($reified[$statement_nodeID])) {
                         $statement_nodeID = '_:' . $nodeID_prefix . ($statement_no++);
                     }
+
                     $reified[$statement_nodeID] = [
                         $RDF . 'type' => [
                             ['type' => 'uri', 'value' => $RDF . 'Statement'],
@@ -1078,20 +1065,19 @@ class ExtendedGraph
      *
      * @param array1, array2, [array3, ...]
      *
-     * @return array
-     *
      * @author Keith
      */
-    public function diff()
+    public function diff(array ...$indices): array
     {
-        $indices = func_get_args();
-        if (count($indices) == 1) {
+        if (count($indices) === 1) {
             array_unshift($indices, $this->_index);
         }
+
         $base = array_shift($indices);
         if (count($base) === 0) {
             return [];
         }
+
         $diff = [];
 
         foreach ($base as $base_uri => $base_ps) {
@@ -1112,6 +1098,7 @@ class ExtendedGraph
                                 foreach ($base_p_values as &$v) {
                                     ksort($v);
                                 }
+
                                 if (!in_array($base_o, $base_p_values, true)) {
                                     $diff[$base_uri][$base_p][] = $base_o;
                                 }
@@ -1131,15 +1118,12 @@ class ExtendedGraph
      *
      * @param array1, array2, [array3, ...]
      *
-     * @return array
-     *
      * @author Keith
      */
-    public function merge()
+    public function merge(array ...$indices): array
     {
         $old_bnodeids = [];
-        $indices = func_get_args();
-        if (count($indices) == 1) {
+        if (count($indices) === 1) {
             array_unshift($indices, $this->_index);
         }
 
@@ -1149,13 +1133,12 @@ class ExtendedGraph
                 /* Make sure that bnode ids don't overlap:
                 _:a in g1 isn't the same as _:a in g2 */
 
-                if (substr($uri, 0, 2) == '_:') {// bnode
+                if (substr($uri, 0, 2) == '_:') { // bnode
                     $old_id = $uri;
                     $count = 1;
 
-                    while (isset($current[$uri])
-                        or ($old_id != $uri and isset($newGraph[$uri]))
-                        or isset($old_bnodeids[$uri])
+                    while (
+                        isset($current[$uri]) || $old_id != $uri && isset($newGraph[$uri]) || isset($old_bnodeids[$uri])
                     ) {
                         $uri .= $count++;
                     }
@@ -1177,9 +1160,8 @@ class ExtendedGraph
                                 } else { // bnode hasn't been transposed
                                     $old_bnode_id = $bnode;
                                     $count = 1;
-                                    while (isset($current[$bnode])
-                                        or ($object['value'] != $bnode and isset($newGraph[$bnode]))
-                                        or isset($old_bnodeids[$uri])
+                                    while (
+                                        isset($current[$bnode]) || $object['value'] != $bnode && isset($newGraph[$bnode]) || isset($old_bnodeids[$uri])
                                     ) {
                                         $bnode .= $count++;
                                     }
@@ -1187,11 +1169,12 @@ class ExtendedGraph
                                     if ($old_bnode_id != $bnode) {
                                         $old_bnodeids[$old_bnode_id] = $bnode;
                                     }
+
                                     $object['value'] = $bnode;
                                 }
                             }
 
-                            if (!isset($current[$uri][$property]) or !in_array($object, $current[$uri][$property])) {
+                            if (!isset($current[$uri][$property]) || !in_array($object, $current[$uri][$property])) {
                                 $current[$uri][$property][] = $object;
                             }
                         }
@@ -1203,11 +1186,7 @@ class ExtendedGraph
         return $current;
     }
 
-    /**
-     * @param string $look_for
-     * @param string $replace_with
-     */
-    public function replace_resource($look_for, $replace_with)
+    public function replace_resource(string $look_for, string $replace_with): void
     {
         $remove_list_resources = [];
         $remove_list_literals = [];
@@ -1219,37 +1198,31 @@ class ExtendedGraph
                     if ($p == $look_for) {
                         foreach ($o_list as $o_info) {
                             if ($o_info['type'] == 'literal') {
-                                $lang = array_key_exists('lang', $o_info) ? $o_info['lang'] : null;
-                                $dt = array_key_exists('datatype', $o_info) ? $o_info['datatype'] : null;
-
+                                $lang = $o_info['lang'] ?? null;
+                                $dt = $o_info['datatype'] ?? null;
                                 $remove_list_literals[] = [$look_for, $look_for, $o_info['value']];
                                 $add_list_literals[] = [$replace_with, $replace_with, $o_info['value'], $lang, $dt];
+                            } elseif ($o_info['value'] == $look_for) {
+                                $remove_list_resources[] = [$look_for, $look_for, $look_for];
+                                $add_list_resources[] = [$replace_with, $replace_with, $replace_with];
                             } else {
-                                if ($o_info['value'] == $look_for) {
-                                    $remove_list_resources[] = [$look_for, $look_for, $look_for];
-                                    $add_list_resources[] = [$replace_with, $replace_with, $replace_with];
-                                } else {
-                                    $remove_list_resources[] = [$look_for, $look_for, $o_info['value']];
-                                    $add_list_resources[] = [$replace_with, $replace_with, $o_info['value']];
-                                }
+                                $remove_list_resources[] = [$look_for, $look_for, $o_info['value']];
+                                $add_list_resources[] = [$replace_with, $replace_with, $o_info['value']];
                             }
                         }
                     } else {
                         foreach ($o_list as $o_info) {
                             if ($o_info['type'] == 'literal') {
-                                $lang = array_key_exists('lang', $o_info) ? $o_info['lang'] : null;
-                                $dt = array_key_exists('datatype', $o_info) ? $o_info['datatype'] : null;
-
+                                $lang = $o_info['lang'] ?? null;
+                                $dt = $o_info['datatype'] ?? null;
                                 $remove_list_literals[] = [$look_for, $p, $o_info['value']];
                                 $add_list_literals[] = [$replace_with, $p, $o_info['value'], $lang, $dt];
+                            } elseif ($o_info['value'] == $look_for) {
+                                $remove_list_resources[] = [$look_for, $p, $look_for];
+                                $add_list_resources[] = [$replace_with, $p, $replace_with];
                             } else {
-                                if ($o_info['value'] == $look_for) {
-                                    $remove_list_resources[] = [$look_for, $p, $look_for];
-                                    $add_list_resources[] = [$replace_with, $p, $replace_with];
-                                } else {
-                                    $remove_list_resources[] = [$look_for, $p, $o_info['value']];
-                                    $add_list_resources[] = [$replace_with, $p, $o_info['value']];
-                                }
+                                $remove_list_resources[] = [$look_for, $p, $o_info['value']];
+                                $add_list_resources[] = [$replace_with, $p, $o_info['value']];
                             }
                         }
                     }
@@ -1259,19 +1232,16 @@ class ExtendedGraph
                     if ($p == $look_for) {
                         foreach ($o_list as $o_info) {
                             if ($o_info['type'] == 'literal') {
-                                $lang = array_key_exists('lang', $o_info) ? $o_info['lang'] : null;
-                                $dt = array_key_exists('datatype', $o_info) ? $o_info['datatype'] : null;
-
+                                $lang = $o_info['lang'] ?? null;
+                                $dt = $o_info['datatype'] ?? null;
                                 $remove_list_literals[] = [$s, $look_for, $o_info['value']];
                                 $add_list_literals[] = [$s, $replace_with, $o_info['value'], $lang, $dt];
+                            } elseif ($o_info['value'] == $look_for) {
+                                $remove_list_resources[] = [$s, $look_for, $look_for];
+                                $add_list_resources[] = [$s, $replace_with, $replace_with];
                             } else {
-                                if ($o_info['value'] == $look_for) {
-                                    $remove_list_resources[] = [$s, $look_for, $look_for];
-                                    $add_list_resources[] = [$s, $replace_with, $replace_with];
-                                } else {
-                                    $remove_list_resources[] = [$s, $look_for, $o_info['value']];
-                                    $add_list_resources[] = [$s, $replace_with, $o_info['value']];
-                                }
+                                $remove_list_resources[] = [$s, $look_for, $o_info['value']];
+                                $add_list_resources[] = [$s, $replace_with, $o_info['value']];
                             }
                         }
                     } else {
@@ -1289,6 +1259,7 @@ class ExtendedGraph
         foreach ($remove_list_resources as $t) {
             $this->remove_resource_triple($t[0], $t[1], $t[2]);
         }
+
         foreach ($add_list_resources as $t) {
             $this->add_resource_triple($t[0], $t[1], $t[2]);
         }
@@ -1296,20 +1267,16 @@ class ExtendedGraph
         foreach ($remove_list_literals as $t) {
             $this->remove_literal_triple($t[0], $t[1], $t[2]);
         }
+
         foreach ($add_list_literals as $t) {
             $this->add_literal_triple($t[0], $t[1], $t[2], $t[3], $t[4]);
         }
     }
 
-    /**
-     * @param string $listUri
-     *
-     * @return array
-     */
-    public function get_list_values($listUri)
+    public function get_list_values(string $listUri): array
     {
         $array = [];
-        while (!empty($listUri) and $listUri != RDF_NIL) {
+        while (!empty($listUri) && $listUri !== RDF_NIL) {
             $array[] = $this->get_first_resource($listUri, RDF_FIRST);
             $listUri = $this->get_first_resource($listUri, RDF_REST);
         }
@@ -1317,7 +1284,10 @@ class ExtendedGraph
         return $array;
     }
 
-    public static function initProperties(array $properties)
+    /**
+     * @param array<string, mixed> $properties
+     */
+    public static function initProperties(array $properties): void
     {
         if (array_key_exists('labelProperties', $properties)) {
             self::$labelProperties = $properties['labelProperties'];
@@ -1326,11 +1296,8 @@ class ExtendedGraph
 
     /**
      * Replaces $uri1 with $uri2 in subject, predicate and object position.
-     *
-     * @param string $uri1
-     * @param string $uri2
      */
-    public function replace_uris($uri1, $uri2)
+    public function replace_uris(string $uri1, string $uri2): void
     {
         $index = $this->get_index();
         if (isset($index[$uri1])) {
@@ -1345,28 +1312,26 @@ class ExtendedGraph
                     $property = $uri2;
                     unset($index[$uri][$uri1]);
                 }
+
                 foreach ($objects as $i => $object) {
-                    if ($object['value'] == $uri1 and $object['type'] !== 'literal') {
+                    if ($object['value'] == $uri1 && $object['type'] !== 'literal') {
                         $index[$uri][$property][$i]['value'] = $uri2;
                     }
                 }
             }
         }
+
         $this->_index = $index;
     }
 
     /**
-     * @param string|null $s
-     * @param string|null $p
-     * @param string|null $o
-     *
-     * @return int
+     * @param bool|float|int|string|null $o
      */
-    public function get_triple_count($s = null, $p = null, $o = null)
+    public function get_triple_count(?string $s = null, ?string $p = null, $o = null): int
     {
         $index = $this->get_index();
 
-        if (empty($index)) {
+        if ($index === []) {
             return 0;
         }
 
@@ -1394,7 +1359,7 @@ class ExtendedGraph
      *
      * @return array the resource values found
      */
-    public function get_resources()
+    public function get_resources(): array
     {
         $resources = [];
         $subjects = $this->get_subjects();
@@ -1413,7 +1378,7 @@ class ExtendedGraph
      *
      * @return array the resource values found
      */
-    public function get_resources_for_subject($s)
+    public function get_resources_for_subject(string $s): array
     {
         $resources = [];
         if (array_key_exists($s, $this->_index)) {
@@ -1429,22 +1394,14 @@ class ExtendedGraph
         return array_unique($resources);
     }
 
-    /**
-     * @param string $p
-     */
-    public function remove_properties($p)
+    public function remove_properties(string $p): void
     {
         foreach ($this->get_subjects() as $s) {
             $this->remove_property_values($s, $p);
         }
     }
 
-    /**
-     * @param string $p
-     *
-     * @return array
-     */
-    public function get_resource_properties($p)
+    public function get_resource_properties(string $p): array
     {
         $resources = [];
         foreach ($this->get_subjects() as $s) {
@@ -1456,12 +1413,9 @@ class ExtendedGraph
     }
 
     /**
-     * @param string $p
-     * @param string $o
-     *
-     * @return array
+     * @param bool|float|int|string $o
      */
-    public function get_subjects_with_property_value($p, $o)
+    public function get_subjects_with_property_value(string $p, $o): array
     {
         $subjects = [];
         foreach ($this->get_subjects() as $s) {
@@ -1473,12 +1427,7 @@ class ExtendedGraph
         return $subjects;
     }
 
-    /**
-     * @param string $sequenceUri
-     *
-     * @return array
-     */
-    public function get_sequence_values($sequenceUri)
+    public function get_sequence_values(string $sequenceUri): array
     {
         $triples = $this->get_index();
         $properties = [];
@@ -1509,12 +1458,7 @@ class ExtendedGraph
         return $values;
     }
 
-    /**
-     * @param string $sequenceUri
-     *
-     * @return int
-     */
-    public function get_next_sequence($sequenceUri)
+    public function get_next_sequence(string $sequenceUri): int
     {
         $values = $this->get_sequence_values($sequenceUri);
 
@@ -1522,21 +1466,17 @@ class ExtendedGraph
     }
 
     /**
-     * @param string $s
-     * @param string $o
+     * @param bool|float|int|string $o
      */
-    public function add_literal_to_sequence($s, $o)
+    public function add_literal_to_sequence(string $s, $o): void
     {
         $this->add_to_sequence($s, $o, 'literal');
     }
 
     /**
      * Remove a resource from a specified sequence and reindex the sequence to remove the gap.
-     *
-     * @param string $sequenceUri
-     * @param string $resourceValue
      */
-    public function remove_resource_from_sequence($sequenceUri, $resourceValue)
+    public function remove_resource_from_sequence(string $sequenceUri, string $resourceValue): void
     {
         $sequenceProperties = $this->get_subject_properties($sequenceUri);
         $sequenceValues = $this->get_sequence_values($sequenceUri);
@@ -1557,25 +1497,16 @@ class ExtendedGraph
         }
     }
 
-    /**
-     * @param string $s
-     * @param string $o
-     */
-    public function add_resource_to_sequence($s, $o)
+    public function add_resource_to_sequence(string $s, string $o): void
     {
-        $this->add_to_sequence($s, $o);
+        $this->add_to_sequence($s, $o, 'resource');
     }
 
-    /**
-     * @param string $s
-     * @param string $o
-     * @param int    $position
-     */
-    public function add_resource_to_sequence_in_position($s, $o, $position)
+    public function add_resource_to_sequence_in_position(string $s, string $o, int $position): void
     {
         $sequenceValues = $this->get_sequence_values($s);
 
-        if (empty($sequenceValues) || $position > count($sequenceValues)) {
+        if ($sequenceValues === [] || $position > count($sequenceValues)) {
             $this->add_resource_to_sequence($s, $o);
         } else {
             array_splice($sequenceValues, $position - 1, 1, [$o, $sequenceValues[$position - 1]]);
@@ -1594,14 +1525,10 @@ class ExtendedGraph
     }
 
     /**
-     * @param string $s
-     * @param string $p
-     * @param string $oOldValue
-     * @param string $oNewValue
-     *
-     * @return bool
+     * @param bool|float|int|string $oOldValue
+     * @param bool|float|int|string $oNewValue
      */
-    public function replace_literal_triple($s, $p, $oOldValue, $oNewValue)
+    public function replace_literal_triple(string $s, string $p, $oOldValue, $oNewValue): bool
     {
         if ($this->has_literal_triple($s, $p, $oOldValue)) {
             $this->remove_literal_triple($s, $p, $oOldValue);
@@ -1613,51 +1540,44 @@ class ExtendedGraph
         return false;
     }
 
-    /**
-     * @param string $s
-     * @param string $p
-     * @param string $o
-     */
-    public function replace_resource_triples($s, $p, $o)
+    public function replace_resource_triples(string $s, string $p, ?string $o): void
     {
         if ($this->subject_has_property($s, $p)) {
             $this->remove_property_values($s, $p);
         }
+
         if (!empty($o)) {
             $this->add_resource_triple($s, $p, $o);
         }
     }
 
     /**
-     * @param string $s
-     * @param string $p
-     * @param string $o
+     * @param bool|float|int|string|null $o
      */
-    public function replace_literal_triples($s, $p, $o)
+    public function replace_literal_triples(string $s, string $p, $o): void
     {
         if ($this->subject_has_property($s, $p)) {
             $this->remove_property_values($s, $p);
         }
+
         if (!empty($o)) {
             $this->add_literal_triple($s, $p, $o);
         }
     }
 
     /**
-     * @param string $uri
-     *
-     * @return string
-     *
      * @throws Exception
      */
-    public function get_label_for_uri($uri)
+    public function get_label_for_uri(string $uri): string
     {
         if (!isset($this->_index[$uri])) {
             return '';
         }
+
         if (!isset(self::$labelProperties)) {
             throw new Exception('Please initialise ExtendedGraph::$labelProperties');
         }
+
         foreach (self::$labelProperties as $p) {
             if (isset($this->_index[$uri][$p])) {
                 return $this->_index[$uri][$p][0]['value'];
@@ -1667,21 +1587,15 @@ class ExtendedGraph
         return '';
     }
 
-    /**
-     * @return bool
-     */
-    public function is_equal_to(ExtendedGraph $otherGraph)
+    public function is_equal_to(ExtendedGraph $otherGraph): bool
     {
         $diffThisAndThat = $this->diff($this->get_index(), $otherGraph->get_index());
         $diffThatAndThis = $this->diff($otherGraph->get_index(), $this->get_index());
 
-        return empty($diffThisAndThat) && empty($diffThatAndThis);
+        return $diffThisAndThat === [] && $diffThatAndThis === [];
     }
 
-    /**
-     * @param string $type
-     */
-    public function remove_subjects_of_type($type)
+    public function remove_subjects_of_type(string $type): void
     {
         $subjects = $this->get_subjects_of_type($type);
         foreach ($subjects as $s) {
@@ -1689,7 +1603,7 @@ class ExtendedGraph
         }
     }
 
-    public function from_graph(ExtendedGraph $graph)
+    public function from_graph(ExtendedGraph $graph): void
     {
         if ($graph) {
             $this->remove_all_triples();
@@ -1704,44 +1618,27 @@ class ExtendedGraph
      * but accepting scalars so we can handle legacy data
      * which was not type-checked.
      *
-     * @param string $value
-     *
-     * @return bool
+     * @param mixed $value
      */
-    protected function isValidLiteral($value)
+    protected function isValidLiteral($value): bool
     {
-        if (!is_scalar($value)) {
-            return false;
-        }
-
-        return true;
+        return is_scalar($value);
     }
 
     /**
      * Check if a triple value is valid.
      *
-     * @param string $value
-     *
-     * @return bool
+     * @param mixed $value
      */
-    protected function isValidResource($value)
+    protected function isValidResource($value): bool
     {
-        if (!is_string($value) || empty($value)) {
-            return false;
-        }
-
-        return true;
+        return is_string($value) && ($value !== '' && $value !== '0');
     }
 
     /**
-     * @param string $s
-     * @param string $p
-     *
-     * @return bool
-     *
      * @throws Exception
      */
-    private function _add_triple($s, $p, array $o_info)
+    private function _add_triple(string $s, string $p, array $o_info): bool
     {
         // The value $o should already have been validated by this point
         // It's validation differs depending on whether it is a literal or resource
@@ -1749,20 +1646,24 @@ class ExtendedGraph
         if (!$this->isValidResource($s)) {
             throw new Exception('The subject is invalid');
         }
+
         if (!$this->isValidResource($p)) {
             throw new Exception('The predicate is invalid');
         }
+
         if (!isset($this->_index[$s])) {
             $this->_index[$s] = [];
             $this->_index[$s][$p] = [$o_info];
 
             return true;
         }
+
         if (!isset($this->_index[$s][$p])) {
             $this->_index[$s][$p] = [$o_info];
 
             return true;
         }
+
         if (!in_array($o_info, $this->_index[$s][$p])) {
             $this->_index[$s][$p][] = $o_info;
 
@@ -1772,15 +1673,12 @@ class ExtendedGraph
         return false;
     }
 
-    /**
-     * @param array $triples
-     */
-    private function _add_arc2_triple_list(&$triples)
+    private function _add_arc2_triple_list(array &$triples): void
     {
         $bnode_index = [];
 
         // We can safely preserve bnode labels if the graph is empty, otherwise we need to rewrite them
-        $rewrite_bnode_labels = $this->is_empty() ? false : true;
+        $rewrite_bnode_labels = !$this->is_empty();
 
         foreach ($triples as $t) {
             $obj = [];
@@ -1789,6 +1687,7 @@ class ExtendedGraph
                 if (!array_key_exists($t['o'], $bnode_index)) {
                     $bnode_index[$t['o']] = uniqid('_:mor');
                 }
+
                 $obj['value'] = $bnode_index[$t['o']];
             } else {
                 $obj['value'] = $t['o'];
@@ -1798,16 +1697,13 @@ class ExtendedGraph
                 if (!array_key_exists($t['s'], $bnode_index)) {
                     $bnode_index[$t['s']] = uniqid('_:mor');
                 }
+
                 $t['s'] = $bnode_index[$t['s']];
             }
 
             if ($t['o_type'] === 'iri') {
                 $obj['type'] = 'uri';
-            } elseif ($t['o_type'] === 'literal1'
-                || $t['o_type'] === 'literal2'
-                || $t['o_type'] === 'long_literal1'
-                || $t['o_type'] === 'long_literal2'
-            ) {
+            } elseif (in_array($t['o_type'], ['literal1', 'literal2', 'long_literal1', 'long_literal2'], true)) {
                 $obj['type'] = 'literal';
             } else {
                 $obj['type'] = $t['o_type'];
@@ -1819,6 +1715,7 @@ class ExtendedGraph
                 } elseif (isset($t['o_datatype']) && $t['o_datatype']) {
                     $obj['datatype'] = $t['o_datatype'];
                 }
+
                 if (isset($t['o_lang']) && $t['o_lang']) {
                     $obj['lang'] = $t['o_lang'];
                 }
@@ -1829,21 +1726,14 @@ class ExtendedGraph
                 $this->_index[$t['s']][$t['p']] = [$obj];
             } elseif (!isset($this->_index[$t['s']][$t['p']])) {
                 $this->_index[$t['s']][$t['p']] = [$obj];
-            } else {
-                if (!in_array($obj, $this->_index[$t['s']][$t['p']])) {
-                    $this->_index[$t['s']][$t['p']][] = $obj;
-                }
+            } elseif (!in_array($obj, $this->_index[$t['s']][$t['p']])) {
+                $this->_index[$t['s']][$t['p']][] = $obj;
             }
         }
     }
 
     // until ARC2 upgrades to support RDF/PHP we need to rename all types of "uri" to "iri"
-    /**
-     * @param array $index
-     *
-     * @return array
-     */
-    private function _to_arc_index(&$index)
+    private function _to_arc_index(array &$index): array
     {
         $ret = [];
 
@@ -1860,6 +1750,7 @@ class ExtendedGraph
                             $o_new[$key] = $value;
                         }
                     }
+
                     $ret[$s][$p][] = $o_new;
                 }
             }
@@ -1869,13 +1760,9 @@ class ExtendedGraph
     }
 
     /**
-     * @param string $p
-     * @param string $o
-     * @param string $type
-     *
-     * @return array
+     * @param bool|float|int|string $o
      */
-    private function get_subjects_where($p, $o, $type)
+    private function get_subjects_where(string $p, $o, string $type): array
     {
         $subjects = [];
         foreach ($this->_index as $subject => $properties) {
@@ -1894,19 +1781,17 @@ class ExtendedGraph
     }
 
     /**
-     * @param string $s
-     * @param string $o
-     * @param string $type
+     * @param bool|float|int|string $o
      */
-    private function add_to_sequence($s, $o, $type = 'resource')
+    private function add_to_sequence(string $s, $o, string $type = 'resource'): void
     {
         $sequenceValue = $this->get_next_sequence($s);
         $this->add_resource_triple($s, self::rdf_type, self::rdf_seq);
 
-        if ($type == 'literal') {
-            $this->add_literal_triple($s, self::rdf . "_{$sequenceValue}", $o);
+        if ($type === 'literal') {
+            $this->add_literal_triple($s, self::rdf . ('_' . $sequenceValue), $o);
         } else {
-            $this->add_resource_triple($s, self::rdf . "_{$sequenceValue}", $o);
+            $this->add_resource_triple($s, self::rdf . ('_' . $sequenceValue), $o);
         }
     }
 }

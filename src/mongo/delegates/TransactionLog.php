@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use MongoDB\Driver\Cursor;
@@ -10,7 +12,9 @@ use Tripod\Config;
 class TransactionLog
 {
     protected $config;
+
     private $transaction_db;
+
     private $transaction_collection;
 
     /**
@@ -20,6 +24,7 @@ class TransactionLog
     {
         $config = Config::getInstance();
         $this->config = $config->getTransactionLogConfig();
+
         $this->transaction_db = $config->getTransactionLogDatabase();
         $this->transaction_collection = $this->transaction_db->selectCollection($this->config['collection']);
     }
@@ -33,7 +38,7 @@ class TransactionLog
      *
      * @throws \Tripod\Exceptions\Exception
      */
-    public function createNewTransaction($transaction_id, $changes, $originalCBDs, $storeName, $podName)
+    public function createNewTransaction($transaction_id, $changes, $originalCBDs, $storeName, $podName): void
     {
         $transaction = [
             '_id' => $transaction_id,
@@ -52,7 +57,7 @@ class TransactionLog
                 throw new \Exception('Error creating new transaction');
             }
         } catch (\Exception $e) {
-            throw new \Tripod\Exceptions\Exception('Error creating new transaction: ' . $e->getMessage());
+            throw new \Tripod\Exceptions\Exception('Error creating new transaction: ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -63,7 +68,7 @@ class TransactionLog
      * @param string     $transaction_id the id of the transaction you wish to cancel
      * @param \Exception $error          pass in the exception you wish to log
      */
-    public function cancelTransaction($transaction_id, ?\Exception $error = null)
+    public function cancelTransaction($transaction_id, ?\Exception $error = null): void
     {
         $params = ['status' => 'cancelling'];
         if ($error != null) {
@@ -84,7 +89,7 @@ class TransactionLog
      * @param string     $transaction_id the id of the transaction you wish to set as failed
      * @param \Exception $error          exception you wish to log
      */
-    public function failTransaction($transaction_id, ?\Exception $error = null)
+    public function failTransaction($transaction_id, ?\Exception $error = null): void
     {
         $params = ['status' => 'failed', 'failedTime' => DateUtil::getMongoDate()];
         if ($error != null) {
@@ -104,7 +109,7 @@ class TransactionLog
      * @param string $transaction_id - the id of the transaction you want to mark as completed
      * @param array  $newCBDs        array of CBD's that represent the after state for each modified entity
      */
-    public function completeTransaction($transaction_id, array $newCBDs)
+    public function completeTransaction($transaction_id, array $newCBDs): void
     {
         $this->updateTransaction(
             ['_id' => $transaction_id],
@@ -128,7 +133,7 @@ class TransactionLog
     /**
      * Purges all transactions from the transaction log.
      */
-    public function purgeAllTransactions()
+    public function purgeAllTransactions(): void
     {
         $this->transaction_collection->drop();
     }
