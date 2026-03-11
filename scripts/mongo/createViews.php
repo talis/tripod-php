@@ -59,13 +59,9 @@ $configLocation = $options['c'] ?? $options['config'];
 require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 /**
- * @param string|null      $id
- * @param string|null      $viewId
- * @param string           $storeName
- * @param ITripodStat|null $stat
- * @param string           $queue
+ * @param string|null $viewId
  */
-function generateViews($id, $viewId, $storeName, $stat, $queue): void
+function generateViews(?string $id, string $viewId, string $storeName, ?ITripodStat $stat = null, ?string $queue = null): void
 {
     $viewSpec = Config::getInstance()->getViewSpecification($storeName, $viewId);
     if (array_key_exists('from', $viewSpec)) {

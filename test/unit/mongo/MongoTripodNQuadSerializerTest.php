@@ -25,7 +25,7 @@ class MongoTripodNQuadSerializerTest extends MongoTripodTestBase
         $serializer = new NQuadSerializer();
         $actual = $serializer->getSerializedIndex($g->_index, Config::getInstance()->getDefaultContextAlias());
 
-        $this->assertEquals($expected, $actual);
+        $this->assertSame($expected, $actual);
     }
 
     public function testSerializerWithMultipleSubjects(): void

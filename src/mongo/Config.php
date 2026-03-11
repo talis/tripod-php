@@ -384,12 +384,7 @@ class Config implements IConfigInstance
             return $this->cardinality[$storeName][$collName];
         }
 
-        // Return the cardinality rule for the specified qname.
-        if (isset($this->cardinality[$storeName][$collName][$qName])) {
-            return $this->cardinality[$storeName][$collName][$qName];
-        }
-
-        return -1;
+        return $this->cardinality[$storeName][$collName][$qName] ?? -1;
     }
 
     /**
@@ -458,11 +453,7 @@ class Config implements IConfigInstance
 
     public function getDefaultDataSourceForStore(string $storeName): ?string
     {
-        if (isset($this->dbConfig[$storeName]['data_source'])) {
-            return $this->dbConfig[$storeName]['data_source'];
-        }
-
-        return null;
+        return $this->dbConfig[$storeName]['data_source'] ?? null;
     }
 
     /**
@@ -482,11 +473,7 @@ class Config implements IConfigInstance
      */
     public function getSearchDocumentSpecification(string $storeName, string $sid): ?array
     {
-        if (isset($this->searchDocSpecs[$storeName][$sid])) {
-            return $this->searchDocSpecs[$storeName][$sid];
-        }
-
-        return null;
+        return $this->searchDocSpecs[$storeName][$sid] ?? null;
     }
 
     /**
@@ -538,11 +525,7 @@ class Config implements IConfigInstance
      */
     public function getTableSpecification(string $storeName, string $tid): ?array
     {
-        if (isset($this->tableSpecs[$storeName][$tid])) {
-            return $this->tableSpecs[$storeName][$tid];
-        }
-
-        return null;
+        return $this->tableSpecs[$storeName][$tid] ?? null;
     }
 
     /**
@@ -751,6 +734,7 @@ class Config implements IConfigInstance
             if (!isset($this->tableSpecs[$storeName][$table])) {
                 throw new ConfigException(sprintf("Table id '%s' not in configuration for store '%s'", $table, $storeName));
             }
+
             $dataSources[] = $this->tableSpecs[$storeName][$table]['to_data_source'] ?? null;
         }
 
@@ -787,6 +771,7 @@ class Config implements IConfigInstance
             if (!isset($this->viewSpecs[$storeName][$view])) {
                 throw new ConfigException(sprintf("View id '%s' not in configuration for store '%s'", $view, $storeName));
             }
+
             $dataSources[] = $this->viewSpecs[$storeName][$view]['to_data_source'] ?? null;
         }
 
@@ -823,6 +808,7 @@ class Config implements IConfigInstance
             if (!isset($this->searchDocSpecs[$storeName][$searchSpec])) {
                 throw new ConfigException(sprintf("Search document spec id '%s' not in configuration for store '%s'", $searchSpec, $storeName));
             }
+
             $dataSources[] = $this->searchDocSpecs[$storeName][$searchSpec]['to_data_source'] ?? null;
         }
 
@@ -991,7 +977,7 @@ class Config implements IConfigInstance
 
         foreach ($this->getMandatoryKey('data_sources', $config) as $source => $c) {
             if (!isset($c['type'])) {
-                throw new ConfigException('No \'type\' set for data source ' . $source);
+                throw new ConfigException("No 'type' set for data source " . $source);
             }
 
             if (!isset($c['connection'])) {
@@ -1198,7 +1184,7 @@ class Config implements IConfigInstance
                 }
 
                 if (isset($field['predicates'])) {
-                    if ($validationLevel == self::VALIDATE_MAX) {
+                    if ($validationLevel === self::VALIDATE_MAX) {
                         foreach ($field['predicates'] as $p) {
                             // If predicates is an array we've got modifiers
                             if (is_array($p)) {
@@ -1240,7 +1226,7 @@ class Config implements IConfigInstance
             }
 
             $validComputingFieldFunctions = Tables::$computedFieldFunctions;
-            if ($validationLevel == self::VALIDATE_MAX) {
+            if ($validationLevel === self::VALIDATE_MAX) {
                 $availableFields = $this->getFieldNamesInSpec($spec);
                 $availableFields = array_map(function (string $field): string {
                     return '$' . $field;
@@ -1270,7 +1256,7 @@ class Config implements IConfigInstance
                     throw new ConfigException('Computed field spec contains more than one function');
                 }
 
-                if ($validationLevel == self::VALIDATE_MAX) {
+                if ($validationLevel === self::VALIDATE_MAX) {
                     $this->validateComputedFieldSpec($functions[0], $field['value'], $availableFields);
                 }
             }
@@ -1386,6 +1372,7 @@ class Config implements IConfigInstance
 
     /**
      * @param array|string $value
+     * @param string[]     $availableFields
      *
      * @throws ConfigException
      */

@@ -52,12 +52,12 @@ class Driver extends DriverBase implements IDriver
     /**
      * Constructor for Driver.
      *
-     * @param array $opts an Array of options: <ul>
-     *                    <li>defaultContext: (string) to use where a specific default context is not defined. Default is Null</li>
-     *                    <li>async: (array) determines the async behaviour of views, tables and search. For each of these array keys, if set to true, generation of these elements will be done asyncronously on save. Default is array(OP_VIEWS=>false,OP_TABLES=>true,OP_SEARCH=>true)</li>
-     *                    <li>stat: this sets the stats object to use to record statistics around operations performed by Driver. Default is null</li>
-     *                    <li>readPreference: The Read preference to set for Mongo: Default is ReadPreference::RP_PRIMARY_PREFERRED</li>
-     *                    <li>retriesToGetLock: Retries to do when unable to get lock on a document, default is 20</li></ul>
+     * @param array<string, mixed> $opts an Array of options: <ul>
+     *                                   <li>defaultContext: (string) to use where a specific default context is not defined. Default is Null</li>
+     *                                   <li>async: (array) determines the async behaviour of views, tables and search. For each of these array keys, if set to true, generation of these elements will be done asyncronously on save. Default is array(OP_VIEWS=>false,OP_TABLES=>true,OP_SEARCH=>true)</li>
+     *                                   <li>stat: this sets the stats object to use to record statistics around operations performed by Driver. Default is null</li>
+     *                                   <li>readPreference: The Read preference to set for Mongo: Default is ReadPreference::RP_PRIMARY_PREFERRED</li>
+     *                                   <li>retriesToGetLock: Retries to do when unable to get lock on a document, default is 20</li></ul>
      */
     public function __construct(string $podName, string $storeName, array $opts = [])
     {
@@ -397,7 +397,7 @@ class Driver extends DriverBase implements IDriver
             'projection' => $fields,
         ];
         if (!empty($limit)) {
-            $findOptions['skip'] = (int) $offset;
+            $findOptions['skip'] = $offset;
             $findOptions['limit'] = (int) $limit;
         }
 
@@ -495,6 +495,7 @@ class Driver extends DriverBase implements IDriver
         if ($lastUpdatedDate === null) {
             return '';
         }
+
         // PHP 5.3 used MongoDate::__toString() to generate the etag.
         // This is incompatible with UTCDate::__toString() so we convert it into a microtime representation.
         // This ensures that if it is required to dual run 2 PHP versions, there are no etag compatibility issues.

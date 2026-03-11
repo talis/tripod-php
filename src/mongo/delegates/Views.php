@@ -744,22 +744,15 @@ class Views extends CompositeBase
         return $obj;
     }
 
-    /**
-     * @param string $viewSpecId
-     *
-     * @return Collection
-     */
-    protected function getCollectionForViewSpec($viewSpecId)
+    protected function getCollectionForViewSpec(string $viewSpecId): Collection
     {
         return $this->getConfigInstance()->getCollectionForView($this->storeName, $viewSpecId);
     }
 
     /**
      * @param array|string $resourceUriOrArray
-     * @param string       $context
-     * @param string       $viewType
      */
-    private function createTripodViewIdsFromResourceUris(array $resourceUriOrArray, $context, $viewType): array
+    private function createTripodViewIdsFromResourceUris(array $resourceUriOrArray, ?string $context, string $viewType): array
     {
         $contextAlias = $this->getContextAlias($context);
         $ret = [];

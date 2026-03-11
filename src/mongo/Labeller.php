@@ -74,7 +74,7 @@ class Labeller extends \Tripod\Labeller
     public function get_prefix(string $ns): string
     {
         $prefix = array_search($ns, $this->_ns, true);
-        if ($prefix !== null && $prefix !== false) {
+        if ($prefix !== false) {
             return $prefix;
         }
 

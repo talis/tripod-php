@@ -11,6 +11,7 @@ if ($argc !== 2) {
 
     exit;
 }
+
 array_shift($argv);
 
 $config = json_decode(file_get_contents($argv[0]), true);

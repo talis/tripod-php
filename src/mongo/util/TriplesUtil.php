@@ -30,12 +30,11 @@ class TriplesUtil
      * Make them quads with a $context.
      *
      * @param mixed         $subject
-     * @param string        $storeName
      * @param string        $podName
      * @param string|null   $context
      * @param string[]|null $allowableTypes
      */
-    public function loadTriplesAbout($subject, array $triples, $storeName, $podName, $context = null, $allowableTypes = null): void
+    public function loadTriplesAbout($subject, array $triples, string $storeName, $podName, $context = null, $allowableTypes = null): void
     {
         $context = ($context == null) ? Config::getInstance()->getDefaultContextAlias() : $this->labeller->uri_to_alias($context);
         if (array_key_exists($podName, $this->collections)) {
@@ -62,7 +61,7 @@ class TriplesUtil
 
         if ($allowableTypes != null && is_array($allowableTypes)) {
             $types = $graph->get_resource_triple_values($subject, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
-            if ($types == null || empty($types)) {
+            if ($types == null || $types === []) {
                 return;
             }
 
@@ -86,10 +85,8 @@ class TriplesUtil
      *
      * @param string      $subject
      * @param string|null $context
-     *
-     * @return array
      */
-    public function bsonizeTriplesAbout($subject, array $triples, $context = null)
+    public function bsonizeTriplesAbout($subject, array $triples, $context = null): ?array
     {
         $context = ($context == null) ? Config::getInstance()->getDefaultContextAlias() : $this->labeller->uri_to_alias($context);
         $graph = new MongoGraph();
@@ -170,11 +167,8 @@ class TriplesUtil
 
     /**
      * @param string $subject
-     * @param string $context
-     *
-     * @return array
      */
-    public function getTArrayAbout($subject, array $triples, $context)
+    public function getTArrayAbout($subject, array $triples, ?string $context): ?array
     {
         $graph = new MongoGraph();
         foreach ($triples as $triple) {
@@ -197,11 +191,10 @@ class TriplesUtil
 
     /**
      * @param string $cbdSubject
-     * @param string $context
      *
      * @throws \Exception
      */
-    protected function saveCBD($cbdSubject, MongoGraph $cbdGraph, Collection $collection, $context)
+    protected function saveCBD($cbdSubject, MongoGraph $cbdGraph, Collection $collection, ?string $context)
     {
         $cbdSubject = $this->labeller->uri_to_alias($cbdSubject);
         if ($cbdGraph == null || $cbdGraph->is_empty()) {

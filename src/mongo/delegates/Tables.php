@@ -81,7 +81,6 @@ class Tables extends CompositeBase
      * Tripod and should inherit connections set up there.
      *
      * @param string           $storeName
-     * @param string           $defaultContext
      * @param ITripodStat|null $stat
      * @param string           $readPreference
      *                                         todo: MongoCollection -> podName
@@ -89,7 +88,7 @@ class Tables extends CompositeBase
     public function __construct(
         $storeName,
         Collection $collection,
-        $defaultContext,
+        ?string $defaultContext,
         $stat = null,
         $readPreference = ReadPreference::RP_PRIMARY
     ) {
@@ -546,7 +545,7 @@ class Tables extends CompositeBase
      *
      * @return int
      */
-    public function count($tableSpec, array $filters = [])
+    public function count(string $tableSpec, array $filters = [])
     {
         $filters['_id.type'] = $tableSpec;
 
@@ -558,7 +557,7 @@ class Tables extends CompositeBase
      * @param string|null       $context  Optional context
      * @param array|string|null $specType Optional table type or array of table types to delete from
      */
-    protected function deleteTableRowsForResource($resource, $context = null, $specType = null)
+    protected function deleteTableRowsForResource(?string $resource, $context = null, $specType = null)
     {
         $t = new Timer();
         $t->start();
@@ -593,11 +592,10 @@ class Tables extends CompositeBase
      * This method handles invalidation and regeneration of table rows based on impact index, before delegating to
      * generateTableRowsForType() for re-generation of any table rows for the $resource.
      *
-     * @param string      $resource
      * @param string|null $context
      * @param array       $specTypes
      */
-    protected function generateTableRowsForResource($resource, $context = null, $specTypes = [])
+    protected function generateTableRowsForResource(?string $resource, $context = null, $specTypes = [])
     {
         $resourceAlias = $this->labeller->uri_to_alias($resource);
         $contextAlias = $this->getContextAlias($context);
@@ -637,7 +635,7 @@ class Tables extends CompositeBase
      * If an exception in thrown because a field is too large to index, the field is
      * truncated and the save is retried.
      *
-     * @param array<string, mixed[]>|array<string, UTCDateTime> $generatedRow the rows to save
+     * @param array<string, mixed> $generatedRow the rows to save
      *
      * @throws \Exception
      */
@@ -764,7 +762,8 @@ class Tables extends CompositeBase
     }
 
     /**
-     * @param array<int, mixed> $equation
+     * @param array<int, mixed>    $equation
+     * @param array<string, mixed> $dest
      *
      * @return float|int|null
      *
@@ -825,7 +824,7 @@ class Tables extends CompositeBase
 
     /**
      * @param array<string, mixed> $replaceSpec The replace value spec
-     * @param array                $dest        The table row document to save
+     * @param array<string, mixed> $dest        The table row document to save
      *
      * @return mixed
      */
@@ -851,7 +850,7 @@ class Tables extends CompositeBase
 
     /**
      * @param array<string, mixed> $conditionalSpec The conditional spec
-     * @param array                $dest            The table row document to save
+     * @param array<string, mixed> $dest            The table row document to save
      *
      * @return mixed The computed value
      */
@@ -1056,6 +1055,7 @@ class Tables extends CompositeBase
      *
      * @param array<string, mixed> $source
      * @param array<string, mixed> $spec
+     * @param array<string, mixed> $dest
      */
     protected function addFields(array $source, array $spec, array &$dest)
     {
@@ -1331,10 +1331,8 @@ class Tables extends CompositeBase
      * For mocking.
      *
      * @param string $tableSpecId Table spec ID
-     *
-     * @return Collection
      */
-    protected function getCollectionForTableSpec($tableSpecId)
+    protected function getCollectionForTableSpec(string $tableSpecId): Collection
     {
         return $this->getConfigInstance()->getCollectionForTable($this->storeName, $tableSpecId);
     }

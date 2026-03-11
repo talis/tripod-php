@@ -736,7 +736,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
     protected function buildTransactionDocument($id, $subjectOfChange, $startTime, $endTime, $_version): array
     {
         return [
-            '_id' => 'transaction_' . (string) $id,
+            '_id' => 'transaction_' . $id,
             'changes' => [
                 [
                     '_id' => ['r' => '_:cs0', 'c' => 'http://talisaspire.com/'],

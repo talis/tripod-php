@@ -156,18 +156,16 @@ class ChangeSet extends ExtendedGraph
         and linking to the Statements from the appropriate changeset
         */
         $reifiedAdditions = ExtendedGraph::reify($additions, 'Add');
-        if (!empty($reifiedAdditions)) {
-            foreach ($reifiedAdditions as $nodeID => $props) {
-                $subject = $props['http://www.w3.org/1999/02/22-rdf-syntax-ns#subject'][0]['value'];
-                if (in_array($subject, $subjectIndex)) {
-                    $csID = $csIndex[$subject];
-                    $this->addT($csID, $CSNS . 'addition', $nodeID, 'bnode');
-                }
+        foreach ($reifiedAdditions as $nodeID => $props) {
+            $subject = $props['http://www.w3.org/1999/02/22-rdf-syntax-ns#subject'][0]['value'];
+            if (in_array($subject, $subjectIndex)) {
+                $csID = $csIndex[$subject];
+                $this->addT($csID, $CSNS . 'addition', $nodeID, 'bnode');
+            }
 
-                // if dc:source is given in the instantiating arguments, add it to the statement as provenance
-                if (isset($this->a['http://purl.org/dc/terms/source'])) {
-                    $this->addT($nodeID, 'http://purl.org/dc/terms/source', $this->a['http://purl.org/dc/terms/source'], 'uri');
-                }
+            // if dc:source is given in the instantiating arguments, add it to the statement as provenance
+            if (isset($this->a['http://purl.org/dc/terms/source'])) {
+                $this->addT($nodeID, 'http://purl.org/dc/terms/source', $this->a['http://purl.org/dc/terms/source'], 'uri');
             }
         }
 

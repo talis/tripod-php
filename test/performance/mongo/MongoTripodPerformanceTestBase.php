@@ -56,7 +56,7 @@ abstract class MongoTripodPerformanceTestBase extends MongoTripodTestBase
             'save.handler.file' => [
                 'filename' => $profilerDir . '/xhgui.data.jsonl',
             ],
-            'profiler.replace_url' => function () {
+            'profiler.replace_url' => function (): string {
                 return $this->getName(true) . ($this->hasFailed() ? ' FAIL' : '');
             },
         ]);

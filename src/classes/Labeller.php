@@ -313,6 +313,7 @@ class Labeller
         if ($qName === null || !preg_match('~^(.+):(.+)$~', $qName, $m)) {
             return null;
         }
+
         if (isset($this->_ns[$m[1]])) {
             return $this->_ns[$m[1]] . $m[2];
         }
@@ -391,7 +392,7 @@ class Labeller
 
     public function get_label(string $uri, ?ExtendedGraph $g = null, bool $capitalize = false, bool $use_qnames = false): string
     {
-        if ($g) {
+        if ($g instanceof ExtendedGraph) {
             $label = $g->get_first_literal($uri, 'http://www.w3.org/2004/02/skos/core#prefLabel', '', 'en');
             if (strlen($label) !== 0) {
                 return $label;
@@ -477,6 +478,7 @@ class Labeller
 
                 return $label;
             }
+
             if ($capitalize && preg_match('~^[a-z]~', $localname)) {
                 return ucfirst($localname);
             }
@@ -489,7 +491,7 @@ class Labeller
 
     public function get_plural_label(string $uri, ?ExtendedGraph $g = null, bool $capitalize = false, bool $use_qnames = false): string
     {
-        if ($g) {
+        if ($g instanceof ExtendedGraph) {
             $label = $g->get_first_literal($uri, 'http://purl.org/net/vocab/2004/03/label#plural', '', 'en');
             if (strlen($label) !== 0) {
                 return $label;
@@ -506,7 +508,7 @@ class Labeller
             return $label;
         }
 
-        if ($use_qnames == false && preg_match('~^.*[\/\#]([a-z]+)$~', $uri, $m)) {
+        if ($use_qnames === false && preg_match('~^.*[\/\#]([a-z]+)$~', $uri, $m)) {
             return $m[1] . 's';
         }
 
@@ -520,7 +522,7 @@ class Labeller
 
     public function get_inverse_label(string $uri, ?ExtendedGraph $g = null, bool $capitalize = false, bool $use_qnames = false): string
     {
-        if ($g) {
+        if ($g instanceof ExtendedGraph) {
             $label = $g->get_first_literal($uri, 'http://purl.org/net/vocab/2004/03/label#inverseSingular', '', 'en');
             if (strlen($label) !== 0) {
                 return $label;

@@ -38,7 +38,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $this->assertEquals('foo.bar', $stat->getHost());
         $this->assertEquals(9876, $stat->getPort());
         $this->assertEquals('', $stat->getPrefix());
-        $this->assertEquals(['class' => StatsD::class, 'config' => ['host' => 'foo.bar', 'port' => 9876, 'prefix' => '']], $stat->getConfig());
+        $this->assertSame(['class' => StatsD::class, 'config' => ['host' => 'foo.bar', 'port' => 9876, 'prefix' => '']], $stat->getConfig());
 
         $stat->setHost('bar.baz');
         $this->assertEquals('bar.baz', $stat->getHost());
@@ -48,7 +48,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->setPrefix('FOO_BAR');
         $this->assertEquals('FOO_BAR', $stat->getPrefix());
 
-        $this->assertEquals(['class' => StatsD::class, 'config' => ['host' => 'bar.baz', 'port' => 4567, 'prefix' => 'FOO_BAR']], $stat->getConfig());
+        $this->assertSame(['class' => StatsD::class, 'config' => ['host' => 'bar.baz', 'port' => 4567, 'prefix' => 'FOO_BAR']], $stat->getConfig());
     }
 
     public function testStatsDIncrementNoPrefix(): void

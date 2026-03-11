@@ -9,9 +9,8 @@ require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 /**
  * @param string $podName
- * @param string $storeName
  */
-function load(TriplesUtil $loader, string $subject, array $triples, array &$errors, $podName, $storeName): void
+function load(TriplesUtil $loader, string $subject, array $triples, array &$errors, $podName, string $storeName): void
 {
     try {
         $loader->loadTriplesAbout($subject, $triples, $storeName, $podName);

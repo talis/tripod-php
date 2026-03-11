@@ -276,10 +276,8 @@ class SearchDocuments extends DriverBase
 
     /**
      * @param mixed $specId
-     *
-     * @return array|null
      */
-    protected function getSearchDocumentSpecification($specId)
+    protected function getSearchDocumentSpecification(string $specId): ?array
     {
         return $this->getConfigInstance()->getSearchDocumentSpecification($this->storeName, $specId);
     }
@@ -298,6 +296,7 @@ class SearchDocuments extends DriverBase
             $objName = $parts[0];
             $name = $parts[1];
         }
+
         $limit = $field['limit'] ?? count($values);
 
         if ($values !== []) {
