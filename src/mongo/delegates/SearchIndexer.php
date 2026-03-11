@@ -63,10 +63,7 @@ class SearchIndexer extends CompositeBase
         );
     }
 
-    /**
-     * @return array
-     */
-    public function getTypesInSpecifications()
+    public function getTypesInSpecifications(): array
     {
         return $this->config->getTypesInSearchSpecifications($this->storeName, $this->getPodName());
     }
@@ -79,13 +76,7 @@ class SearchIndexer extends CompositeBase
         return OP_SEARCH;
     }
 
-    /**
-     * @param string $storeName
-     * @param string $specId
-     *
-     * @return array|null
-     */
-    public function getSpecification($storeName, $specId)
+    public function getSpecification(string $storeName, string $specId): ?array
     {
         return $this->config->getSearchDocumentSpecification($storeName, $specId);
     }
@@ -263,13 +254,11 @@ class SearchIndexer extends CompositeBase
     }
 
     /**
-     * @param string $context
-     *
-     * @return array|mixed
+     * @return mixed[]
      */
-    public function findImpactedComposites(array $resourcesAndPredicates, $context)
+    public function findImpactedComposites(array $resourcesAndPredicates, string $contextAlias): array
     {
-        return $this->getSearchProvider()->findImpactedDocuments($resourcesAndPredicates, $context);
+        return $this->getSearchProvider()->findImpactedDocuments($resourcesAndPredicates, $contextAlias);
     }
 
     /**

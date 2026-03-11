@@ -119,10 +119,8 @@ class Tables extends CompositeBase
 
     /**
      * Returns an array of the rdf types that will trigger the table specification.
-     *
-     * @return array
      */
-    public function getTypesInSpecifications()
+    public function getTypesInSpecifications(): array
     {
         return $this->config->getTypesInTableSpecifications($this->storeName, $this->getPodName());
     }
@@ -130,9 +128,9 @@ class Tables extends CompositeBase
     /**
      * Returns an array of table rows that are impacted by the changes.
      *
-     * @param string $contextAlias
+     * @return mixed[]
      */
-    public function findImpactedComposites(array $resourcesAndPredicates, $contextAlias): array
+    public function findImpactedComposites(array $resourcesAndPredicates, string $contextAlias): array
     {
         $contextAlias = $this->getContextAlias($contextAlias); // belt and braces
 
@@ -211,13 +209,7 @@ class Tables extends CompositeBase
         return $affectedTableRows;
     }
 
-    /**
-     * @param string $storeName
-     * @param string $tableSpecId
-     *
-     * @return array|null
-     */
-    public function getSpecification($storeName, $tableSpecId)
+    public function getSpecification(string $storeName, string $tableSpecId): ?array
     {
         return $this->config->getTableSpecification($storeName, $tableSpecId);
     }

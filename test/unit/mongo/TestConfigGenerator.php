@@ -1,6 +1,7 @@
 <?php
 
 use Tripod\Mongo\Config;
+use Tripod\Mongo\IConfigInstance;
 
 class TestConfigGenerator extends Config
 {
@@ -16,7 +17,7 @@ class TestConfigGenerator extends Config
         return ['class' => get_class($this), 'filename' => $this->fileName];
     }
 
-    public static function deserialize(array $config)
+    public static function deserialize(array $config): IConfigInstance
     {
         $instance = new self();
         $instance->fileName = $config['filename'];
