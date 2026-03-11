@@ -8,6 +8,7 @@ use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
 use MongoDB\Driver\ReadPreference;
 use Tripod\Exceptions\ViewException;
+use Tripod\ExtendedGraph;
 use Tripod\ITripodStat;
 use Tripod\Mongo\DateUtil;
 use Tripod\Mongo\ImpactedSubject;
@@ -22,11 +23,9 @@ class Views extends CompositeBase
      * Construct accepts actual objects rather than strings as this class is a delegate of
      * Tripod and should inherit connections set up there.
      *
-     * @param string      $storeName
-     * @param string|null $defaultContext
-     * @param string      $readPreference
+     * @param int|string $readPreference
      */
-    public function __construct($storeName, Collection $collection, $defaultContext, ?ITripodStat $stat = null, $readPreference = ReadPreference::RP_PRIMARY)
+    public function __construct(string $storeName, Collection $collection, ?string $defaultContext, ?ITripodStat $stat = null, $readPreference = ReadPreference::RP_PRIMARY)
     {
         $this->storeName = $storeName;
         $this->labeller = new Labeller();
@@ -57,20 +56,15 @@ class Views extends CompositeBase
         $this->generateViews([$resourceUri], $context);
     }
 
-    /**
-     * @return array
-     */
-    public function getTypesInSpecifications()
+    public function getTypesInSpecifications(): array
     {
         return $this->config->getTypesInViewSpecifications($this->storeName, $this->getPodName());
     }
 
     /**
-     * @param string $contextAlias
-     *
      * @return mixed[]
      */
-    public function findImpactedComposites(array $resourcesAndPredicates, $contextAlias): array
+    public function findImpactedComposites(array $resourcesAndPredicates, string $contextAlias): array
     {
         // This should never happen, but in the event that we have been passed an empty array or something
         if ($resourcesAndPredicates === []) {
@@ -129,13 +123,7 @@ class Views extends CompositeBase
         return $affectedViews;
     }
 
-    /**
-     * @param string $storeName
-     * @param string $viewSpecId
-     *
-     * @return array|null
-     */
-    public function getSpecification($storeName, $viewSpecId)
+    public function getSpecification(string $storeName, string $viewSpecId): ?array
     {
         return $this->config->getViewSpecification($storeName, $viewSpecId);
     }
@@ -143,12 +131,9 @@ class Views extends CompositeBase
     /**
      * Return all views, restricted by $filter conditions, for given $viewType.
      *
-     * @param array $filter   - an array, keyed by predicate, to filter by
-     * @param mixed $viewType
-     *
-     * @return MongoGraph
+     * @param array $filter - an array, keyed by predicate, to filter by
      */
-    public function getViews(array $filter, $viewType)
+    public function getViews(array $filter, string $viewType): MongoGraph
     {
         $query = ['_id.type' => $viewType];
         foreach ($filter as $predicate => $object) {
@@ -173,13 +158,8 @@ class Views extends CompositeBase
 
     /**
      * For given $resource, return the view of type $viewType.
-     *
-     * @param string|null $resource
-     * @param string|null $context
-     *
-     * @return MongoGraph
      */
-    public function getViewForResource($resource, string $viewType, $context = null)
+    public function getViewForResource(?string $resource, string $viewType, ?string $context = null): MongoGraph
     {
         if (empty($resource)) {
             return new MongoGraph();
@@ -220,13 +200,8 @@ class Views extends CompositeBase
 
     /**
      * For given $resources, return the views of type $viewType.
-     *
-     * @param string      $viewType
-     * @param string|null $context
-     *
-     * @return MongoGraph
      */
-    public function getViewForResources(array $resources, $viewType, $context = null)
+    public function getViewForResources(array $resources, string $viewType, ?string $context = null): ExtendedGraph
     {
         $contextAlias = $this->getContextAlias($context);
 
@@ -278,11 +253,8 @@ class Views extends CompositeBase
 
     /**
      * Autodiscovers the multiple view specification that may be applicable for a given resource, and submits each for generation.
-     *
-     * @param array       $resources
-     * @param string|null $context
      */
-    public function generateViews($resources, $context = null): void
+    public function generateViews(array $resources, ?string $context = null): void
     {
         $contextAlias = $this->getContextAlias($context);
 
@@ -328,13 +300,9 @@ class Views extends CompositeBase
     /**
      * This method finds all the view specs for the given $rdfType and generates the views for the $resource one by one.
      *
-     * @param string      $rdfType
-     * @param string|null $resource
-     * @param string|null $context
-     *
      * @throws \Exception
      */
-    public function generateViewsForResourcesOfType($rdfType, $resource = null, $context = null): void
+    public function generateViewsForResourcesOfType(string $rdfType, ?string $resource = null, ?string $context = null): void
     {
         $rdfType = $this->labeller->qname_to_alias($rdfType);
         $rdfTypeAlias = $this->labeller->uri_to_alias($rdfType);
@@ -362,8 +330,8 @@ class Views extends CompositeBase
     /**
      * This method will delete all views where the _id.type of the viewmatches the specified $viewId.
      *
-     * @param string           $viewId    View spec ID
-     * @param UTCDateTime|null $timestamp Optional timestamp to delete all views that are older than
+     * @param string               $viewId    View spec ID
+     * @param int|UTCDateTime|null $timestamp Optional timestamp to delete all views that are older than
      *
      * @return int The number of views deleted
      */
@@ -397,13 +365,11 @@ class Views extends CompositeBase
     /**
      * Given a specific $viewId, generates a single view for the $resource.
      *
-     * @param string|null $resource
-     * @param string|null $context
      * @param string|null $queueName Queue for background bulk generation
      *
      * @throws ViewException
      */
-    public function generateView(string $viewId, $resource = null, $context = null, $queueName = null): ?array
+    public function generateView(string $viewId, ?string $resource = null, ?string $context = null, ?string $queueName = null): ?array
     {
         $contextAlias = $this->getContextAlias($context);
         $viewSpec = $this->getConfigInstance()->getViewSpecification($this->storeName, $viewId);
@@ -532,10 +498,8 @@ class Views extends CompositeBase
      *
      * @param string               $viewSpec View spec ID
      * @param array<string, mixed> $filters  Query filters to get count on
-     *
-     * @return int
      */
-    public function count($viewSpec, array $filters = [])
+    public function count(string $viewSpec, array $filters = []): int
     {
         $filters['_id.type'] = $viewSpec;
 
@@ -649,13 +613,8 @@ class Views extends CompositeBase
 
     /**
      * Check to see if a linkMatch matches a filter.
-     *
-     * @param string $linkMatchType
-     * @param string $linkMatchValue
-     * @param string $filterType
-     * @param string $filterMatch
      */
-    protected function matchesFilter($linkMatchType, $linkMatchValue, $filterType, $filterMatch): bool
+    protected function matchesFilter(string $linkMatchType, string $linkMatchValue, string $filterType, string $filterMatch): bool
     {
         if ($linkMatchType !== $filterType) {
             return false;
@@ -668,11 +627,10 @@ class Views extends CompositeBase
      * Returns a document with properties extracted from $source, according to $viewSpec. Useful for partial representations
      * of CBDs in a view.
      *
-     * @param mixed                $source
+     * @param array<string, mixed> $source
      * @param array<string, mixed> $viewSpec
-     * @param mixed                $from
      */
-    protected function extractProperties(array $source, array $viewSpec, $from): array
+    protected function extractProperties(array $source, array $viewSpec, string $from): array
     {
         $obj = [];
         if (isset($viewSpec['include'])) {

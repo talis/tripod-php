@@ -13,10 +13,8 @@ class TripodConfigFactory
      * ITripodConfigSerializer instance.
      *
      * @param array<string, mixed> $config The Tripod config or serialized ITripodConfigSerializer array
-     *
-     * @return IConfigInstance
      */
-    public static function create(array $config)
+    public static function create(array $config): IConfigInstance
     {
         if (Config::getConfig() !== $config) {
             Config::setConfig($config);

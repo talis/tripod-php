@@ -20,11 +20,9 @@ abstract class CompositeBase extends DriverBase implements IComposite
     /**
      * Returns an array of ImpactedSubjects based on the subjects and predicates of change.
      *
-     * @param string $contextAlias
-     *
      * @return ImpactedSubject[]
      */
-    public function getImpactedSubjects(array $subjectsAndPredicatesOfChange, $contextAlias)
+    public function getImpactedSubjects(array $subjectsAndPredicatesOfChange, string $contextAlias): array
     {
         $candidates = [];
         $filter = [];
@@ -128,27 +126,18 @@ abstract class CompositeBase extends DriverBase implements IComposite
 
     /**
      * Returns an array of the rdf types that will trigger the specification.
-     *
-     * @return array
      */
-    abstract public function getTypesInSpecifications();
+    abstract public function getTypesInSpecifications(): array;
 
     /**
-     * @param string $contextAlias
-     *
-     * @return mixed
+     * @return mixed[]
      */
-    abstract public function findImpactedComposites(array $resourcesAndPredicates, $contextAlias);
+    abstract public function findImpactedComposites(array $resourcesAndPredicates, string $contextAlias): array;
 
     /**
      * Returns the specification config.
-     *
-     * @param string $storeName
-     * @param string $specId    The specification id
-     *
-     * @return array|null
      */
-    abstract public function getSpecification($storeName, $specId);
+    abstract public function getSpecification(string $storeName, string $specId): ?array;
 
     /**
      * Test if the a particular type appears in the array of types associated with a particular spec and that the changeset
