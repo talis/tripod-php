@@ -496,14 +496,11 @@ class Driver extends DriverBase implements IDriver
             return '';
         }
 
-        // PHP 5.3 used MongoDate::__toString() to generate the etag.
-        // This is incompatible with UTCDate::__toString() so we convert it into a microtime representation.
-        // This ensures that if it is required to dual run 2 PHP versions, there are no etag compatibility issues.
-        // Note that MongoDate doesn't go to 8 decimal place precision but still returns it so we go to 6 and pad
-        // with an extra 2
-        $seconds = $lastUpdatedDate->__toString() / 1000;
+        $milliseconds = (int) $lastUpdatedDate->__toString();
+        $seconds = intdiv($milliseconds, 1000);
+        $fraction = ($milliseconds % 1000) / 1000;
 
-        return str_pad(number_format($seconds - floor($seconds), 6), 10, '0', STR_PAD_RIGHT) . ' ' . floor($seconds);
+        return sprintf('%.8f %d', $fraction, $seconds);
     }
 
     public function getTripodViews(): Views
