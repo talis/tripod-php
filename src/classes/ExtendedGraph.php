@@ -1060,10 +1060,9 @@ class ExtendedGraph
     }
 
     /**
-     * diff
-     * returns a simpleIndex consisting of all the statements in array1 that weren't found in any of the subsequent arrays.
+     * returns a simpleIndex consisting of all the statements from the first array that weren't found in any of the subsequent arrays.
      *
-     * @param array1, array2, [array3, ...]
+     * @param array ...$indices If only one array is passed then the diff is taken against the graph's own index, otherwise the diff is taken against the first array passed as a parameter
      *
      * @author Keith
      */
@@ -1116,7 +1115,7 @@ class ExtendedGraph
      * merge
      * merges all  rdf/json-style arrays passed as parameters.
      *
-     * @param array1, array2, [array3, ...]
+     * @param array ...$indices If only one array is passed then the merge is done against the graph's own index, otherwise the merge is done against the first array passed as a parameter
      *
      * @author Keith
      */

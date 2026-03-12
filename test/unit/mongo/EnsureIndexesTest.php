@@ -33,9 +33,6 @@ class EnsureIndexesTest extends ResqueJobTestBase
      *
      * @group ensure-indexes
      *
-     * @param mixed      $argument
-     * @param mixed|null $argumentName
-     *
      * @throws Exception
      */
     public function testMandatoryArgs(string $argument, ?string $argumentName = null): void
@@ -215,21 +212,12 @@ class EnsureIndexesTest extends ResqueJobTestBase
     /**
      *  Creates a simple mock EnsureIndexes Job.
      *
-     *  @param  array list of methods to stub
-     * @param mixed $methods
-     *
      * @return EnsureIndexes&MockObject
      */
-    protected function createMockJob($methods = []): MockObject
+    protected function createMockJob(array $methods = ['getIndexUtils', 'submitJob', 'warningLog', 'enqueue', 'getJobStatus']): MockObject
     {
-        $methodsToStub = ['getIndexUtils', 'submitJob', 'warningLog', 'enqueue', 'getJobStatus'];
-
-        if (!empty($methods)) {
-            $methodsToStub = $methods;
-        }
-
         $mockEnsureIndexesJob = $this->getMockBuilder(EnsureIndexes::class)
-            ->onlyMethods($methodsToStub)
+            ->onlyMethods($methods)
             ->setMockClassName('MockEnsureIndexes')
             ->getMock();
         $mockEnsureIndexesJob->job = new Resque_Job('queue', ['id' => uniqid()]);

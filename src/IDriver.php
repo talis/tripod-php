@@ -102,7 +102,7 @@ interface IDriver
     /**
      * Register an event hook, which will be executed when the event fires.
      */
-    public function registerHook(string $eventType, IEventHook $hook);
+    public function registerHook(string $eventType, IEventHook $hook): void;
 
     // START Deprecated methods that will be removed in 1.x.x
 

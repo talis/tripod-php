@@ -58,18 +58,18 @@ interface ISearchProvider
      *      duration    - the time it took to execute the query and build the result structure
      *  results     - an array of results.
      *
-     * @param string $q       the query as input by a user
+     * @param string $query   the query as input by a user
      * @param string $type    the search document type to restrict results in other words _id.type
      * @param array  $indices an array of indices (from spec) to match query terms against, must specify at least one
      * @param array  $fields  an array of the fields (from spec) you want included in the search results
      * @param int    $limit   the number of results to return per page
      * @param int    $offset  the offset to skip to
      *
-     * @return mixed a structure representing the search results
+     * @return array a structure representing the search results
      *
      * @throws SearchException if there was an error performing the search, or if the parameters are invalid
      */
-    public function search($q, $type, $indices = [], $fields = [], $limit = 10, $offset = 0);
+    public function search(string $query, string $type, array $indices = [], array $fields = [], int $limit = 10, int $offset = 0): array;
 
     /**
      * Removes all documents from search index based on the specified type id.

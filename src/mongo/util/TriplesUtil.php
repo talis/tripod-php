@@ -234,11 +234,9 @@ class TriplesUtil
     }
 
     /**
-     * @param bool|list<string> $parts
-     *
-     * @return string
+     * @param string[] $parts
      */
-    private function extract_object(array $parts)
+    private function extract_object(array $parts): string
     {
         if (!$this->is_object_literal($parts[2])) {
             return trim($parts[2], '><');

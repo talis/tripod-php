@@ -267,7 +267,7 @@ class Updates extends DriverBase
      *
      * @param string $reason
      *
-     * @throws \Exception, if something goes wrong when unlocking documents, or creating audit entries
+     * @throws \Exception If something goes wrong when unlocking documents, or creating audit entries
      */
     public function removeInertLocks(string $transaction_id, $reason): bool
     {
@@ -1171,20 +1171,6 @@ class Updates extends DriverBase
     }
 
     /**
-     * Returns the context alias curie for the supplied context or default context.
-     *
-     * @param string|null $context
-     *
-     * @return string
-     */
-    protected function getContextAlias($context = null)
-    {
-        $contextAlias = $this->labeller->uri_to_alias((empty($context)) ? $this->defaultContext : $context);
-
-        return (empty($contextAlias)) ? $this->getConfigInstance()->getDefaultContextAlias() : $contextAlias;
-    }
-
-    /**
      * @return Database
      */
     protected function getLocksDatabase()
@@ -1210,8 +1196,6 @@ class Updates extends DriverBase
 
     /**
      * Helper function to group the changes for $changeUri by namespaced predicate, then by additions and removals.
-     *
-     * @param mixed $changeUri
      */
     private function getAdditionsRemovalsGroupedByNsPredicate(ChangeSet $cs, string $changeUri): array
     {
@@ -1241,8 +1225,7 @@ class Updates extends DriverBase
     /**
      * Helper method to group changes for $changeUri of a given type by namespaced predicate.
      *
-     * @param mixed $changeUri
-     * @param mixed $changePredicate
+     * @param array|string $changePredicate
      *
      * @throws Exception
      */
@@ -1279,7 +1262,6 @@ class Updates extends DriverBase
      * Helper method to add operator to a set of existing changes ready to be sent to Mongo.
      *
      * @param array<string, mixed>                          $changes
-     * @param mixed                                         $operator
      * @param array<string, int>|array<string, UTCDateTime> $kvp
      */
     private function addOperatorToChange(array &$changes, string $operator, array $kvp): void
@@ -1290,10 +1272,13 @@ class Updates extends DriverBase
 
         foreach ($kvp as $key => $value) {
             if (isset($changes[$operator][$key])) {
-                $value = array_merge($value, $changes[$operator][$key]);
+                if (!is_array($changes[$operator][$key])) {
+                    $changes[$operator][$key] = [$changes[$operator][$key]];
+                }
+                $changes[$operator][$key][] = $value;
+            } else {
+                $changes[$operator][$key] = $value;
             }
-
-            $changes[$operator][$key] = $value;
         }
     }
 

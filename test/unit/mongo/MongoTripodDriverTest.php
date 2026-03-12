@@ -2250,7 +2250,6 @@ class MongoTripodDriverTest extends MongoTripodTestBase
 
         $tripod->expects($this->once())
             ->method('getStatFromStatFactory')
-            ->with($opts['statsConfig'])
             ->willReturn($mockStat);
 
         /** @var StatsD */

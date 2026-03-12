@@ -90,8 +90,6 @@ abstract class JobBase extends DriverBase
 
     /**
      * Called in every job prior to perform().
-     *
-     * @param \Resque_Job The queued job
      */
     public static function beforePerform(\Resque_Job $job): void
     {
@@ -120,28 +118,7 @@ abstract class JobBase extends DriverBase
         $failedJob->getStat()->increment($failedJob->getStatFailureIncrementKey());
     }
 
-    /**
-     * @param string $message Log message
-     * @param mixed  $params  Log params
-     */
-    public function debugLog($message, $params = null): void
-    {
-        parent::debugLog($message, $params);
-    }
-
-    /**
-     * @param string $message Log message
-     * @param mixed  $params  Log params
-     */
-    public function errorLog($message, $params = null): void
-    {
-        parent::errorLog($message, $params);
-    }
-
-    /**
-     * @return ITripodStat
-     */
-    public function getStat()
+    public function getStat(): ITripodStat
     {
         if ($this->statsConfig === null) {
             $this->getStatsConfig();
@@ -152,10 +129,8 @@ abstract class JobBase extends DriverBase
 
     /**
      * Gets the stats config for the job.
-     *
-     * @return array
      */
-    public function getStatsConfig()
+    public function getStatsConfig(): array
     {
         if ($this->statsConfig === []) {
             $this->setStatsConfig();

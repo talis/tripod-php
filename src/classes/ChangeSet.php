@@ -12,9 +12,30 @@ namespace Tripod;
  */
 class ChangeSet extends ExtendedGraph
 {
+    /** @var array<string, array<string, array{type: string, value: string}[]>> */
     public $before = [];
 
+    /** @var array<string, array<string, array{type: string, value: string}[]>> */
     public $after = [];
+
+    /**
+     * @var array{
+     *   subjectOfChange?: string,
+     *   createdDate?: string,
+     *   creatorName?: string,
+     *   changeReason?: string,
+     *   after?: array,
+     *   before?: array,
+     *   after_rdfxml?: string,
+     *   before_rdfxml?: string,
+     *   properties?: array<string, array>,
+     *   'http://purl.org/dc/terms/source'?: string|array
+     * }
+     */
+    public $a;
+
+    /** @var array<string, array<string, array{type: string, value: string}[]>> */
+    public $_index = [];
 
     /**
      * Create a new changeset. This will calculate the required additions and removals based on before and after versions of a bounded description. The args parameter is an associative array that may have the following fields:
@@ -41,30 +62,6 @@ class ChangeSet extends ExtendedGraph
      *
      * @param array $a args an associative array of parameters to use when constructing the changeset
      */
-    public $a;
-
-    public $subjectIndex = [];
-
-    public $_index = [];
-
-    protected $subjectOfChange;
-
-    protected $before_rdfxml;
-
-    protected $after_rdfxml;
-
-    protected $createdDate;
-
-    protected $creatorName;
-
-    protected $changeReason;
-
-    protected $has_changes = false;
-
-    protected $cs_resource;
-
-    protected $include_count = 0;
-
     public function __construct(array $a)
     {
         parent::__construct();
@@ -100,7 +97,7 @@ class ChangeSet extends ExtendedGraph
         $this->__init();
     }
 
-    protected function __init()
+    protected function __init(): void
     {
         $csIndex = [];
         $CSNS = 'http://purl.org/vocab/changeset/schema#';
@@ -189,10 +186,10 @@ class ChangeSet extends ExtendedGraph
     /**
      * adds a triple to the internal simpleIndex holding all the changesets and statements.
      *
-     * @param string $s      Subject uri
-     * @param string $p      Predicate URI
-     * @param string $o      Object URI or literal value
-     * @param string $o_type
+     * @param string       $s      Subject uri
+     * @param string       $p      Predicate URI
+     * @param array|string $o      Object URI or literal value
+     * @param string       $o_type Object type (bnode, uri, literal)
      *
      * @author Keith
      */

@@ -67,9 +67,7 @@ class JobGroup
             return $updateResult['count'];
         }
 
-        if (isset($updateResult->count)) {
-            return $updateResult->count;
-        }
+        return $updateResult->count;
     }
 
     /**

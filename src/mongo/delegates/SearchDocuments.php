@@ -274,9 +274,6 @@ class SearchDocuments extends DriverBase
         }
     }
 
-    /**
-     * @param mixed $specId
-     */
     protected function getSearchDocumentSpecification(string $specId): ?array
     {
         return $this->getConfigInstance()->getSearchDocumentSpecification($this->storeName, $specId);

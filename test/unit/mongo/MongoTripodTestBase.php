@@ -209,13 +209,7 @@ abstract class MongoTripodTestBase extends TestCase
         $this->assertNotEmpty($doc[$key]->toDateTime());
     }
 
-    /**
-     * @param mixed       $_id
-     * @param int|null    $expectedValue
-     * @param bool        $hasVersion
-     * @param Driver|null $tripod
-     */
-    protected function assertDocumentVersion(array $_id, $expectedValue = null, $hasVersion = true, $tripod = null, bool $fromTransactionLog = false): void
+    protected function assertDocumentVersion(array $_id, ?int $expectedValue = null, bool $hasVersion = true, ?Driver $tripod = null): void
     {
         // just make sure $_id is aliased
         $labeller = new Labeller();
@@ -223,7 +217,7 @@ abstract class MongoTripodTestBase extends TestCase
             $_id[$key] = $labeller->uri_to_alias($value);
         }
 
-        $doc = $this->getDocument($_id, $tripod, $fromTransactionLog);
+        $doc = $this->getDocument($_id, $tripod);
         if ($hasVersion == true) {
             $this->assertArrayHasKey('_version', $doc, 'Document for ' . var_export($_id, true) . ' should have a version, but none found');
 
@@ -237,13 +231,12 @@ abstract class MongoTripodTestBase extends TestCase
     }
 
     /**
-     * @param array                   $_id                the id of the document to retrieve from mongo
-     * @param string                  $property           the property you are checking for
-     * @param mixed                   $expectedValue      if not null the property value will be matched against this expectedValue
-     * @param Collection|IDriver|null $tripod             where to retrieve the document from
-     * @param bool                    $fromTransactionLog if you want to retrieve the document from transaction log
+     * @param array                   $_id           the id of the document to retrieve from mongo
+     * @param string                  $property      the property you are checking for
+     * @param mixed                   $expectedValue if not null the property value will be matched against this expectedValue
+     * @param Collection|IDriver|null $tripod        where to retrieve the document from
      */
-    protected function assertDocumentHasProperty(array $_id, $property, $expectedValue = null, $tripod = null, bool $fromTransactionLog = false): void
+    protected function assertDocumentHasProperty(array $_id, string $property, $expectedValue = null, $tripod = null): void
     {
         // just make sure $_id is aliased
         $labeller = new Labeller();
@@ -251,7 +244,7 @@ abstract class MongoTripodTestBase extends TestCase
             $_id[$key] = $labeller->uri_to_alias($value);
         }
 
-        $doc = $this->getDocument($_id, $tripod, $fromTransactionLog);
+        $doc = $this->getDocument($_id, $tripod);
 
         $this->assertArrayHasKey($property, $doc, 'Document for ' . var_export($_id, true) . sprintf(' should have property [%s], but none found', $property));
         if ($expectedValue !== null) {

@@ -15,9 +15,9 @@ class Config implements ITripodConfig
     private static $configInstance;
 
     /**
-     * @var array
+     * @var array|null
      */
-    private static $config = [];
+    private static $config;
 
     /**
      * Config should not be instantiated directly: use Config::getInstance().

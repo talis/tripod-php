@@ -226,7 +226,7 @@ class Driver extends DriverBase implements IDriver
     /**
      * Remove locks that are there forever, creates a audit entry to keep track who and why removed these locks.
      *
-     * @throws \Exception, if something goes wrong when unlocking documents, or creating audit entries
+     * @throws \Exception If something goes wrong when unlocking documents, or creating audit entries
      */
     public function removeInertLocks(string $transaction_id, string $reason): bool
     {

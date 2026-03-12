@@ -841,7 +841,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             ],
         ];
 
-        $returnedGraph = new ExtendedGraph();
+        $returnedGraph = new MongoGraph();
         $returnedGraph->add_literal_triple($uri1, 'http://somepred', 'someval');
 
         $mockDb = $this->getMockBuilder(Database::class)
@@ -1926,10 +1926,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
         $this->assertTrue($view->has_triples_about('http://schemas.talis.com/2005/user/schema#xyz'));
     }
 
-    /**
-     * @return ExtendedGraph
-     */
-    public function fetchGraphInGetViewForResourcesCallback(...$args)
+    public function fetchGraphInGetViewForResourcesCallback(...$args): MongoGraph
     {
         $uri1 = 'http://uri1';
         $uri2 = 'http://uri2';
@@ -1940,10 +1937,10 @@ class MongoTripodViewsTest extends MongoTripodTestBase
         $query1 = ['_id' => ['$in' => [['r' => $uri1, 'c' => $context, 'type' => $viewType], ['r' => $uri2, 'c' => $context, 'type' => $viewType]]]];
         $query2 = ['_id' => ['$in' => [['r' => $uri2, 'c' => $context, 'type' => $viewType]]]];
 
-        $returnedGraph1 = new ExtendedGraph();
+        $returnedGraph1 = new MongoGraph();
         $returnedGraph1->add_literal_triple($uri1, 'http://somepred', 'someval');
 
-        $returnedGraph2 = new ExtendedGraph();
+        $returnedGraph2 = new MongoGraph();
         $returnedGraph2->add_literal_triple($uri2, 'http://somepred', 'someval');
         if ($args[0] == $query1) {
             return $returnedGraph1;
@@ -1962,9 +1959,6 @@ class MongoTripodViewsTest extends MongoTripodTestBase
 
         $viewType = 'someView';
         $context = 'http://someContext';
-
-        $returnedGraph = new ExtendedGraph();
-        $returnedGraph->add_literal_triple($uri1, 'http://somepred', 'someval');
 
         $mockDb = $this->getMockBuilder(Database::class)
             ->disableOriginalConstructor()
@@ -2025,9 +2019,6 @@ class MongoTripodViewsTest extends MongoTripodTestBase
         $viewType = 'someView';
         $context = 'http://someContext';
 
-        $returnedGraph = new ExtendedGraph();
-        $returnedGraph->add_literal_triple($uri1, 'http://somepred', 'someval');
-
         $mockDb = $this->getMockBuilder(Database::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['selectCollection'])
@@ -2087,9 +2078,6 @@ class MongoTripodViewsTest extends MongoTripodTestBase
 
         $viewType = 'someView';
         $context = 'http://someContext';
-
-        $returnedGraph = new ExtendedGraph();
-        $returnedGraph->add_literal_triple($uri1, 'http://somepred', 'someval');
 
         $mockDb = $this->getMockBuilder(Database::class)
             ->disableOriginalConstructor()

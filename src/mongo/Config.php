@@ -1256,7 +1256,7 @@ class Config implements IConfigInstance
                     throw new ConfigException('Computed field spec contains more than one function');
                 }
 
-                if ($validationLevel === self::VALIDATE_MAX) {
+                if ($validationLevel === self::VALIDATE_MAX && isset($availableFields)) {
                     $this->validateComputedFieldSpec($functions[0], $field['value'], $availableFields);
                 }
             }
@@ -1708,8 +1708,8 @@ class Config implements IConfigInstance
                 }
             } while ($retries <= self::CONNECTION_RETRIES);
 
-            if (!isset($this->connections[$dataSource])) {
-                self::getLogger()->error('MongoConnectionException failed after ' . $retries . ' attempts (MAX:' . self::CONNECTION_RETRIES . '): ' . $e->getMessage());
+            if (!isset($this->connections[$dataSource]) && $exception !== null) {
+                self::getLogger()->error('MongoConnectionException failed after ' . $retries . ' attempts (MAX:' . self::CONNECTION_RETRIES . '): ' . $exception->getMessage());
 
                 throw $exception;
             }
@@ -1819,7 +1819,7 @@ class Config implements IConfigInstance
     private static function getenv(string $env, $default = false)
     {
         $var = getenv($env);
-        if (isset($var) && $var != '') {
+        if ($var) {
             return $var;
         }
 

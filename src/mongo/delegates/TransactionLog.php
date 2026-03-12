@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace Tripod\Mongo;
 
+use MongoDB\Collection;
+use MongoDB\Database;
 use MongoDB\Driver\Cursor;
 use MongoDB\InsertOneResult;
-use MongoDB\UpdateOneResult;
+use MongoDB\UpdateResult;
 use Tripod\Config;
 
 class TransactionLog
 {
+    /** @var IConfigInstance */
     protected $config;
 
+    /** @var Database */
     private $transaction_db;
 
+    /** @var Collection */
     private $transaction_collection;
 
     /**
@@ -202,13 +207,9 @@ class TransactionLog
     /**
      * Proxy method to help with test mocking.
      *
-     * @param array $transaction
-     *
-     * @return InsertOneResult
-     *
      * @codeCoverageIgnore
      */
-    protected function insertTransaction($transaction)
+    protected function insertTransaction(array $transaction): InsertOneResult
     {
         return $this->transaction_collection->insertOne($transaction, ['w' => 1]);
     }
@@ -216,15 +217,9 @@ class TransactionLog
     /**
      * Proxy method to help with test mocking.
      *
-     * @param array $query
-     * @param array $update
-     * @param array $options
-     *
-     * @return UpdateOneResult
-     *
      * @codeCoverageIgnore
      */
-    protected function updateTransaction($query, $update, $options)
+    protected function updateTransaction(array $query, array $update, array $options): UpdateResult
     {
         return $this->transaction_collection->updateOne($query, $update, $options);
     }

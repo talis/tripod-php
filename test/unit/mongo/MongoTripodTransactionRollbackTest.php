@@ -435,13 +435,9 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
      * This is a private method that performs exactly the same operation as Driver::lockSingleDocument, the reason this is duplicated here
      * is so that we can simulate the correct locking of documents as part of mocking a workflow that will lock a document correctly but not another.
      *
-     * @param mixed $s
-     * @param mixed $transaction_id
-     * @param mixed $contextAlias
-     *
-     * @return array
+     * @return array|false|null
      */
-    public function lockSingleDocumentCallback(?string $s, $transaction_id, $contextAlias)
+    public function lockSingleDocumentCallback(?string $s, string $transaction_id, string $contextAlias)
     {
         $lCollection = Config::getInstance()->getCollectionForLocks($this->tripod->getStoreName());
         $countEntriesInLocksCollection = $lCollection->count(['_id' => [_ID_RESOURCE => $this->labeller->uri_to_alias($s), _ID_CONTEXT => $contextAlias]]);

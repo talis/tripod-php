@@ -7,28 +7,16 @@ namespace Tripod;
 interface ITripodStat
 {
     /**
-     * @param string     $operation
-     * @param int|number $inc       Amount to increment by
-     *
-     * @return void
+     * @param int $inc Amount to increment by
      */
-    public function increment($operation, $inc = 1);
+    public function increment(string $operation, int $inc = 1): void;
 
     /**
-     * @param string $operation
-     * @param number $duration
-     *
-     * @return void
+     * @param float|int $duration
      */
-    public function timer($operation, $duration);
+    public function timer(string $operation, $duration): void;
 
-    /**
-     * @return array
-     */
-    public function getConfig();
+    public function getConfig(): array;
 
-    /**
-     * @return ITripodStat
-     */
-    public static function createFromConfig(array $config);
+    public static function createFromConfig(array $config): ITripodStat;
 }

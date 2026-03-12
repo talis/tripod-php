@@ -184,9 +184,6 @@ class SearchIndexer extends CompositeBase
         }
 
         $filter = ['$or' => $types];
-        if (isset($resource)) {
-            $filter['_id'] = [_ID_RESOURCE => $this->labeller->uri_to_alias($resource), _ID_CONTEXT => $contextAlias];
-        }
 
         $count = $this->getConfigInstance()->getCollectionForCBD($this->getStoreName(), $from)->count($filter);
         $docs = $this->getConfigInstance()

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use MongoDB\Collection;
 use MongoDB\Driver\Manager;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tripod\Mongo\IndexUtils;
@@ -314,7 +315,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      */
     protected function createMockCollection(): MockObject
     {
-        return $this->getMockBuilder(MongoDB\Collection::class)
+        return $this->getMockBuilder(Collection::class)
             ->onlyMethods(['createIndex', 'dropIndexes'])
             ->setConstructorArgs([
                 new Manager('mongodb://fake:27017'),

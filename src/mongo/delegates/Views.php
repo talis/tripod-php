@@ -46,8 +46,6 @@ class Views extends CompositeBase
 
     /**
      * Receive update from subject.
-     *
-     * @param ImpactedSubject
      */
     public function update(ImpactedSubject $subject): void
     {
@@ -510,15 +508,8 @@ class Views extends CompositeBase
 
     /**
      * Joins data to $dest from $source according to specification in $joins, or queries DB if data is not available in $source.
-     *
-     * @param bool                 $buildImpactIndex
-     * @param mixed                $source
-     * @param mixed                $joins
-     * @param array<string, mixed> $dest
-     * @param mixed                $from
-     * @param mixed                $contextAlias
      */
-    protected function doJoins(array $source, $joins, array &$dest, $from, $contextAlias, $buildImpactIndex = true)
+    protected function doJoins(array $source, array $joins, array &$dest, string $from, string $contextAlias, bool $buildImpactIndex = true)
     {
         // expand sequences before doing any joins...
         $this->expandSequence($joins, $source);
@@ -749,9 +740,6 @@ class Views extends CompositeBase
         return $this->getConfigInstance()->getCollectionForView($this->storeName, $viewSpecId);
     }
 
-    /**
-     * @param array|string $resourceUriOrArray
-     */
     private function createTripodViewIdsFromResourceUris(array $resourceUriOrArray, ?string $context, string $viewType): array
     {
         $contextAlias = $this->getContextAlias($context);

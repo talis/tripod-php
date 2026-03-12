@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Tripod\Config;
+use Tripod\Exceptions\Exception;
 use Tripod\Exceptions\LabellerException;
 use Tripod\Mongo\MongoGraph;
 
@@ -71,14 +72,6 @@ class MongoGraphTest extends MongoTripodTestBase
         $expected = "<http://example.com/2> <http://purl.org/dc/terms/title> \"some literal title\" <http://wibble.talisaspire.com/> .
 <http://example.com/2> <http://purl.org/dc/terms/source> <http://www.google.com> <http://wibble.talisaspire.com/> .\n";
         $this->assertSame($expected, $g->to_nquads('http://wibble.talisaspire.com/'));
-    }
-
-    public function testAddTripodArrayThrowsException(): void
-    {
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Value passed to add_tripod_array is not of type array');
-        $g = new MongoGraph();
-        $g->add_tripod_array(null);
     }
 
     public function testAddTripodArraySingleDoc(): void
@@ -218,7 +211,7 @@ class MongoGraphTest extends MongoTripodTestBase
     public function testAddTripodArrayContainingEmptyPredicate(): void
     {
         // Should not be able to label ''
-        $this->expectException(Tripod\Exceptions\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The predicate cannot be an empty string');
         $doc = [
             '_id' => ['r' => 'http://talisaspire.com/works/4d101f63c10a6-2', 'c' => 'http://talisaspire.com/works/4d101f63c10a6-2'],
@@ -245,7 +238,7 @@ class MongoGraphTest extends MongoTripodTestBase
      */
     public function testAddTripodArrayContainingInvalidSubject($value): void
     {
-        $this->expectException(Tripod\Exceptions\Exception::class);
+        $this->expectException(Exception::class);
         $doc = [
             '_id' => ['r' => $value, 'c' => 'http://talisaspire.com/works/4d101f63c10a6-2'],
             '_version' => 0,

@@ -48,17 +48,9 @@ class MongoGraph extends ExtendedGraph
     /**
      * Adds the tripod array(s) to this graph.
      * This method is used to add individual tripod documents, or a series of tripod array documents that are embedded in a view.
-     *
-     * @param mixed $tarray
-     *
-     * @throws Exception
      */
-    public function add_tripod_array($tarray): void
+    public function add_tripod_array(array $tarray): void
     {
-        if (!is_array($tarray)) {
-            throw new Exception('Value passed to add_tripod_array is not of type array');
-        }
-
         // need to convert from tripod storage format to rdf/json as php array format
         if (isset($tarray['value'][_GRAPHS])) {
             // iterate add add each graph
@@ -72,11 +64,8 @@ class MongoGraph extends ExtendedGraph
 
     /**
      * Returns a mongo-ready doc for a single CBD.
-     *
-     * @param mixed $docId
-     * @param mixed $context
      */
-    public function to_tripod_array($docId, ?string $context): ?array
+    public function to_tripod_array(string $docId, ?string $context): ?array
     {
         $docId = $this->_labeller->qname_to_alias($docId);
         $contextAlias = $this->_labeller->uri_to_alias($context);
@@ -98,12 +87,9 @@ class MongoGraph extends ExtendedGraph
     /**
      * Returns a mongo-ready doc for views, which can have multiple graphs in the same doc.
      *
-     * @param mixed $docId
-     * @param mixed $context
-     *
      * @return array<string, mixed>
      */
-    public function to_tripod_view_array($docId, ?string $context): array
+    public function to_tripod_view_array(string $docId, ?string $context): array
     {
         $subjects = $this->get_subjects();
         $contextAlias = $this->_labeller->uri_to_alias($context);

@@ -84,13 +84,10 @@ abstract class DriverBase
      */
     protected $config;
 
-    /**
-     * @return ITripodStat
-     */
-    public function getStat()
+    public function getStat(): ITripodStat
     {
         if ($this->stat == null) {
-            $this->setStat($this->getStatFromStatFactory($this->statsConfig));
+            $this->setStat($this->getStatFromStatFactory());
         }
 
         return $this->stat;
@@ -108,10 +105,8 @@ abstract class DriverBase
 
     /**
      * Returns stat object config.
-     *
-     * @return array
      */
-    public function getStatsConfig()
+    public function getStatsConfig(): array
     {
         $stat = $this->getStat();
         if ($stat) {
@@ -121,90 +116,65 @@ abstract class DriverBase
         return $this->statsConfig;
     }
 
-    /**
-     * @return string
-     */
-    public function getStoreName()
+    public function getStoreName(): string
     {
         return $this->storeName;
     }
 
-    /**
-     * @return string
-     */
-    public function getPodName()
+    public function getPodName(): string
     {
         return $this->podName;
     }
 
     /**
-     * @param string     $type
-     * @param array|null $params
-     *
      * @codeCoverageIgnore
      */
-    public function timingLog($type, $params = null): void
+    public function timingLog(string $type, ?array $params = null): void
     {
         $type = '[PID ' . getmypid() . '] ' . $type;
         $this->log(LogLevel::DEBUG, $type, $params);
     }
 
     /**
-     * @param array|null $params
-     * @param mixed      $message
-     *
      * @codeCoverageIgnore
      */
-    public function infoLog($message, $params = null): void
+    public function infoLog(string $message, ?array $params = null): void
     {
         $message = '[PID ' . getmypid() . '] ' . $message;
         $this->log(LogLevel::INFO, $message, $params);
     }
 
     /**
-     * @param array|null $params
-     * @param mixed      $message
-     *
      * @codeCoverageIgnore
      */
-    public function debugLog($message, $params = null): void
+    public function debugLog(string $message, ?array $params = null): void
     {
         $message = '[PID ' . getmypid() . '] ' . $message;
         $this->log(LogLevel::DEBUG, $message, $params);
     }
 
     /**
-     * @param string     $message
-     * @param array|null $params
-     *
      * @codeCoverageIgnore
      */
-    public function errorLog($message, $params = null): void
+    public function errorLog(string $message, ?array $params = null): void
     {
         $message = '[PID ' . getmypid() . '] ' . $message;
         $this->log(LogLevel::ERROR, $message, $params);
     }
 
     /**
-     * @param string     $message
-     * @param array|null $params
-     *
      * @codeCoverageIgnore
      */
-    public function warningLog($message, $params = null): void
+    public function warningLog(string $message, ?array $params = null): void
     {
         $message = '[PID ' . getmypid() . '] ' . $message;
         $this->log(LogLevel::WARNING, $message, $params);
     }
 
     /**
-     * @static
-     *
-     * @return LoggerInterface
-     *
      * @codeCoverageIgnore
      */
-    public static function getLogger()
+    public static function getLogger(): LoggerInterface
     {
         if (self::$logger == null) {
             $log = new Logger('TRIPOD');
@@ -216,46 +186,25 @@ abstract class DriverBase
 
     /**
      * For mocking out the creation of stat objects.
-     *
-     * @return ITripodStat
      */
-    protected function getStatFromStatFactory(array $config)
+    protected function getStatFromStatFactory(): ITripodStat
     {
         return TripodStatFactory::create($this->statsConfig);
     }
 
-    /**
-     * @param int $secs
-     *
-     * @return int
-     */
-    protected function getExpirySecFromNow($secs)
+    protected function getExpirySecFromNow(int $secs): int
     {
         return time() + $secs;
     }
 
-    /**
-     * @param string|null $context
-     *
-     * @return mixed
-     */
-    protected function getContextAlias($context = null)
+    protected function getContextAlias(?string $context = null): string
     {
         $contextAlias = $this->labeller->uri_to_alias((empty($context)) ? $this->defaultContext : $context);
 
         return (empty($contextAlias)) ? $this->getConfigInstance()->getDefaultContextAlias() : $contextAlias;
     }
 
-    /**
-     * @param array<string, mixed> $query
-     * @param string               $type
-     * @param Collection|null      $collection
-     * @param array                $includeProperties
-     * @param int                  $cursorSize
-     *
-     * @return MongoGraph
-     */
-    protected function fetchGraph(array $query, $type, $collection = null, $includeProperties = [], $cursorSize = 101)
+    protected function fetchGraph(array $query, string $type, ?Collection $collection = null, ?array $includeProperties = [], int $cursorSize = 101): MongoGraph
     {
         $graph = new MongoGraph();
 
@@ -315,8 +264,8 @@ abstract class DriverBase
             }
         } while ($retries <= Config::CONNECTION_RETRIES && $cursorSuccess === false);
 
-        if ($cursorSuccess === false) {
-            self::getLogger()->error('CursorException failed after ' . $retries . ' attempts (MAX:' . Config::CONNECTION_RETRIES . '): ' . $e->getMessage());
+        if ($cursorSuccess === false && $exception !== null) {
+            self::getLogger()->error('CursorException failed after ' . $retries . ' attempts (MAX:' . Config::CONNECTION_RETRIES . '): ' . $exception->getMessage());
 
             throw $exception;
         }
@@ -344,11 +293,8 @@ abstract class DriverBase
 
     /**
      * Expands an RDF sequence into proper tripod join clauses.
-     *
-     * @param array                $joins
-     * @param array<string, mixed> $source
      */
-    protected function expandSequence(&$joins, array $source)
+    protected function expandSequence(array &$joins, array $source): void
     {
         if (!empty($joins) && isset($joins['followSequence'])) {
             // add any rdf:_x style properties in the source to the joins array,
@@ -376,13 +322,9 @@ abstract class DriverBase
     /**
      * Adds an _id object (or array of _id objects) to the target document's impact index.
      *
-     * @param array<string, mixed> &$target
-     * @param mixed                $buildImpactIndex
-     * @param array<string, mixed> $id
-     *
      * @throws \InvalidArgumentException
      */
-    protected function addIdToImpactIndex(array $id, array &$target, $buildImpactIndex = true)
+    protected function addIdToImpactIndex(array $id, array &$target, bool $buildImpactIndex = true): void
     {
         if ($buildImpactIndex) {
             if (isset($id[_ID_RESOURCE])) {
@@ -409,18 +351,13 @@ abstract class DriverBase
 
     /**
      * For mocking.
-     *
-     * @return IConfigInstance
      */
-    protected function getConfigInstance()
+    protected function getConfigInstance(): IConfigInstance
     {
         return \Tripod\Config::getInstance();
     }
 
-    /**
-     * @return Database
-     */
-    protected function getDatabase()
+    protected function getDatabase(): Database
     {
         if ($this->db === null) {
             $this->db = $this->config->getDatabase(
@@ -433,10 +370,7 @@ abstract class DriverBase
         return $this->db;
     }
 
-    /**
-     * @return Collection
-     */
-    protected function getCollection()
+    protected function getCollection(): Collection
     {
         if ($this->collection === null) {
             $this->collection = $this->getDatabase()->selectCollection($this->podName);
@@ -445,7 +379,12 @@ abstract class DriverBase
         return $this->collection;
     }
 
-    protected function applyHooks($fn, $hooks, $args = [])
+    /**
+     * @param IEventHook[] $hooks
+     *
+     * @throws Exception If an invalid hook function is requested
+     */
+    protected function applyHooks(string $fn, array $hooks, array $args = []): void
     {
         switch ($fn) {
             case $this::HOOK_FN_PRE:
@@ -459,8 +398,7 @@ abstract class DriverBase
 
         foreach ($hooks as $hook) {
             try {
-                // @var $hook IEventHook
-                $hook->{$fn}($args);
+                call_user_func([$hook, $fn], $args);
             } catch (\Exception $e) {
                 // don't let rabid hooks stop tripod
                 static::getLogger()->error('Hook ' . get_class($hook) . sprintf(' threw exception %s, continuing', $e->getMessage()));
@@ -469,13 +407,11 @@ abstract class DriverBase
     }
 
     /**
-     * @param array|null $params
-     *
      * @codeCoverageIgnore
      */
-    private function log(string $level, string $message, $params): void
+    private function log(string $level, string $message, ?array $params): void
     {
-        ($params == null) ? self::getLogger()->log($level, $message) : self::getLogger()->log($level, $message, $params);
+        self::getLogger()->log($level, $message, $params ?: []);
     }
 }
 
@@ -486,36 +422,25 @@ final class NoStat implements ITripodStat
      */
     public static $instance;
 
-    /**
-     * @param string     $operation
-     * @param int|number $inc
-     */
-    public function increment($operation, $inc = 1): void
+    public function increment(string $operation, int $inc = 1): void
     {
         // do nothing
     }
 
     /**
-     * @param string $operation
-     * @param number $duration
+     * @param float|int $duration
      */
-    public function timer($operation, $duration): void
+    public function timer(string $operation, $duration): void
     {
         // do nothing
     }
 
-    /**
-     * @return array{}
-     */
     public function getConfig(): array
     {
         return [];
     }
 
-    /**
-     * @return self
-     */
-    public static function getInstance()
+    public static function getInstance(): self
     {
         if (self::$instance == null) {
             self::$instance = new NoStat();
@@ -524,10 +449,7 @@ final class NoStat implements ITripodStat
         return self::$instance;
     }
 
-    /**
-     * @return NoStat
-     */
-    public static function createFromConfig(array $config = [])
+    public static function createFromConfig(array $config = []): self
     {
         return self::getInstance();
     }

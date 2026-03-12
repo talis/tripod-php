@@ -36,13 +36,8 @@ class EnsureIndexes extends JobBase
 
     /**
      * This method is use to schedule an EnsureIndexes job.
-     *
-     * @param string  $storeName
-     * @param booelan $reindex
-     * @param string  $queueName
-     * @param mixed   $background
      */
-    public function createJob($storeName, $reindex, $background, $queueName = null): void
+    public function createJob(string $storeName, bool $reindex, bool $background, ?string $queueName = null): void
     {
         $configInstance = $this->getConfigInstance();
         if (!$queueName) {

@@ -104,8 +104,6 @@ class Tables extends CompositeBase
 
     /**
      * Receive update from subject.
-     *
-     * @param ImpactedSubject
      */
     public function update(ImpactedSubject $subject): void
     {
@@ -671,15 +669,12 @@ class Tables extends CompositeBase
         // Find the name of any indexed fields
         $indexedFields = [];
         $indexesGroupedByCollection = $this->config->getIndexesGroupedByCollection($this->storeName);
-        if (isset($indexesGroupedByCollection, $indexesGroupedByCollection[$collection->getCollectionName()])) {
-            $indexes = $indexesGroupedByCollection[$collection->getCollectionName()];
-            if (isset($indexes)) {
-                foreach ($indexes as $repset) {
-                    foreach ($repset as $index) {
-                        foreach ($index as $indexedFieldname => $v) {
-                            if (strpos($indexedFieldname, 'value.') === 0) {
-                                $indexedFields[] = substr($indexedFieldname, strlen('value.'));
-                            }
+        if (isset($indexesGroupedByCollection[$collection->getCollectionName()])) {
+            foreach ($indexesGroupedByCollection[$collection->getCollectionName()] as $repset) {
+                foreach ($repset as $index) {
+                    foreach ($index as $indexedFieldname => $v) {
+                        if (strpos($indexedFieldname, 'value.') === 0) {
+                            $indexedFields[] = substr($indexedFieldname, strlen('value.'));
                         }
                     }
                 }
@@ -1246,11 +1241,9 @@ class Tables extends CompositeBase
     /**
      * Add counts to $dest by counting what is in $source according to $countSpec.
      *
-     * @param mixed $source
-     * @param mixed $countSpec
      * @param int[] $dest
      */
-    protected function doCounts(array $source, $countSpec, array &$dest)
+    protected function doCounts(array $source, array $countSpec, array &$dest): void
     {
         // process count aggregate function
         foreach ($countSpec as $c) {

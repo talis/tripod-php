@@ -370,20 +370,11 @@ class MongoSearchProvider implements ISearchProvider
     }
 
     /**
-     * @param string $q
-     * @param string $type
-     * @param array  $indices
-     * @param array  $fields
-     * @param int    $limit
-     * @param int    $offset
-     *
-     * @return array|mixed
-     *
      * @throws SearchException
      */
-    public function search($q, $type, $indices = [], $fields = [], $limit = 10, $offset = 0): array
+    public function search(string $query, string $type, array $indices = [], array $fields = [], int $limit = 10, int $offset = 0): array
     {
-        if (empty($q)) {
+        if (empty($query)) {
             throw new SearchException('You must specify a query');
         }
 
@@ -407,7 +398,7 @@ class MongoSearchProvider implements ISearchProvider
             throw new SearchException('Value for offset must be a positive number');
         }
 
-        $original_terms = explode(' ', trim(strtolower($q)));
+        $original_terms = explode(' ', trim(strtolower($query)));
         $terms = array_values(array_diff($original_terms, $this->stopWords));
 
         // todo: this means if all the words entered were stop words, then use the orginal terms rather than do nothing!
@@ -420,16 +411,16 @@ class MongoSearchProvider implements ISearchProvider
             $regexes[] = new Regex($t, '');
         }
 
-        $query = [];
-        $query['_id.type'] = $type;
+        $filter = [];
+        $filter['_id.type'] = $type;
 
         if (count($indices) === 1) {
             $searchIndex = $indices[0];
-            $query[$searchIndex] = ['$all' => $regexes];
+            $filter[$searchIndex] = ['$all' => $regexes];
         } else {
-            $query['$or'] = [];
+            $filter['$or'] = [];
             foreach ($indices as $searchIndex) {
-                $query['$or'][] = [$searchIndex => ['$all' => $regexes]];
+                $filter['$or'][] = [$searchIndex => ['$all' => $regexes]];
             }
         }
 
@@ -442,7 +433,7 @@ class MongoSearchProvider implements ISearchProvider
         $searchTimer->start();
 
         $cursor = $this->config->getCollectionForSearchDocument($this->storeName, $type)
-            ->find($query, [
+            ->find($filter, [
                 'projection' => $fieldsToReturn,
                 'limit' => $limit,
                 'skip' => $offset,
@@ -454,11 +445,11 @@ class MongoSearchProvider implements ISearchProvider
         $searchResults['head']['limit'] = $limit;
         $searchResults['head']['offset'] = $offset;
         $searchResults['head']['duration'] = '';
-        $searchResults['head']['query'] = $q;
+        $searchResults['head']['query'] = $query;
         $searchResults['head']['query_terms_used'] = $terms;
         $searchResults['results'] = [];
 
-        $count = $this->config->getCollectionForSearchDocument($this->storeName, $type)->count($query);
+        $count = $this->config->getCollectionForSearchDocument($this->storeName, $type)->count($filter);
         if ($count > 0) {
             $searchResults['head']['count'] = $count;
 
