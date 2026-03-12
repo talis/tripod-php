@@ -68,6 +68,7 @@ jobs:
       - checkout
       - run: composer install
       - run: composer lint
+      - run: composer analyse
 
   test:
     parameters:

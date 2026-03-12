@@ -1,0 +1,17 @@
+parameters:
+  level: 5
+  phpVersion:
+    min: 70400 # PHP 7.4
+    max: 80419 # PHP 8.4.19
+  tips:
+    treatPhpDocTypesAsCertain: false
+  ignoreErrors:
+    - '#Access to undefined constant MongoDB\\Driver\\ReadPreference\:\:RP_.*#'
+    - '#Call to an undefined method MongoDB\\Driver\\ReadPreference\:\:getMode\(\)#'
+    - identifier: missingType.iterableValue
+      reportUnmatched: false
+    - identifier: unset.possiblyHookedProperty
+      reportUnmatched: false
+  paths:
+    - src
+    - test

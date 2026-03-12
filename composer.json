@@ -30,7 +30,8 @@
         "phpunit/phpunit": "^9.6.20",
         "resque/php-resque": "v1.3.6",
         "friendsofphp/php-cs-fixer": "^3.4",
-        "perftools/php-profiler": "^1.2"
+        "perftools/php-profiler": "^1.2",
+        "phpstan/phpstan": "^2.1"
     },
     "autoload": {
         "classmap": ["src/"]
@@ -40,6 +41,7 @@
     },
     "scripts": {
         "lint": "php-cs-fixer check",
+        "analyse": "phpstan analyse --memory-limit 1024M",
         "test": [
             "Composer\\Config::disableProcessTimeout",
             "phpunit"
