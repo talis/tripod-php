@@ -8,14 +8,20 @@ namespace Tripod;
  * Represents a changeset. Can be used to create a changeset based on the difference between two bounded descriptions. The descriptions must share the same subject URI.
  * Adapted from Moriarty's changeset.
  *
+ * @phpstan-import-type ObjectType from ExtendedGraph
+ * @phpstan-import-type TripleSubject from ExtendedGraph
+ * @phpstan-import-type TriplePredicate from ExtendedGraph
+ * @phpstan-import-type TripleObject from ExtendedGraph
+ * @phpstan-import-type TripleGraph from ExtendedGraph
+ *
  * @see https://code.google.com/p/moriarty/source/browse/trunk/changeset.class.php
  */
 class ChangeSet extends ExtendedGraph
 {
-    /** @var array<string, array<string, array{type: string, value: string}[]>> */
+    /** @var TripleGraph */
     public $before = [];
 
-    /** @var array<string, array<string, array{type: string, value: string}[]>> */
+    /** @var TripleGraph */
     public $after = [];
 
     /**
@@ -24,18 +30,15 @@ class ChangeSet extends ExtendedGraph
      *   createdDate?: string,
      *   creatorName?: string,
      *   changeReason?: string,
-     *   after?: array,
-     *   before?: array,
+     *   after?: TripleGraph,
+     *   before?: TripleGraph,
      *   after_rdfxml?: string,
      *   before_rdfxml?: string,
      *   properties?: array<string, array>,
-     *   'http://purl.org/dc/terms/source'?: string|array
+     *   'http://purl.org/dc/terms/source'?: array|string
      * }
      */
     public $a;
-
-    /** @var array<string, array<string, array{type: string, value: string}[]>> */
-    public $_index = [];
 
     /**
      * Create a new changeset. This will calculate the required additions and removals based on before and after versions of a bounded description. The args parameter is an associative array that may have the following fields:
@@ -186,14 +189,14 @@ class ChangeSet extends ExtendedGraph
     /**
      * adds a triple to the internal simpleIndex holding all the changesets and statements.
      *
-     * @param string       $s      Subject uri
-     * @param string       $p      Predicate URI
-     * @param array|string $o      Object URI or literal value
-     * @param string       $o_type Object type (bnode, uri, literal)
+     * @param TripleSubject                      $s      Subject URI
+     * @param TriplePredicate                    $p      Predicate URI
+     * @param string|TripleObject|TripleObject[] $o      Object URI or literal value
+     * @param ObjectType                         $o_type Object type (bnode, uri, literal)
      *
      * @author Keith
      */
-    public function addT($s, $p, $o, $o_type = 'bnode'): void
+    public function addT(string $s, string $p, $o, $o_type = 'bnode'): void
     {
         if (is_array($o) && isset($o[0]['type'])) {
             foreach ($o as $obj) {

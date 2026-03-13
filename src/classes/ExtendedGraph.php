@@ -9,28 +9,35 @@ use Tripod\Exceptions\Exception;
 /**
  * This class is based on SimpleGraph, part of Moriaty: https://code.google.com/p/moriarty/.
  *
+ * @phpstan-type ObjectResource string
+ * @phpstan-type ObjectLiteral string|int|float|bool
+ * @phpstan-type ObjectType 'bnode'|'uri'|'literal'
+ * @phpstan-type ObjectValue ObjectResource|ObjectLiteral
+ * @phpstan-type TripleSubject string
+ * @phpstan-type TriplePredicate string
+ * @phpstan-type TripleObject array{type: ObjectType, value: ObjectValue, lang?: string, datatype?: string}
+ * @phpstan-type TripleGraph array<TripleSubject, array<TriplePredicate, TripleObject[]>>
+ *
  * @see https://code.google.com/p/moriarty/source/browse/trunk/labeller.class.php
  */
 class ExtendedGraph
 {
-    // END SimpleGraph
-
-    // Modifications start here
-
     public const rdf = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 
     public const rdf_type = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 
     public const rdf_seq = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq';
 
-    // FROM SimpleGraph
+    /** @var TripleGraph */
     public $_index = [];
 
+    /** @var string[] */
     public $_image_properties = [
         'http://xmlns.com/foaf/0.1/depiction',
         'http://xmlns.com/foaf/0.1/img',
     ];
 
+    /** @var string[] */
     public $_property_order = [
         'http://www.w3.org/2004/02/skos/core#prefLabel',
         RDFS_LABEL,
@@ -45,6 +52,7 @@ class ExtendedGraph
         RDF_TYPE,
     ];
 
+    /** @var array */
     public $parser_errors = [];
 
     /**
@@ -52,6 +60,7 @@ class ExtendedGraph
      */
     public $_labeller;
 
+    /** @var array<string, string> */
     protected $_ns = [
         'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
         'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
@@ -89,12 +98,12 @@ class ExtendedGraph
     /**
      * Up to the application to decide what constitures the label properties for a given app.
      *
-     * @var array
+     * @var string[]
      */
     private static $labelProperties;
 
     /**
-     * @param array|string $graph
+     * @param string|TripleGraph $graph
      */
     public function __construct($graph = null)
     {
@@ -175,9 +184,9 @@ class ExtendedGraph
     /**
      * Adds a triple with a resource object to the graph.
      *
-     * @param string      $s the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string      $p the predicate URI of the triple
-     * @param string|null $o the object of the triple, either a URI or a blank node in the format _:name
+     * @param TripleSubject       $s the subject of the triple, either a URI or a blank node in the format _:name
+     * @param TriplePredicate     $p the predicate URI of the triple
+     * @param ObjectResource|null $o the object of the triple, either a URI or a blank node in the format _:name
      *
      * @return bool true if the triple was new, false if it already existed in the graph
      */
@@ -193,11 +202,11 @@ class ExtendedGraph
     /**
      * Adds a triple with a literal object to the graph.
      *
-     * @param string                $s    the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string                $p    the predicate of the triple as a URI
-     * @param bool|float|int|string $o    the object of the triple as a scalar value
-     * @param string|null           $lang the language code of the triple's object (optional)
-     * @param string|null           $dt   the datatype URI of the triple's object (optional)
+     * @param TripleSubject   $s    the subject of the triple, either a URI or a blank node in the format _:name
+     * @param TriplePredicate $p    the predicate of the triple as a URI
+     * @param ObjectLiteral   $o    the object of the triple as a scalar value
+     * @param string|null     $lang the language code of the triple's object (optional)
+     * @param string|null     $dt   the datatype URI of the triple's object (optional)
      *
      * @return bool true if the triple was new, false if it already existed in the graph
      */
@@ -230,7 +239,9 @@ class ExtendedGraph
     /**
      * Get a copy of the graph's triple index.
      *
-     * @see http://n2.talis.com/wiki/RDF_PHP_Specification
+     * @see https://www.easyrdf.org/docs/rdf-formats-php
+     *
+     * @return TripleGraph
      */
     public function get_index(): array
     {
@@ -291,7 +302,7 @@ class ExtendedGraph
     /**
      * Serialise the graph to JSON.
      *
-     * @see http://n2.talis.com/wiki/RDF_JSON_Specification
+     * @see https://www.easyrdf.org/docs/rdf-formats-json
      *
      * @return string the JSON version of the graph
      */
@@ -303,7 +314,7 @@ class ExtendedGraph
     /**
      * Serialise the graph to HTML.
      *
-     * @param array|string|null $s
+     * @param TripleSubject|TripleSubject[]|null $s
      *
      * @return string a HTML version of the graph
      */
@@ -317,7 +328,7 @@ class ExtendedGraph
                 if ($subjects === []) {
                     return '';
                 }
-            } elseif (array_key_exists($s, $this->_index)) {
+            } elseif (isset($this->_index[$s])) {
                 $subjects = [$s];
             } else {
                 return '';
@@ -346,14 +357,15 @@ class ExtendedGraph
                         $h .= '<br />';
                     }
 
+                    $value = (string) $this->_index[$subject][$p][$i]['value'];
                     if ($this->_index[$subject][$p][$i]['type'] === 'literal') {
-                        $h .= htmlspecialchars($this->_index[$subject][$p][$i]['value']);
+                        $h .= htmlspecialchars($value);
                     } else {
-                        $h .= '<a href="' . htmlspecialchars($this->_index[$subject][$p][$i]['value']) . '">';
+                        $h .= '<a href="' . htmlspecialchars($value) . '">';
                         if ($guess_labels) {
-                            $h .= htmlspecialchars($this->get_label($this->_index[$subject][$p][$i]['value']));
+                            $h .= htmlspecialchars($this->get_label($value));
                         } else {
-                            $h .= htmlspecialchars($this->_index[$subject][$p][$i]['value']);
+                            $h .= htmlspecialchars($value);
                         }
 
                         $h .= '</a>';
@@ -411,26 +423,26 @@ class ExtendedGraph
     /**
      * Fetch the first literal value for a given subject and predicate. If there are multiple possible values then one is selected at random.
      *
-     * @param string                     $s       the subject to search for
-     * @param string|string[]            $p       the predicate to search for, or an array of predicates
-     * @param bool|float|int|string|null $default a default value to use if no literal values are found
+     * @param TripleSubject                     $s       the subject to search for
+     * @param TriplePredicate|TriplePredicate[] $p       the predicate to search for, or an array of predicates
+     * @param ObjectLiteral|null                $default a default value to use if no literal values are found
      *
-     * @return bool|float|int|string|null the first literal value found or the supplied default if no values were found
+     * @return ObjectLiteral|null the first literal value found or the supplied default if no values were found
      */
     public function get_first_literal(string $s, $p, $default = null, ?string $preferred_language = null)
     {
         $best_literal = $default;
-        if (array_key_exists($s, $this->_index)) {
+        if (isset($this->_index[$s])) {
             if (is_array($p)) {
                 foreach ($p as $p_uri) {
-                    if (array_key_exists($p_uri, $this->_index[$s])) {
+                    if (isset($this->_index[$s][$p_uri])) {
                         foreach ($this->_index[$s][$p_uri] as $value) {
                             if ($value['type'] == 'literal') {
                                 if ($preferred_language == null) {
                                     return $value['value'];
                                 }
 
-                                if (array_key_exists('lang', $value) && $value['lang'] == $preferred_language) {
+                                if (isset($value['lang']) && $value['lang'] == $preferred_language) {
                                     return $value['value'];
                                 }
 
@@ -439,14 +451,14 @@ class ExtendedGraph
                         }
                     }
                 }
-            } elseif (array_key_exists($p, $this->_index[$s])) {
+            } elseif (isset($this->_index[$s][$p])) {
                 foreach ($this->_index[$s][$p] as $value) {
                     if ($value['type'] == 'literal') {
                         if ($preferred_language == null) {
                             return $value['value'];
                         }
 
-                        if (array_key_exists('lang', $value) && $value['lang'] == $preferred_language) {
+                        if (isset($value['lang']) && $value['lang'] == $preferred_language) {
                             return $value['value'];
                         }
 
@@ -462,11 +474,11 @@ class ExtendedGraph
     /**
      * Fetch the first resource value for a given subject and predicate. If there are multiple possible values then one is selected at random.
      *
-     * @param string $s       the subject to search for
-     * @param string $p       the predicate to search for
-     * @param string $default a default value to use if no literal values are found
+     * @param TripleSubject   $s       the subject to search for
+     * @param TriplePredicate $p       the predicate to search for
+     * @param ObjectResource  $default a default value to use if no literal values are found
      *
-     * @return string|null the first resource value found or the supplied default if no values were found
+     * @return ObjectResource|null the first resource value found or the supplied default if no values were found
      */
     public function get_first_resource(string $s, string $p, ?string $default = null): ?string
     {
@@ -484,9 +496,9 @@ class ExtendedGraph
     /**
      * Remove a triple with a resource object from the graph.
      *
-     * @param string                $s the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string                $p the predicate URI of the triple
-     * @param bool|float|int|string $o the object of the triple, either a URI or a blank node in the format _:name
+     * @param TripleSubject   $s the subject of the triple, either a URI or a blank node in the format _:name
+     * @param TriplePredicate $p the predicate URI of the triple
+     * @param ObjectResource  $o the object of the triple, either a URI or a blank node in the format _:name
      */
     public function remove_resource_triple(string $s, string $p, $o): void
     {
@@ -511,7 +523,7 @@ class ExtendedGraph
     }
 
     /**
-     * @param bool|float|int|string $o
+     * @param ObjectLiteral $o
      */
     public function remove_literal_triple(string $s, string $p, $o): void
     {
@@ -538,7 +550,7 @@ class ExtendedGraph
     /**
      * Remove all triples having the supplied subject.
      *
-     * @param string $s the subject of the triple, either a URI or a blank node in the format _:name
+     * @param TripleSubject $s the subject of the triple, either a URI or a blank node in the format _:name
      */
     public function remove_triples_about(string $s): void
     {
@@ -562,7 +574,7 @@ class ExtendedGraph
     /**
      * Replace the triples in the graph with those parsed from the supplied JSON.
      *
-     * @see http://n2.talis.com/wiki/RDF_JSON_Specification
+     * @see https://www.easyrdf.org/docs/rdf-formats-json
      *
      * @param string $json the JSON to parse
      */
@@ -580,7 +592,7 @@ class ExtendedGraph
     /**
      * Add the triples parsed from the supplied JSON to the graph.
      *
-     * @see http://n2.talis.com/wiki/RDF_JSON_Specification
+     * @see https://www.easyrdf.org/docs/rdf-formats-json
      *
      * @param string $json the JSON to parse
      */
@@ -740,15 +752,15 @@ class ExtendedGraph
     /**
      * Tests whether the graph contains the given triple.
      *
-     * @param string                $s the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string                $p the predicate URI of the triple
-     * @param bool|float|int|string $o the object of the triple, either a URI or a blank node in the format _:name
+     * @param TripleSubject   $s the subject of the triple, either a URI or a blank node in the format _:name
+     * @param TriplePredicate $p the predicate URI of the triple
+     * @param ObjectResource  $o the object of the triple, either a URI or a blank node in the format _:name
      *
      * @return bool true if the triple exists in the graph, false otherwise
      */
     public function has_resource_triple(string $s, string $p, $o): bool
     {
-        if (array_key_exists($s, $this->_index) && array_key_exists($p, $this->_index[$s])) {
+        if (isset($this->_index[$s][$p])) {
             foreach ($this->_index[$s][$p] as $value) {
                 if (($value['type'] == 'uri' || $value['type'] == 'bnode') && $value['value'] === $o) {
                     return true;
@@ -762,25 +774,25 @@ class ExtendedGraph
     /**
      * Tests whether the graph contains the given triple.
      *
-     * @param string                $s    the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string                $p    the predicate URI of the triple
-     * @param bool|float|int|string $o    the object of the triple as a literal value
-     * @param string|null           $lang the language of the object
-     * @param string|null           $dt   the datatype of the object
+     * @param TripleSubject   $s    the subject of the triple, either a URI or a blank node in the format _:name
+     * @param TriplePredicate $p    the predicate URI of the triple
+     * @param ObjectLiteral   $o    the object of the triple as a literal value
+     * @param string|null     $lang the language of the object
+     * @param string|null     $dt   the datatype of the object
      *
      * @return bool true if the triple exists in the graph, false otherwise
      */
     public function has_literal_triple(string $s, string $p, $o, ?string $lang = null, ?string $dt = null): bool
     {
-        if (array_key_exists($s, $this->_index) && array_key_exists($p, $this->_index[$s])) {
+        if (isset($this->_index[$s][$p])) {
             foreach ($this->_index[$s][$p] as $value) {
                 if (($value['type'] == 'literal') && $value['value'] === $o) {
                     if ($lang !== null) {
-                        return array_key_exists('lang', $value) && $value['lang'] === $lang;
+                        return isset($value['lang']) && $value['lang'] === $lang;
                     }
 
                     if ($dt !== null) {
-                        return array_key_exists('datatype', $value) && $value['datatype'] === $dt;
+                        return isset($value['datatype']) && $value['datatype'] === $dt;
                     }
 
                     return true;
@@ -794,15 +806,15 @@ class ExtendedGraph
     /**
      * Fetch the resource values for a given subject and predicate.
      *
-     * @param string $s the subject to search for
-     * @param string $p the predicate to search for
+     * @param TripleSubject   $s the subject to search for
+     * @param TriplePredicate $p the predicate to search for
      *
-     * @return array list of URIs and blank nodes that are the objects of triples with the supplied subject and predicate
+     * @return ObjectResource[] list of URIs and blank nodes that are the objects of triples with the supplied subject and predicate
      */
     public function get_resource_triple_values(string $s, string $p): array
     {
         $values = [];
-        if (array_key_exists($s, $this->_index) && array_key_exists($p, $this->_index[$s])) {
+        if (isset($this->_index[$s][$p])) {
             foreach ($this->_index[$s][$p] as $value) {
                 if ($value['type'] == 'uri' || $value['type'] == 'bnode') {
                     $values[] = $value['value'];
@@ -816,18 +828,18 @@ class ExtendedGraph
     /**
      * Fetch the literal values for a given subject and predicate.
      *
-     * @param string       $s the subject to search for
-     * @param array|string $p the predicate to search for or an array of predicates
+     * @param TripleSubject                     $s the subject to search for
+     * @param TriplePredicate|TriplePredicate[] $p the predicate to search for or an array of predicates
      *
-     * @return array list of literals that are the objects of triples with the supplied subject and predicate
+     * @return ObjectLiteral[] list of literals that are the objects of triples with the supplied subject and predicate
      */
     public function get_literal_triple_values(string $s, $p): array
     {
         $values = [];
-        if (array_key_exists($s, $this->_index)) {
+        if (isset($this->_index[$s])) {
             if (is_array($p)) {
                 foreach ($p as $p_uri) {
-                    if (array_key_exists($p_uri, $this->_index[$s])) {
+                    if (isset($this->_index[$s][$p_uri])) {
                         foreach ($this->_index[$s][$p_uri] as $value) {
                             if ($value['type'] == 'literal') {
                                 $values[] = $value['value'];
@@ -835,7 +847,7 @@ class ExtendedGraph
                         }
                     }
                 }
-            } elseif (array_key_exists($p, $this->_index[$s])) {
+            } elseif (isset($this->_index[$s][$p])) {
                 foreach ($this->_index[$s][$p] as $value) {
                     if ($value['type'] == 'literal') {
                         $values[] = $value['value'];
@@ -850,10 +862,10 @@ class ExtendedGraph
     /**
      * Fetch the values for a given subject and predicate.
      *
-     * @param string       $s the subject to search for
-     * @param array|string $p the predicate to search for, or an array of predicates
+     * @param TripleSubject                     $s the subject to search for
+     * @param TriplePredicate|TriplePredicate[] $p the predicate to search for or an array of predicates
      *
-     * @return array list of values of triples with the supplied subject and predicate
+     * @return TripleObject[] list of values of triples with the supplied subject and predicate
      */
     public function get_subject_property_values(string $s, $p): array
     {
@@ -862,9 +874,9 @@ class ExtendedGraph
             $p = [$p];
         }
 
-        if (array_key_exists($s, $this->_index)) {
+        if (isset($this->_index[$s])) {
             foreach ($p as $pinst) {
-                if (array_key_exists($pinst, $this->_index[$s])) {
+                if (isset($this->_index[$s][$pinst])) {
                     foreach ($this->_index[$s][$pinst] as $value) {
                         $values[] = $value;
                     }
@@ -878,14 +890,14 @@ class ExtendedGraph
     /**
      * Fetch a subgraph where all triples have given subject.
      *
-     * @param string $s the subject to search for
+     * @param TripleSubject $s the subject to search for
      *
      * @return ExtendedGraph triples with the supplied subject
      */
     public function get_subject_subgraph(string $s): ExtendedGraph
     {
         $sub = new ExtendedGraph();
-        if (array_key_exists($s, $this->_index)) {
+        if (isset($this->_index[$s])) {
             $sub->_index[$s] = $this->_index[$s];
         }
 
@@ -895,7 +907,7 @@ class ExtendedGraph
     /**
      * Fetch an array of all the subjects.
      *
-     * @return string[] list of all the subjects in the graph
+     * @return TripleSubject[] list of all the subjects in the graph
      */
     public function get_subjects(): array
     {
@@ -905,18 +917,18 @@ class ExtendedGraph
     /**
      * Fetch an array of all the subject that have and rdf type that matches that given.
      *
-     * @param string $t the type to match
+     * @param ObjectResource $o the type to match
      */
-    public function get_subjects_of_type(string $t): array
+    public function get_subjects_of_type(string $o): array
     {
-        return $this->get_subjects_where_resource('http://www.w3.org/1999/02/22-rdf-syntax-ns#type', $t);
+        return $this->get_subjects_where_resource('http://www.w3.org/1999/02/22-rdf-syntax-ns#type', $o);
     }
 
     /**
      * Fetch an array of all the subjects where the predicate and object match a ?s $p $o triple in the graph and the object is a resource.
      *
-     * @param string $p the predicate to match
-     * @param string $o the resource object to match
+     * @param TriplePredicate $p the predicate to match
+     * @param ObjectResource  $o the resource object to match
      */
     public function get_subjects_where_resource(string $p, string $o): array
     {
@@ -926,8 +938,8 @@ class ExtendedGraph
     /**
      * Fetch an array of all the subjects where the predicate and object match a ?s $p $o triple in the graph and the object is a literal value.
      *
-     * @param string                $p the predicate to match
-     * @param bool|float|int|string $o the literal object to match
+     * @param TriplePredicate $p the predicate to match
+     * @param ObjectValue     $o the literal object to match
      */
     public function get_subjects_where_literal(string $p, $o): array
     {
@@ -937,15 +949,15 @@ class ExtendedGraph
     /**
      * Fetch the properties of a given subject and predicate.
      *
-     * @param string $s        the subject to search for
-     * @param bool   $distinct if true then duplicate properties are included only once (optional, default is true)
+     * @param TripleSubject $s        the subject to search for
+     * @param bool          $distinct if true then duplicate properties are included only once (optional, default is true)
      *
-     * @return array list of property URIs
+     * @return TriplePredicate[] list of property URIs
      */
     public function get_subject_properties(string $s, bool $distinct = true): array
     {
         $values = [];
-        if (array_key_exists($s, $this->_index)) {
+        if (isset($this->_index[$s])) {
             foreach ($this->_index[$s] as $prop => $prop_values) {
                 if ($distinct) {
                     $values[] = $prop;
@@ -964,37 +976,33 @@ class ExtendedGraph
     /**
      * Tests whether the graph contains a triple with the given subject and predicate.
      *
-     * @param string $s the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string $p the predicate URI of the triple
+     * @param TripleSubject   $s the subject of the triple, either a URI or a blank node in the format _:name
+     * @param TriplePredicate $p the predicate URI of the triple
      *
      * @return bool true if a matching triple exists in the graph, false otherwise
      */
     public function subject_has_property(string $s, string $p): bool
     {
-        if (array_key_exists($s, $this->_index)) {
-            return array_key_exists($p, $this->_index[$s]);
-        }
-
-        return false;
+        return isset($this->_index[$s][$p]);
     }
 
     /**
      * Tests whether the graph contains a triple with the given subject.
      *
-     * @param string $s the subject of the triple, either a URI or a blank node in the format _:name
+     * @param TripleSubject $s the subject of the triple, either a URI or a blank node in the format _:name
      *
      * @return bool true if the graph contains any triples with the specified subject, false otherwise
      */
     public function has_triples_about(string $s): bool
     {
-        return array_key_exists($s, $this->_index);
+        return isset($this->_index[$s]);
     }
 
     /**
      * Removes all triples with the given subject and predicate.
      *
-     * @param string $s the subject of the triple, either a URI or a blank node in the format _:name
-     * @param string $p the predicate URI of the triple
+     * @param TripleSubject   $s the subject of the triple, either a URI or a blank node in the format _:name
+     * @param TriplePredicate $p the predicate URI of the triple
      */
     public function remove_property_values(string $s, string $p): void
     {
@@ -1030,7 +1038,7 @@ class ExtendedGraph
     }
 
     /**
-     * @param array<string, mixed> $resources
+     * @param TripleGraph $resources
      */
     public function reify(array $resources, string $nodeID_prefix = 'Statement'): array
     {
@@ -1062,7 +1070,7 @@ class ExtendedGraph
     /**
      * returns a simpleIndex consisting of all the statements from the first array that weren't found in any of the subsequent arrays.
      *
-     * @param array ...$indices If only one array is passed then the diff is taken against the graph's own index, otherwise the diff is taken against the first array passed as a parameter
+     * @param TripleGraph ...$indices If only one array is passed then the diff is taken against the graph's own index, otherwise the diff is taken against the first array passed as a parameter
      *
      * @author Keith
      */
@@ -1115,7 +1123,7 @@ class ExtendedGraph
      * merge
      * merges all  rdf/json-style arrays passed as parameters.
      *
-     * @param array ...$indices If only one array is passed then the merge is done against the graph's own index, otherwise the merge is done against the first array passed as a parameter
+     * @param TripleGraph ...$indices If only one array is passed then the merge is done against the graph's own index, otherwise the merge is done against the first array passed as a parameter
      *
      * @author Keith
      */
@@ -1147,7 +1155,7 @@ class ExtendedGraph
                     }
                 }
 
-                if (isset($properties) && is_array($properties)) {
+                if (!empty($properties)) {
                     foreach ($properties as $property => $objects) {
                         foreach ($objects as $object) {
                             // make sure that the new bnode is being used
@@ -1324,7 +1332,9 @@ class ExtendedGraph
     }
 
     /**
-     * @param bool|float|int|string|null $o
+     * @param TripleSubject|null   $s
+     * @param TriplePredicate|null $p
+     * @param ObjectValue|null     $o
      */
     public function get_triple_count(?string $s = null, ?string $p = null, $o = null): int
     {
@@ -1356,7 +1366,7 @@ class ExtendedGraph
     /**
      * Fetch all the resource values for all subjects.
      *
-     * @return array the resource values found
+     * @return ObjectResource[] the resource values found
      */
     public function get_resources(): array
     {
@@ -1373,14 +1383,14 @@ class ExtendedGraph
     /**
      * Fetch all the resource values for a given subject.
      *
-     * @param string $s the subject to search for
+     * @param TripleSubject $s the subject to search for
      *
-     * @return array the resource values found
+     * @return ObjectResource[] the resource values found
      */
     public function get_resources_for_subject(string $s): array
     {
         $resources = [];
-        if (array_key_exists($s, $this->_index)) {
+        if (isset($this->_index[$s])) {
             foreach ($this->_index[$s] as $values) {
                 foreach ($values as $value) {
                     if ($value['type'] == 'uri' || $value['type'] == 'bnode') {
@@ -1393,6 +1403,9 @@ class ExtendedGraph
         return array_unique($resources);
     }
 
+    /**
+     * @param TriplePredicate $p
+     */
     public function remove_properties(string $p): void
     {
         foreach ($this->get_subjects() as $s) {
@@ -1400,6 +1413,11 @@ class ExtendedGraph
         }
     }
 
+    /**
+     * @param TriplePredicate $p
+     *
+     * @return ObjectResource[] the resource values found
+     */
     public function get_resource_properties(string $p): array
     {
         $resources = [];
@@ -1412,7 +1430,10 @@ class ExtendedGraph
     }
 
     /**
-     * @param bool|float|int|string $o
+     * @param TriplePredicate $p
+     * @param ObjectValue     $o
+     *
+     * @return TripleSubject[]
      */
     public function get_subjects_with_property_value(string $p, $o): array
     {
@@ -1426,6 +1447,11 @@ class ExtendedGraph
         return $subjects;
     }
 
+    /**
+     * @param TripleSubject $sequenceUri
+     *
+     * @return ObjectValue[]
+     */
     public function get_sequence_values(string $sequenceUri): array
     {
         $triples = $this->get_index();
@@ -1448,15 +1474,12 @@ class ExtendedGraph
             ksort($properties, SORT_NUMERIC);
         }
 
-        $values = [];
-
-        foreach ($properties as $value) {
-            $values[] = $value;
-        }
-
-        return $values;
+        return array_values($properties);
     }
 
+    /**
+     * @param TripleSubject $sequenceUri
+     */
     public function get_next_sequence(string $sequenceUri): int
     {
         $values = $this->get_sequence_values($sequenceUri);
@@ -1465,7 +1488,8 @@ class ExtendedGraph
     }
 
     /**
-     * @param bool|float|int|string $o
+     * @param TripleSubject $s
+     * @param ObjectLiteral $o
      */
     public function add_literal_to_sequence(string $s, $o): void
     {
@@ -1474,6 +1498,9 @@ class ExtendedGraph
 
     /**
      * Remove a resource from a specified sequence and reindex the sequence to remove the gap.
+     *
+     * @param TripleSubject  $sequenceUri
+     * @param ObjectResource $resourceValue
      */
     public function remove_resource_from_sequence(string $sequenceUri, string $resourceValue): void
     {
@@ -1496,11 +1523,19 @@ class ExtendedGraph
         }
     }
 
+    /**
+     * @param TripleSubject  $s
+     * @param ObjectResource $o
+     */
     public function add_resource_to_sequence(string $s, string $o): void
     {
         $this->add_to_sequence($s, $o, 'resource');
     }
 
+    /**
+     * @param TripleSubject  $s
+     * @param ObjectResource $o
+     */
     public function add_resource_to_sequence_in_position(string $s, string $o, int $position): void
     {
         $sequenceValues = $this->get_sequence_values($s);
@@ -1524,8 +1559,8 @@ class ExtendedGraph
     }
 
     /**
-     * @param bool|float|int|string $oOldValue
-     * @param bool|float|int|string $oNewValue
+     * @param ObjectLiteral $oOldValue
+     * @param ObjectLiteral $oNewValue
      */
     public function replace_literal_triple(string $s, string $p, $oOldValue, $oNewValue): bool
     {
@@ -1539,6 +1574,11 @@ class ExtendedGraph
         return false;
     }
 
+    /**
+     * @param TripleSubject       $s
+     * @param TriplePredicate     $p
+     * @param ObjectResource|null $o
+     */
     public function replace_resource_triples(string $s, string $p, ?string $o): void
     {
         if ($this->subject_has_property($s, $p)) {
@@ -1551,7 +1591,9 @@ class ExtendedGraph
     }
 
     /**
-     * @param bool|float|int|string|null $o
+     * @param TripleSubject      $s
+     * @param TriplePredicate    $p
+     * @param ObjectLiteral|null $o
      */
     public function replace_literal_triples(string $s, string $p, $o): void
     {
@@ -1565,15 +1607,17 @@ class ExtendedGraph
     }
 
     /**
+     * @param TripleSubject $uri
+     *
      * @throws Exception
      */
     public function get_label_for_uri(string $uri): string
     {
-        if (!isset($this->_index[$uri])) {
+        if (empty($this->_index[$uri])) {
             return '';
         }
 
-        if (!isset(self::$labelProperties)) {
+        if (empty(self::$labelProperties)) {
             throw new Exception('Please initialise ExtendedGraph::$labelProperties');
         }
 
@@ -1594,6 +1638,9 @@ class ExtendedGraph
         return $diffThisAndThat === [] && $diffThatAndThis === [];
     }
 
+    /**
+     * @param ObjectResource $type
+     */
     public function remove_subjects_of_type(string $type): void
     {
         $subjects = $this->get_subjects_of_type($type);
@@ -1604,10 +1651,8 @@ class ExtendedGraph
 
     public function from_graph(ExtendedGraph $graph): void
     {
-        if ($graph) {
-            $this->remove_all_triples();
-            $this->add_graph($graph);
-        }
+        $this->remove_all_triples();
+        $this->add_graph($graph);
     }
 
     /**
@@ -1635,6 +1680,10 @@ class ExtendedGraph
     }
 
     /**
+     * @param TripleSubject   $s
+     * @param TriplePredicate $p
+     * @param TripleObject    $o_info
+     *
      * @throws Exception
      */
     private function _add_triple(string $s, string $p, array $o_info): bool
@@ -1731,8 +1780,10 @@ class ExtendedGraph
         }
     }
 
-    // until ARC2 upgrades to support RDF/PHP we need to rename all types of "uri" to "iri"
-    private function _to_arc_index(array &$index): array
+    /**
+     * @param TripleGraph $index
+     */
+    private function _to_arc_index(array $index): array
     {
         $ret = [];
 
@@ -1743,6 +1794,8 @@ class ExtendedGraph
                 foreach ($p_info as $o) {
                     $o_new = [];
                     foreach ($o as $key => $value) {
+                        // until ARC2 upgrades to support RDF/PHP we
+                        // need to rename all types of "uri" to "iri"
                         if ($key == 'type' && $value == 'uri') {
                             $o_new['type'] = 'iri';
                         } else {
@@ -1759,13 +1812,15 @@ class ExtendedGraph
     }
 
     /**
-     * @param bool|float|int|string $o
+     * @param TriplePredicate $p
+     * @param ObjectValue     $o
+     * @param ObjectType      $type
      */
     private function get_subjects_where(string $p, $o, string $type): array
     {
         $subjects = [];
         foreach ($this->_index as $subject => $properties) {
-            if (array_key_exists($p, $properties)) {
+            if (isset($properties[$p])) {
                 foreach ($properties[$p] as $object) {
                     if ($object['type'] == $type && $object['value'] == $o) {
                         $subjects[] = $subject;
@@ -1780,7 +1835,9 @@ class ExtendedGraph
     }
 
     /**
-     * @param bool|float|int|string $o
+     * @param TripleSubject        $s
+     * @param ObjectValue          $o
+     * @param 'literal'|'resource' $type
      */
     private function add_to_sequence(string $s, $o, string $type = 'resource'): void
     {
