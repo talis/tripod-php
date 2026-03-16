@@ -409,7 +409,10 @@ final class NoStat implements ITripodStat
         return self::$instance;
     }
 
-    public static function createFromConfig(array $config = []): self
+    /**
+     * @return self
+     */
+    public static function createFromConfig(array $config = [])
     {
         return self::getInstance();
     }

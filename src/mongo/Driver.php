@@ -107,8 +107,10 @@ class Driver extends DriverBase implements IDriver
      *
      * @param string      $resource uri resource you'd like to describe
      * @param string|null $context  string uri of the context, or named graph, you'd like to describe from
+     *
+     * @return MongoGraph
      */
-    public function describeResource(string $resource, ?string $context = null): MongoGraph
+    public function describeResource(string $resource, ?string $context = null): ExtendedGraph
     {
         $resource = $this->labeller->uri_to_alias($resource);
         $query = [
@@ -123,8 +125,10 @@ class Driver extends DriverBase implements IDriver
 
     /**
      * Pass subjects as to $resources and have mongo return a DESCRIBE <?resource[0]> <?resource[1]> <?resource[2]> etc.
+     *
+     * @return MongoGraph
      */
-    public function describeResources(array $resources, ?string $context = null): MongoGraph
+    public function describeResources(array $resources, ?string $context = null): ExtendedGraph
     {
         $ids = [];
         foreach ($resources as $resource) {
@@ -140,20 +144,28 @@ class Driver extends DriverBase implements IDriver
         return $this->fetchGraph($query, MONGO_MULTIDESCRIBE);
     }
 
-    public function getViewForResource(?string $resource, string $viewType): MongoGraph
+    /**
+     * @return MongoGraph
+     */
+    public function getViewForResource(?string $resource, string $viewType): ExtendedGraph
     {
         return $this->getTripodViews()->getViewForResource($resource, $viewType);
     }
 
     /**
      * @param string[] $resources
+     *
+     * @return MongoGraph
      */
-    public function getViewForResources(array $resources, string $viewType): MongoGraph
+    public function getViewForResources(array $resources, string $viewType): ExtendedGraph
     {
         return $this->getTripodViews()->getViewForResources($resources, $viewType);
     }
 
-    public function getViews(array $filter, string $viewType): MongoGraph
+    /**
+     * @return MongoGraph
+     */
+    public function getViews(array $filter, string $viewType): ExtendedGraph
     {
         return $this->getTripodViews()->getViews($filter, $viewType);
     }
@@ -440,8 +452,10 @@ class Driver extends DriverBase implements IDriver
      * Returns a graph as the result of $query. Useful replacement for DESCRIBE ... WHERE.
      *
      * @deprecated use getGraph
+     *
+     * @return MongoGraph
      */
-    public function describe(array $query): MongoGraph
+    public function describe(array $query): ExtendedGraph
     {
         return $this->fetchGraph($query, MONGO_DESCRIBE_WITH_CONDITION);
     }
@@ -454,8 +468,10 @@ class Driver extends DriverBase implements IDriver
      *
      * @param array $filter            conditions to filter by
      * @param array $includeProperties only include these predicates, empty array means return all predicates
+     *
+     * @return MongoGraph
      */
-    public function graph(array $filter, array $includeProperties = []): MongoGraph
+    public function graph(array $filter, array $includeProperties = []): ExtendedGraph
     {
         return $this->fetchGraph($filter, MONGO_GET_GRAPH, null, $includeProperties);
     }

@@ -18,5 +18,8 @@ interface ITripodStat
 
     public function getConfig(): array;
 
-    public static function createFromConfig(array $config): ITripodStat;
+    /**
+     * @return self
+     */
+    public static function createFromConfig(array $config);
 }

@@ -66,7 +66,10 @@ class StatsD implements ITripodStat
         ];
     }
 
-    public static function createFromConfig(array $config): self
+    /**
+     * @return self
+     */
+    public static function createFromConfig(array $config)
     {
         if (isset($config['config'])) {
             $config = $config['config'];
