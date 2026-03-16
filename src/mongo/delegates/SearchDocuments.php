@@ -32,12 +32,9 @@ class SearchDocuments extends DriverBase
     }
 
     /**
-     * @param string $resource
-     * @param string $context
-     *
      * @throws \Exception
      */
-    public function generateSearchDocumentBasedOnSpecId(string $specId, $resource, $context): ?array
+    public function generateSearchDocumentBasedOnSpecId(string $specId, ?string $resource, ?string $context): ?array
     {
         if (empty($resource)) {
             throw new \Exception('Resource must be specified');

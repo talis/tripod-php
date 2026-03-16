@@ -164,13 +164,13 @@ class EnsureIndexesTest extends ResqueJobTestBase
         ];
 
         $job = $this->getMockBuilder(EnsureIndexes::class)
-            ->onlyMethods(['warningLog', 'enqueue', 'getJobStatus'])
+            ->onlyMethods(['warningLog', 'enqueue', 'hasJobStatus'])
             ->getMock();
 
         // both of these methods will be called 6 times because after the first attempt fails it will
         // retry 5 times.
         $job->expects($this->exactly(6))->method('enqueue')->willReturn('sometoken');
-        $job->expects($this->exactly(6))->method('getJobStatus')->willReturn(false);
+        $job->expects($this->exactly(6))->method('hasJobStatus')->willReturn(false);
 
         // expect 5 retries. Catch this with call to warning log
         $job->expects($this->exactly(5))->method('warningLog');
@@ -214,7 +214,7 @@ class EnsureIndexesTest extends ResqueJobTestBase
      *
      * @return EnsureIndexes&MockObject
      */
-    protected function createMockJob(array $methods = ['getIndexUtils', 'submitJob', 'warningLog', 'enqueue', 'getJobStatus']): MockObject
+    protected function createMockJob(array $methods = ['getIndexUtils', 'submitJob', 'warningLog', 'enqueue', 'hasJobStatus']): MockObject
     {
         $mockEnsureIndexesJob = $this->getMockBuilder(EnsureIndexes::class)
             ->onlyMethods($methods)

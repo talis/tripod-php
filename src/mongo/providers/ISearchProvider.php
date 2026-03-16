@@ -78,9 +78,9 @@ interface ISearchProvider
      *
      * @param string $typeId search type id
      *
-     * @return array|bool response returned by mongo
+     * @return int The number of search documents deleted
      *
      * @throws Exception if there was an error performing the operation
      */
-    public function deleteSearchDocumentsByTypeId($typeId);
+    public function deleteSearchDocumentsByTypeId(string $typeId): int;
 }

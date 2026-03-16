@@ -15,7 +15,7 @@ class IndexUtils
      * @param string|null $storeName  - database name to ensure indexes for
      * @param bool        $background - index in the background (default) or lock DB whilst indexing
      */
-    public function ensureIndexes($reindex = false, $storeName = null, $background = true): void
+    public function ensureIndexes(bool $reindex = false, ?string $storeName = null, bool $background = true): void
     {
         $config = $this->getConfig();
         $dbs = ($storeName == null) ? $config->getDbs() : [$storeName];
@@ -69,87 +69,81 @@ class IndexUtils
             // Index views
             foreach ($config->getViewSpecifications($storeName) as $viewId => $spec) {
                 $collection = $config->getCollectionForView($storeName, $viewId);
-                if ($collection) {
-                    $indexes = [
-                        [_ID_KEY . '.' . _ID_RESOURCE => 1, _ID_KEY . '.' . _ID_CONTEXT => 1, _ID_KEY . '.' . _ID_TYPE => 1],
-                        [_ID_KEY . '.' . _ID_TYPE => 1],
-                        ['value.' . _IMPACT_INDEX => 1],
-                        [\_CREATED_TS => 1],
-                    ];
-                    if (isset($spec['ensureIndexes'])) {
-                        $indexes = array_merge($indexes, $spec['ensureIndexes']);
-                    }
+                $indexes = [
+                    [_ID_KEY . '.' . _ID_RESOURCE => 1, _ID_KEY . '.' . _ID_CONTEXT => 1, _ID_KEY . '.' . _ID_TYPE => 1],
+                    [_ID_KEY . '.' . _ID_TYPE => 1],
+                    ['value.' . _IMPACT_INDEX => 1],
+                    [\_CREATED_TS => 1],
+                ];
+                if (isset($spec['ensureIndexes'])) {
+                    $indexes = array_merge($indexes, $spec['ensureIndexes']);
+                }
 
-                    if ($reindex && !in_array($collection->getNamespace(), $reindexedCollections)) {
-                        $collection->dropIndexes();
-                        $reindexedCollections[] = $collection->getNamespace();
-                    }
+                if ($reindex && !in_array($collection->getNamespace(), $reindexedCollections)) {
+                    $collection->dropIndexes();
+                    $reindexedCollections[] = $collection->getNamespace();
+                }
 
-                    foreach ($indexes as $index) {
-                        $collection->createIndex(
-                            $index,
-                            [
-                                'background' => $background,
-                            ]
-                        );
-                    }
+                foreach ($indexes as $index) {
+                    $collection->createIndex(
+                        $index,
+                        [
+                            'background' => $background,
+                        ]
+                    );
                 }
             }
 
             // Index table rows
             foreach ($config->getTableSpecifications($storeName) as $tableId => $spec) {
                 $collection = $config->getCollectionForTable($storeName, $tableId);
-                if ($collection) {
-                    $indexes = [
-                        [_ID_KEY . '.' . _ID_RESOURCE => 1, _ID_KEY . '.' . _ID_CONTEXT => 1, _ID_KEY . '.' . _ID_TYPE => 1],
-                        [_ID_KEY . '.' . _ID_TYPE => 1],
-                        ['value.' . _IMPACT_INDEX => 1],
-                        [\_CREATED_TS => 1],
-                    ];
-                    if (isset($spec['ensureIndexes'])) {
-                        $indexes = array_merge($indexes, $spec['ensureIndexes']);
-                    }
+                $indexes = [
+                    [_ID_KEY . '.' . _ID_RESOURCE => 1, _ID_KEY . '.' . _ID_CONTEXT => 1, _ID_KEY . '.' . _ID_TYPE => 1],
+                    [_ID_KEY . '.' . _ID_TYPE => 1],
+                    ['value.' . _IMPACT_INDEX => 1],
+                    [\_CREATED_TS => 1],
+                ];
+                if (isset($spec['ensureIndexes'])) {
+                    $indexes = array_merge($indexes, $spec['ensureIndexes']);
+                }
 
-                    if ($reindex && !in_array($collection->getNamespace(), $reindexedCollections)) {
-                        $collection->dropIndexes();
-                        $reindexedCollections[] = $collection->getNamespace();
-                    }
+                if ($reindex && !in_array($collection->getNamespace(), $reindexedCollections)) {
+                    $collection->dropIndexes();
+                    $reindexedCollections[] = $collection->getNamespace();
+                }
 
-                    foreach ($indexes as $index) {
-                        $collection->createIndex(
-                            $index,
-                            [
-                                'background' => $background,
-                            ]
-                        );
-                    }
+                foreach ($indexes as $index) {
+                    $collection->createIndex(
+                        $index,
+                        [
+                            'background' => $background,
+                        ]
+                    );
                 }
             }
 
             // index search documents
             foreach (array_keys($config->getSearchDocumentSpecifications($storeName)) as $searchId) {
                 $collection = $config->getCollectionForSearchDocument($storeName, $searchId);
-                if ($collection) {
-                    $indexes = [
-                        [_ID_KEY . '.' . _ID_RESOURCE => 1, _ID_KEY . '.' . _ID_CONTEXT => 1],
-                        [_ID_KEY . '.' . _ID_TYPE => 1],
-                        [_IMPACT_INDEX => 1],
-                        [\_CREATED_TS => 1],
-                    ];
+                $indexes = [
+                    [_ID_KEY . '.' . _ID_RESOURCE => 1, _ID_KEY . '.' . _ID_CONTEXT => 1],
+                    [_ID_KEY . '.' . _ID_TYPE => 1],
+                    [_IMPACT_INDEX => 1],
+                    [\_CREATED_TS => 1],
+                ];
 
-                    if ($reindex && !in_array($collection->getNamespace(), $reindexedCollections)) {
-                        $collection->dropIndexes();
-                        $reindexedCollections[] = $collection->getNamespace();
-                    }
+                if ($reindex && !in_array($collection->getNamespace(), $reindexedCollections)) {
+                    $collection->dropIndexes();
+                    $reindexedCollections[] = $collection->getNamespace();
+                }
 
-                    foreach ($indexes as $index) {
-                        $collection->createIndex(
-                            $index,
-                            [
-                                'background' => $background,
-                            ]
-                        );
-                    }
+                foreach ($indexes as $index) {
+                    $collection->createIndex(
+                        $index,
+                        [
+                            'background' => $background,
+                        ]
+                    );
                 }
             }
         }
@@ -158,8 +152,6 @@ class IndexUtils
     /**
      * returns mongo tripod config instance, this method aids helps with
      * testing.
-     *
-     * @return \Tripod\Mongo\Config
      */
     protected function getConfig(): IConfigInstance
     {

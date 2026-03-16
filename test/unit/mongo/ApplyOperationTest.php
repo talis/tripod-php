@@ -993,11 +993,11 @@ class ApplyOperationTest extends ResqueJobTestBase
         );
 
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
-            ->onlyMethods(['enqueue', 'getJobStatus', 'warningLog'])
+            ->onlyMethods(['enqueue', 'hasJobStatus', 'warningLog'])
             ->getMock();
 
         $applyOperation->method('enqueue')->willReturn('sometoken');
-        $applyOperation->method('getJobStatus')->willReturn(false);
+        $applyOperation->method('hasJobStatus')->willReturn(false);
 
         // expect 5 retries. Catch this with call to warning log
         $applyOperation->expects($this->exactly(5))->method('warningLog');

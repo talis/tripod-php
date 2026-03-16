@@ -10,8 +10,6 @@ use Tripod\Exceptions\LabellerException;
 
 class TriplesUtil
 {
-    private array $collections = [];
-
     private Labeller $labeller;
 
     /**
@@ -26,19 +24,12 @@ class TriplesUtil
      * Add $triples about a given $subject to Mongo. Only $triples with subject matching $subject will be added, others will be ignored.
      * Make them quads with a $context.
      *
-     * @param mixed         $subject
-     * @param string        $podName
-     * @param string|null   $context
      * @param string[]|null $allowableTypes
      */
-    public function loadTriplesAbout($subject, array $triples, string $storeName, $podName, $context = null, $allowableTypes = null): void
+    public function loadTriplesAbout(string $subject, array $triples, string $storeName, string $podName, ?string $context = null, ?array $allowableTypes = null): void
     {
-        $context = ($context == null) ? Config::getInstance()->getDefaultContextAlias() : $this->labeller->uri_to_alias($context);
-        if (array_key_exists($podName, $this->collections)) {
-            $collection = $this->collections[$podName];
-        } else {
-            $collection = Config::getInstance()->getCollectionForCBD($storeName, $podName);
-        }
+        $context = $context !== null ? $this->labeller->uri_to_alias($context) : Config::getInstance()->getDefaultContextAlias();
+        $collection = Config::getInstance()->getCollectionForCBD($storeName, $podName);
 
         $graph = new MongoGraph();
         foreach ($triples as $triple) {
@@ -56,11 +47,8 @@ class TriplesUtil
             }
         }
 
-        if ($allowableTypes != null && is_array($allowableTypes)) {
+        if ($allowableTypes != null) {
             $types = $graph->get_resource_triple_values($subject, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
-            if ($types == null || $types === []) {
-                return;
-            }
 
             foreach ($types as $type) {
                 if (in_array($type, $allowableTypes)) {

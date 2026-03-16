@@ -334,13 +334,13 @@ class Views extends CompositeBase
      *
      * @return int The number of views deleted
      */
-    public function deleteViewsByViewId(string $viewId, $timestamp = null)
+    public function deleteViewsByViewId(string $viewId, $timestamp = null): int
     {
         $viewSpec = $this->getConfigInstance()->getViewSpecification($this->storeName, $viewId);
         if ($viewSpec == null) {
             $this->debugLog(sprintf("Could not find a view specification with viewId '%s'", $viewId));
 
-            return;
+            return 0;
         }
 
         $query = ['_id.type' => $viewId];
@@ -751,7 +751,7 @@ class Views extends CompositeBase
     }
 
     /**
-     * @param string $viewSpec
+     * @param array{from: string}|null $viewSpec
      *
      * @return string
      */

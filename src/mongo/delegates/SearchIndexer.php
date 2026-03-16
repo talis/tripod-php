@@ -136,17 +136,13 @@ class SearchIndexer extends CompositeBase
     }
 
     /**
-     * @param string|null $resourceUri
-     * @param string|null $context
-     * @param string|null $queueName
-     *
      * @return array|null Will return an array with a count and group id, if $queueName is sent and $resourceUri is null
      */
     public function generateSearchDocuments(
         string $searchDocumentType,
-        $resourceUri = null,
-        $context = null,
-        $queueName = null
+        ?string $resourceUri = null,
+        ?string $context = null,
+        ?string $queueName = null
     ): ?array {
         $t = new Timer();
         $t->start();
@@ -188,7 +184,7 @@ class SearchIndexer extends CompositeBase
 
         $jobOptions = [];
         $subjects = [];
-        if ($queueName && !$resourceUri) {
+        if ($queueName) {
             $jobOptions['statsConfig'] = $this->getStatsConfig();
             $jobGroup = $this->getJobGroup($this->storeName);
             $jobOptions[ApplyOperation::TRACKING_KEY] = $jobGroup->getId()->__toString();
@@ -196,7 +192,7 @@ class SearchIndexer extends CompositeBase
         }
 
         foreach ($docs as $doc) {
-            if ($queueName && !$resourceUri) {
+            if ($queueName) {
                 $subject = new ImpactedSubject(
                     $doc['_id'],
                     OP_SEARCH,
@@ -250,12 +246,7 @@ class SearchIndexer extends CompositeBase
         return $this->getSearchProvider()->findImpactedDocuments($resourcesAndPredicates, $contextAlias);
     }
 
-    /**
-     * @param string $typeId
-     *
-     * @return array|bool
-     */
-    public function deleteSearchDocumentsByTypeId($typeId)
+    public function deleteSearchDocumentsByTypeId(string $typeId): int
     {
         return $this->getSearchProvider()->deleteSearchDocumentsByTypeId($typeId);
     }

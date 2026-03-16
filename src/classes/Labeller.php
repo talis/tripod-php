@@ -325,7 +325,7 @@ class Labeller
             $ns = $m[1];
             $localname = $m[2];
             $prefix = $this->get_prefix($ns);
-            if ($prefix != null && $prefix !== false) {
+            if ($prefix) {
                 return $prefix . ':' . $localname;
             }
         }
@@ -336,7 +336,7 @@ class Labeller
     public function get_prefix(string $ns): string
     {
         $prefix = array_search($ns, $this->_ns, true);
-        if ($prefix != null && $prefix !== false) {
+        if ($prefix) {
             return $prefix;
         }
 

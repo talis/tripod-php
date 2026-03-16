@@ -219,8 +219,6 @@ class Config implements IConfigInstance
      *
      * @deprecated
      *
-     * @return Config
-     *
      * @throws ConfigException
      */
     public static function getInstance(): IConfigInstance
@@ -402,7 +400,7 @@ class Config implements IConfigInstance
      */
     public function getViewSpecification(string $storeName, string $vid): ?array
     {
-        if (isset($this->viewSpecs[$storeName], $this->viewSpecs[$storeName][$vid])) {
+        if (isset($this->viewSpecs[$storeName][$vid])) {
             return $this->viewSpecs[$storeName][$vid];
         }
 
@@ -1554,11 +1552,12 @@ class Config implements IConfigInstance
     protected function getPredicatesFromPredicateFunctions(array $array): array
     {
         $predicates = [];
-        if (is_array($array)) {
-            if (isset($array['predicates'])) {
-                $predicates = $array['predicates'];
-            } else {
-                $predicates = array_merge($predicates, $this->getPredicatesFromPredicateFunctions($array[key($array)]));
+        if (isset($array['predicates'])) {
+            $predicates = $array['predicates'];
+        } elseif ($array !== []) {
+            $function = key($array);
+            if (is_array($array[$function])) {
+                $predicates = array_merge($predicates, $this->getPredicatesFromPredicateFunctions($array[$function]));
             }
         }
 

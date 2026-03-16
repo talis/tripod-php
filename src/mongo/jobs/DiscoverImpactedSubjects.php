@@ -201,8 +201,6 @@ class DiscoverImpactedSubjects extends JobBase
 
     /**
      * For mocking.
-     *
-     * @return ApplyOperation
      */
     protected function getApplyOperation(): ApplyOperation
     {

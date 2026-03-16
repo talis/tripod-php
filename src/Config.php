@@ -54,7 +54,7 @@ class Config implements ITripodConfig
      */
     public static function getConfig(): array
     {
-        return self::$config;
+        return self::$config ?? [];
     }
 
     /**

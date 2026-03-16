@@ -6,14 +6,13 @@ namespace Tripod\Mongo;
 
 use MongoDB\Collection;
 use MongoDB\Database;
-use MongoDB\Driver\Cursor;
+use MongoDB\Driver\CursorInterface;
 use MongoDB\InsertOneResult;
 use MongoDB\UpdateResult;
 use Tripod\Config;
 
 class TransactionLog
 {
-    /** @var IConfigInstance */
     protected array $config;
 
     private Database $transaction_db;
@@ -142,16 +141,14 @@ class TransactionLog
     }
 
     /**
-     * @param string      $storeName
-     * @param string      $podName
-     * @param string|null $fromDate  only transactions after this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
-     * @param string|null $toDate    only transactions before this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
+     * @param string|null $fromDate only transactions after this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
+     * @param string|null $toDate   only transactions before this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
      *
-     * @return Cursor
+     * @return CursorInterface&\Iterator
      *
      * @throws \InvalidArgumentException
      */
-    public function getCompletedTransactions($storeName = null, $podName = null, $fromDate = null, $toDate = null)
+    public function getCompletedTransactions(?string $storeName = null, ?string $podName = null, ?string $fromDate = null, ?string $toDate = null)
     {
         $query = [];
         $query['status'] = 'completed';
@@ -184,14 +181,14 @@ class TransactionLog
     }
 
     /**
-     * @param string $storeName database name to filter on (optional)
-     * @param string $podName   collectionName to filter on (optional)
+     * @param string|null $storeName database name to filter on (optional)
+     * @param string|null $podName   collectionName to filter on (optional)
      *
      * @return int Total number of completed transactions in the transaction log
      *
      * @codeCoverageIgnore
      */
-    public function getCompletedTransactionCount($storeName = null, $podName = null)
+    public function getCompletedTransactionCount(?string $storeName = null, ?string $podName = null)
     {
         if (!empty($storeName) && !empty($podName)) {
             return $this->transaction_collection->count(['status' => 'completed', 'dbName' => $storeName, 'collectionName' => $podName]);

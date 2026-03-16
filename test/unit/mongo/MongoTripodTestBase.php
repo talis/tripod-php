@@ -21,12 +21,12 @@ use Tripod\StatsD;
 abstract class MongoTripodTestBase extends TestCase
 {
     /**
-     * @var Driver
+     * @var Driver|null
      */
     protected $tripod;
 
     /**
-     * @var TransactionLog
+     * @var TransactionLog|null
      */
     protected $tripodTransactionLog;
 
@@ -206,7 +206,7 @@ abstract class MongoTripodTestBase extends TestCase
     {
         $this->assertArrayHasKey($key, $doc, 'the date property: {$key} was not present in document');
         $this->assertInstanceOf(UTCDateTime::class, $doc[$key]);
-        $this->assertNotEmpty($doc[$key]->toDateTime());
+        $this->assertInstanceOf(DateTimeInterface::class, $doc[$key]->toDateTime());
     }
 
     protected function assertDocumentVersion(array $_id, ?int $expectedValue = null, bool $hasVersion = true, ?Driver $tripod = null): void
@@ -268,7 +268,7 @@ abstract class MongoTripodTestBase extends TestCase
 
         $doc = $this->getDocument($_id, $tripod, $fromTransactionLog);
         if ($doc === null) {
-            $this->assertNull($doc);
+            $this->assertNull($doc); // @phpstan-ignore method.alreadyNarrowedType
 
             return; // if document doesn't exist then it doesn't have the property, so assertion is successful
         }
@@ -277,7 +277,7 @@ abstract class MongoTripodTestBase extends TestCase
     }
 
     /**
-     * @param Driver|null $tripod
+     * @param Collection|IDriver|null $tripod
      */
     protected function assertDocumentExists(array $_id, $tripod = null, bool $fromTransactionLog = false): void
     {
@@ -293,7 +293,7 @@ abstract class MongoTripodTestBase extends TestCase
     {
         $doc = $this->getDocument($_id, $tripod, $useTransactionTripod);
         if ($useTransactionTripod) {
-            $this->assertNull($doc, sprintf('Document with _id:[%s] exists, but it should not', $_id));
+            $this->assertNull($doc, 'Document with _id:[' . print_r($_id, true) . '] exists, but it should not');
         } else {
             $this->assertTrue(is_array($doc), 'Document should be array');
             $keys = array_keys($doc);

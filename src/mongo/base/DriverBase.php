@@ -80,12 +80,7 @@ abstract class DriverBase
      */
     public function getStatsConfig(): array
     {
-        $stat = $this->getStat();
-        if ($stat) {
-            return $stat->getConfig();
-        }
-
-        return $this->statsConfig;
+        return $this->getStat()->getConfig();
     }
 
     public function getStoreName(): string

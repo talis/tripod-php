@@ -8,8 +8,7 @@ class StatsD implements ITripodStat
 {
     private string $host;
 
-    /** @var int|string */
-    private $port;
+    private int $port;
 
     private ?string $prefix = null;
 
@@ -217,7 +216,7 @@ class StatsD implements ITripodStat
 
     protected function getStatsPaths(): array
     {
-        return array_values(array_filter([$this->getAggregateStatPath()]));
+        return array_filter([$this->getAggregateStatPath()]);
     }
 
     protected function getAggregateStatPath(): string

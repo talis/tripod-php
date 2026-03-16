@@ -11,6 +11,7 @@ use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
 use MongoDB\Driver\Exception\BulkWriteException;
 use MongoDB\UpdateResult;
+use Tripod\Config;
 use Tripod\Exceptions\SearchException;
 use Tripod\ISearchProvider;
 use Tripod\Timer;
@@ -19,9 +20,6 @@ class MongoSearchProvider implements ISearchProvider
 {
     protected string $storeName;
 
-    /**
-     * @var Config
-     */
     protected IConfigInstance $config;
 
     private Labeller $labeller;
@@ -210,7 +208,7 @@ class MongoSearchProvider implements ISearchProvider
     {
         $this->storeName = $tripod->getStoreName();
         $this->labeller = new Labeller();
-        $this->config = \Tripod\Config::getInstance();
+        $this->config = Config::getInstance();
     }
 
     /**
@@ -387,11 +385,11 @@ class MongoSearchProvider implements ISearchProvider
             throw new SearchException('You must specify at least one field from the search document specification to return');
         }
 
-        if (!is_numeric($limit) || $limit < 0) {
+        if ($limit < 0) {
             throw new SearchException('Value for limit must be a positive number');
         }
 
-        if (!is_numeric($offset) || $offset < 0) {
+        if ($offset < 0) {
             throw new SearchException('Value for offset must be a positive number');
         }
 
@@ -485,14 +483,14 @@ class MongoSearchProvider implements ISearchProvider
      * Here search type id represents to id from, mongo tripod config, that is converted to _id.type in SEARCH_INDEX_COLLECTION
      * If type id is not specified this method will throw an exception.
      *
-     * @param string           $typeId    Search type id
-     * @param UTCDateTime|null $timestamp Optional timestamp to delete all search docs that are older than
+     * @param string               $typeId    Search type id
+     * @param int|UTCDateTime|null $timestamp Optional timestamp to delete all search docs that are older than
      *
      * @return int The number of search documents deleted
      *
      * @throws \Tripod\Exceptions\Exception if there was an error performing the operation
      */
-    public function deleteSearchDocumentsByTypeId($typeId, $timestamp = null)
+    public function deleteSearchDocumentsByTypeId(string $typeId, $timestamp = null): int
     {
         $searchSpec = $this->getSearchDocumentSpecification($typeId);
         if ($searchSpec == null) {

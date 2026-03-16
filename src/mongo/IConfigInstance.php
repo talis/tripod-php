@@ -149,6 +149,13 @@ interface IConfigInstance extends ITripodConfigSerializer
     public function getTypesInSearchSpecifications(string $storeName, ?string $pod = null): array;
 
     /**
+     * Returns a unique list of every rdf type configured in view, table, and search specifications.
+     *
+     * @param string $storeName Store name
+     */
+    public function getAllTypesInSpecifications(string $storeName): array;
+
+    /**
      * Returns an array of database names.
      */
     public function getDbs(): array;

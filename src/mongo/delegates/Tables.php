@@ -215,7 +215,7 @@ class Tables extends CompositeBase
      * @param array<string, mixed> $options Table query options
      * @param array<string, mixed> $filter
      *
-     * @return array<string, CursorInterface|mixed[]>
+     * @return array{head: array{count: int, offset: int, limit: int}, results: array|CursorInterface}
      */
     public function getTableRows(
         string $tableSpecId,
@@ -309,12 +309,12 @@ class Tables extends CompositeBase
     /**
      * This method will delete all table rows where the _id.type matches the specified $tableId.
      *
-     * @param string           $tableId   Table spec ID
-     * @param UTCDateTime|null $timestamp Optional timestamp to delete all table rows that are older than
+     * @param string               $tableId   Table spec ID
+     * @param int|UTCDateTime|null $timestamp Optional timestamp to delete all table rows that are older than
      *
      * @return int The number of table rows deleted
      */
-    public function deleteTableRowsByTableId(string $tableId, $timestamp = null)
+    public function deleteTableRowsByTableId(string $tableId, $timestamp = null): int
     {
         $t = new Timer();
         $t->start();
@@ -323,7 +323,7 @@ class Tables extends CompositeBase
         if ($tableSpec == null) {
             $this->debugLog('Could not find a table specification for ' . $tableId);
 
-            return;
+            return 0;
         }
 
         $query = ['_id.type' => $tableId];
@@ -1040,12 +1040,15 @@ class Tables extends CompositeBase
      * @param array<string, mixed> $spec
      * @param array<string, mixed> $dest
      */
-    protected function addFields(array $source, array $spec, array &$dest)
+    protected function addFields(array $source, array $spec, array &$dest): void
     {
         if (isset($spec['fields'])) {
             foreach ($spec['fields'] as $f) {
-                if (isset($f['temporary']) && $f['temporary'] === true && !in_array($f['fieldName'], $this->temporaryFields)) {
-                    $this->temporaryFields[] = $f['fieldName'];
+                /** @var string */
+                $fieldName = $f['fieldName'];
+
+                if (isset($f['temporary']) && $f['temporary'] === true && !in_array($fieldName, $this->temporaryFields)) {
+                    $this->temporaryFields[] = $fieldName;
                 }
 
                 if (isset($f['predicates'])) {
@@ -1069,8 +1072,8 @@ class Tables extends CompositeBase
                                     }
 
                                 // Otherwise apply a modifier
-                                } elseif (isset($dest[$f['fieldName']])) {
-                                    $dest[$f['fieldName']] = $this->applyModifier($function, $dest[$f['fieldName']], $functionOptions);
+                                } elseif (isset($dest[$fieldName])) {
+                                    $dest[$fieldName] = $this->applyModifier($function, $dest[$fieldName], $functionOptions);
                                 }
                             }
                         }
@@ -1084,14 +1087,14 @@ class Tables extends CompositeBase
                     }
 
                     // If value exists, set as array
-                    if (isset($dest[$f['fieldName']])) {
-                        if (!is_array($dest[$f['fieldName']])) {
-                            $dest[$f['fieldName']] = [$dest[$f['fieldName']]];
+                    if (isset($dest[$fieldName])) {
+                        if (!is_array($dest[$fieldName])) {
+                            $dest[$fieldName] = [$dest[$fieldName]];
                         }
 
-                        $dest[$f['fieldName']][] = $this->labeller->qname_to_alias($source['_id']['r']);
+                        $dest[$fieldName][] = $this->labeller->qname_to_alias($source['_id']['r']);
                     } else {
-                        $dest[$f['fieldName']] = $this->labeller->qname_to_alias($source['_id']['r']);
+                        $dest[$fieldName] = $this->labeller->qname_to_alias($source['_id']['r']);
                     }
                 }
             }
@@ -1103,9 +1106,9 @@ class Tables extends CompositeBase
      *
      * @param array<string, mixed> $source
      * @param array<string, mixed> $f
-     * @param string               $predicate
+     * @param array<string, mixed> $dest
      */
-    protected function generateValues(array $source, array $f, $predicate, array &$dest)
+    protected function generateValues(array $source, array $f, string $predicate, array &$dest): void
     {
         $values = [];
         if (isset($source[$predicate][VALUE_URI]) && !empty($source[$predicate][VALUE_URI])) {
@@ -1126,20 +1129,23 @@ class Tables extends CompositeBase
             }
         }
 
+        /** @var string */
+        $fieldName = $f['fieldName'];
+
         // now add all the values
         foreach ($values as $v) {
-            if (!isset($dest[$f['fieldName']])) {
+            if (!isset($dest[$fieldName])) {
                 // single value
-                $dest[$f['fieldName']] = $v;
-            } elseif (is_array($dest[$f['fieldName']])) {
+                $dest[$fieldName] = $v;
+            } elseif (is_array($dest[$fieldName])) {
                 // add to existing array of values
-                $dest[$f['fieldName']][] = $v;
+                $dest[$fieldName][] = $v;
             } else {
                 // convert from single value to array of values
-                $existingVal = $dest[$f['fieldName']];
-                $dest[$f['fieldName']] = [];
-                $dest[$f['fieldName']][] = $existingVal;
-                $dest[$f['fieldName']][] = $v;
+                $existingVal = $dest[$fieldName];
+                $dest[$fieldName] = [];
+                $dest[$fieldName][] = $existingVal;
+                $dest[$fieldName][] = $v;
             }
         }
     }
@@ -1147,7 +1153,7 @@ class Tables extends CompositeBase
     /**
      * Recursively get functions that can modify a predicate.
      *
-     * @param array $array
+     * @param array|string $array
      */
     protected function getPredicateFunctions($array): array
     {
@@ -1155,9 +1161,12 @@ class Tables extends CompositeBase
         if (is_array($array)) {
             if (isset($array['predicates'])) {
                 $predicateFunctions['predicates'] = $array['predicates'];
-            } else {
-                $predicateFunctions[key($array)] = $array[key($array)];
-                $predicateFunctions = array_merge($predicateFunctions, $this->getPredicateFunctions($array[key($array)]));
+            } elseif ($array !== []) {
+                $function = key($array);
+                $predicateFunctions[$function] = $array[$function];
+                if (is_array($array[$function])) {
+                    $predicateFunctions = array_merge($predicateFunctions, $this->getPredicateFunctions($array[$function]));
+                }
             }
         }
 
@@ -1325,15 +1334,14 @@ class Tables extends CompositeBase
      *      join - pass in "glue":" " to specify what to glue multiple values together with
      *      date - no options.
      *
-     * @param string               $modifier
-     * @param string               $value
-     * @param array<string, mixed> $options
+     * @param string|string[]|\Stringable|\Stringable[] $value
+     * @param array<string, bool|int|string>            $options
      *
      * @return mixed
      *
      * @throws \Exception
      */
-    private function applyModifier($modifier, $value, array $options = [])
+    private function applyModifier(string $modifier, $value, array $options = [])
     {
         switch ($modifier) {
             case 'predicates':

@@ -33,20 +33,15 @@ class Updates extends DriverBase
     private ?TransactionLog $transactionLog = null;
 
     /**
-     * @var string the original read preference gets stored here
-     *             when changing for a write
+     * @var int|string the original read preference gets stored here when changing for a write
      */
     private $originalCollectionReadPreference = '';
 
     /**
-     * @var string the original read preference gets stored here
-     *             when changing for a write
+     * @var int|string the original read preference gets stored here when changing for a write
      */
     private $originalDbReadPreference = '';
 
-    /**
-     * @var int
-     */
     private int $retriesToGetLock;
 
     /**
@@ -405,7 +400,7 @@ class Updates extends DriverBase
     {
         $dbReadPref = $this->db->getReadPreference();
         if ($this->originalDbReadPreference !== $dbReadPref->getMode()) {
-            $pref = $this->originalDbReadPreference ?? $this->readPreference;
+            $pref = $this->originalDbReadPreference ?: $this->readPreference;
             $dbTagsets = $dbReadPref->getTagsets();
 
             $this->db = $this->db->withOptions([
@@ -416,7 +411,7 @@ class Updates extends DriverBase
         // Reset collection object
         $collReadPref = $this->getCollection()->getReadPreference();
         if ($this->originalCollectionReadPreference !== $collReadPref->getMode()) {
-            $pref = $this->originalCollectionReadPreference ?? $this->readPreference;
+            $pref = $this->originalCollectionReadPreference ?: $this->readPreference;
             $collTagsets = $collReadPref->getTagsets();
             $this->collection = $this->collection->withOptions([
                 'readPreference' => new ReadPreference($pref, $collTagsets),
@@ -988,13 +983,11 @@ class Updates extends DriverBase
     /**
      * Lock and return a single document for editing.
      *
-     * @param string $s              subject URI of resource to lock
-     * @param string $transaction_id
-     * @param string $contextAlias
+     * @param string $s subject URI of resource to lock
      *
-     * @return array
+     * @return array|false
      */
-    protected function lockSingleDocument(?string $s, $transaction_id, $contextAlias)
+    protected function lockSingleDocument(string $s, string $transaction_id, string $contextAlias)
     {
         $countEntriesInLocksCollection = $this->getLocksCollection()
             ->count(
@@ -1132,21 +1125,16 @@ class Updates extends DriverBase
     /**
      * This proxy method allows us to mock updates against $this->collection.
      *
-     * @param mixed                $query
-     * @param mixed                $update
+     * @param array|object         $query
+     * @param array|object         $update
      * @param array<string, mixed> $options
-     *
-     * @return bool
      */
-    protected function updateCollection($query, $update, array $options)
+    protected function updateCollection($query, $update, array $options): UpdateResult
     {
         return $this->getCollection()->replaceOne($query, $update, $options);
     }
 
-    /**
-     * @return Database
-     */
-    protected function getLocksDatabase()
+    protected function getLocksDatabase(): Database
     {
         if ($this->locksDb === null) {
             $this->locksDb = $this->config->getDatabase($this->storeName);

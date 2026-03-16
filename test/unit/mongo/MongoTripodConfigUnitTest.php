@@ -16,9 +16,6 @@ use Tripod\Mongo\MongoSearchProvider;
 
 class MongoTripodConfigUnitTest extends MongoTripodTestBase
 {
-    /**
-     * @var Tripod\Mongo\Config
-     */
     private IConfigInstance $tripodConfig;
 
     protected function setUp(): void
