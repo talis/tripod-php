@@ -22,27 +22,13 @@ use Tripod\Timer;
 
 class Updates extends DriverBase
 {
-    /**
-     * @var Labeller
-     */
-    protected $labeller;
-
     protected Driver $tripod;
 
-    /**
-     * @var Database
-     */
-    protected $locksDb;
+    protected ?Database $locksDb = null;
 
-    /**
-     * @var Collection
-     */
-    protected $locksCollection;
+    protected ?Collection $locksCollection = null;
 
-    /**
-     * @var DiscoverImpactedSubjects
-     */
-    protected $discoverImpactedSubjects;
+    protected ?DiscoverImpactedSubjects $discoverImpactedSubjects = null;
 
     private ?TransactionLog $transactionLog = null;
 
@@ -61,17 +47,14 @@ class Updates extends DriverBase
     /**
      * @var int
      */
-    private $retriesToGetLock;
+    private int $retriesToGetLock;
 
     /**
-     * @var mixed[]
+     * @var array{OP_VIEWS: bool, OP_TABLES: bool, OP_SEARCH: bool}
      */
     private array $async;
 
-    /**
-     * @var string
-     */
-    private $queueName;
+    private ?string $queueName = null;
 
     /**
      * @var IEventHook[]
@@ -1172,10 +1155,7 @@ class Updates extends DriverBase
         return $this->locksDb;
     }
 
-    /**
-     * @return Collection
-     */
-    protected function getLocksCollection()
+    protected function getLocksCollection(): Collection
     {
         if ($this->locksCollection === null) {
             $this->locksCollection = $this->getLocksDatabase()->selectCollection(LOCKS_COLLECTION);

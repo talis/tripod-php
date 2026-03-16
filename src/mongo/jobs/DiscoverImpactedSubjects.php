@@ -20,19 +20,16 @@ class DiscoverImpactedSubjects extends JobBase
 
     public const CONTEXT_ALIAS_KEY = 'contextAlias';
 
-    /**
-     * @var ApplyOperation
-     */
-    protected $applyOperation;
+    protected ?ApplyOperation $applyOperation = null;
 
     /**
-     * @var array
+     * @var array<string, ImpactedSubject[]>
      */
     protected $subjectsGroupedByQueue = [];
 
     protected $configRequired = true;
 
-    protected $subjectCount;
+    protected int $subjectCount;
 
     protected $mandatoryArgs = [
         self::STORE_NAME_KEY,
@@ -207,7 +204,7 @@ class DiscoverImpactedSubjects extends JobBase
      *
      * @return ApplyOperation
      */
-    protected function getApplyOperation()
+    protected function getApplyOperation(): ApplyOperation
     {
         if ($this->applyOperation === null) {
             $this->applyOperation = new ApplyOperation();

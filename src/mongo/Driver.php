@@ -26,14 +26,11 @@ class Driver extends DriverBase implements IDriver
     private ?SearchIndexer $searchIndexer = null;
 
     /**
-     * @var mixed[]
+     * @var array{OP_VIEWS: bool, OP_TABLES: bool, OP_SEARCH: bool}
      */
     private array $async;
 
-    /**
-     * @var int
-     */
-    private $retriesToGetLock;
+    private int $retriesToGetLock;
 
     private ?Updates $updates = null;
 

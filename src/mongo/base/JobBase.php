@@ -44,15 +44,19 @@ abstract class JobBase extends DriverBase
      */
     public $job;
 
+    /**
+     * @var string[]
+     */
     protected $mandatoryArgs = [];
 
+    /**
+     * @var bool
+     */
     protected $configRequired = false;
 
-    /** @var IConfigInstance */
-    protected $tripodConfig;
+    protected ?IConfigInstance $tripodConfig = null;
 
-    /** @var Timer */
-    protected $timer;
+    protected ?Timer $timer = null;
 
     private ?Driver $tripod = null;
 

@@ -533,7 +533,6 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
         $tripod = $this->getMockBuilder(Driver::class)
             ->onlyMethods(['getStoreName'])
             ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
-            ->disableOriginalConstructor()
             ->getMock();
         $tripod->expects($this->atLeastOnce())->method('getStoreName')->willReturn('tripod_php_testing');
 

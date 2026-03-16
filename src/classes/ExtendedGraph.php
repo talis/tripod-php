@@ -29,16 +29,16 @@ class ExtendedGraph
     public const rdf_seq = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq';
 
     /** @var TripleGraph */
-    public $_index = [];
+    public array $_index = [];
 
     /** @var string[] */
-    public $_image_properties = [
+    public array $_image_properties = [
         'http://xmlns.com/foaf/0.1/depiction',
         'http://xmlns.com/foaf/0.1/img',
     ];
 
     /** @var string[] */
-    public $_property_order = [
+    public array $_property_order = [
         'http://www.w3.org/2004/02/skos/core#prefLabel',
         RDFS_LABEL,
         'http://purl.org/dc/terms/title',
@@ -52,8 +52,7 @@ class ExtendedGraph
         RDF_TYPE,
     ];
 
-    /** @var array */
-    public $parser_errors = [];
+    public array $parser_errors = [];
 
     /**
      * @var Labeller
@@ -61,7 +60,7 @@ class ExtendedGraph
     public $_labeller;
 
     /** @var array<string, string> */
-    protected $_ns = [
+    protected array $_ns = [
         'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
         'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
         'owl' => 'http://www.w3.org/2002/07/owl#',
@@ -100,7 +99,7 @@ class ExtendedGraph
      *
      * @var string[]
      */
-    private static $labelProperties;
+    private static array $labelProperties;
 
     /**
      * @param string|TripleGraph $graph
@@ -1297,7 +1296,7 @@ class ExtendedGraph
     public static function initProperties(array $properties): void
     {
         if (array_key_exists('labelProperties', $properties)) {
-            self::$labelProperties = $properties['labelProperties'];
+            self::$labelProperties = $properties['labelProperties'] ?? [];
         }
     }
 

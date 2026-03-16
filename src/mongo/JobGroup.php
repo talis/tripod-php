@@ -15,7 +15,7 @@ class JobGroup
 
     private ?Collection $collection = null;
 
-    private $storeName;
+    private string $storeName;
 
     /**
      * Constructor method.
@@ -23,7 +23,7 @@ class JobGroup
      * @param string          $storeName Tripod store (database) name
      * @param ObjectId|string $groupId   Optional tracking ID, will assign a new one if omitted
      */
-    public function __construct($storeName, $groupId = null)
+    public function __construct(string $storeName, $groupId = null)
     {
         $this->storeName = $storeName;
         if (!$groupId) {
@@ -40,7 +40,7 @@ class JobGroup
      *
      * @param int $count Number of jobs in group
      */
-    public function setJobCount($count): void
+    public function setJobCount(int $count): void
     {
         $this->getMongoCollection()->updateOne(
             ['_id' => $this->getId()],
@@ -56,7 +56,7 @@ class JobGroup
      *
      * @return int Updated job count
      */
-    public function incrementJobCount($inc = 1)
+    public function incrementJobCount(int $inc = 1): int
     {
         $updateResult = $this->getMongoCollection()->findOneAndUpdate(
             ['_id' => $this->getId()],

@@ -8,7 +8,6 @@ use MongoDB\Collection;
 use MongoDB\Driver\ReadPreference;
 use Tripod\Exceptions\SearchException;
 use Tripod\ISearchProvider;
-use Tripod\ITripodStat;
 use Tripod\Mongo\Driver;
 use Tripod\Mongo\IConfigInstance;
 use Tripod\Mongo\ImpactedSubject;
@@ -19,10 +18,6 @@ use Tripod\Timer;
 
 class SearchIndexer extends CompositeBase
 {
-    protected Labeller $labeller;
-
-    protected ITripodStat $stat;
-
     private Driver $tripod;
 
     private ?ISearchProvider $searchProvider = null;

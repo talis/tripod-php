@@ -6,8 +6,7 @@ namespace Tripod;
 
 class StatsD implements ITripodStat
 {
-    /** @var string */
-    private $host;
+    private string $host;
 
     /** @var int|string */
     private $port;
@@ -17,7 +16,6 @@ class StatsD implements ITripodStat
     private ?string $pivotValue = null;
 
     /**
-     * @param string     $host
      * @param int|string $port
      */
     public function __construct(string $host, $port, ?string $prefix = '')

@@ -19,10 +19,10 @@ namespace Tripod;
 class ChangeSet extends ExtendedGraph
 {
     /** @var TripleGraph */
-    public $before = [];
+    public array $before = [];
 
     /** @var TripleGraph */
-    public $after = [];
+    public array $after = [];
 
     /**
      * @var array{
@@ -38,7 +38,7 @@ class ChangeSet extends ExtendedGraph
      *   'http://purl.org/dc/terms/source'?: array|string
      * }
      */
-    public $a;
+    public array $a;
 
     /**
      * Create a new changeset. This will calculate the required additions and removals based on before and after versions of a bounded description. The args parameter is an associative array that may have the following fields:

@@ -31,58 +31,30 @@ abstract class DriverBase
 
     public const HOOK_FN_FAILURE = 'failure';
 
-    /**
-     * @var LoggerInterface
-     */
-    public static $logger;
+    public static ?LoggerInterface $logger = null;
 
-    /**
-     * @var Collection
-     */
-    protected $collection;
+    protected string $storeName;
 
-    /**
-     * @var string
-     */
-    protected $storeName;
+    protected string $podName;
 
-    /**
-     * @var string
-     */
-    protected $podName;
+    protected ?string $defaultContext = null;
 
-    /**
-     * @var string|null
-     */
-    protected $defaultContext;
+    protected ?ITripodStat $stat = null;
 
-    /**
-     * @var ITripodStat|null
-     */
-    protected $stat;
+    protected array $statsConfig = [];
 
-    /** @var array */
-    protected $statsConfig = [];
+    protected ?Database $db = null;
 
-    /**
-     * @var Database
-     */
-    protected $db;
+    protected ?Collection $collection = null;
 
     /**
      * @var int|string
      */
     protected $readPreference = ReadPreference::RP_PRIMARY_PREFERRED;
 
-    /**
-     * @var Labeller
-     */
-    protected $labeller;
+    protected Labeller $labeller;
 
-    /**
-     * @var IConfigInstance
-     */
-    protected $config;
+    protected IConfigInstance $config;
 
     public function getStat(): ITripodStat
     {

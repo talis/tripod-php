@@ -11,43 +11,35 @@ use Tripod\ITripodStat;
 /**
  * A subject that has been involved in an modification event (create/update, delete) and will therefore require
  * view, table and search doc generation.
+ *
+ * @phpstan-type ResourceId array{r: string, c: string}
  */
 class ImpactedSubject
 {
     private ?string $operation = null;
 
     /**
-     * @var mixed[]
+     * @var ResourceId
      */
     private array $resourceId;
 
     /**
-     * @var mixed[]
+     * @var string[]
      */
     private array $specTypes;
 
-    /**
-     * @var string
-     */
-    private $storeName;
+    private string $storeName;
+
+    private string $podName;
+
+    private ?ITripodStat $tripodStat = null;
 
     /**
-     * @var string
-     */
-    private $podName;
-
-    private ?ITripodStat $tripodStat;
-
-    /**
-     * @param string $operation
-     * @param string $storeName
-     * @param string $podName
-     *
      * @throws Exception
      */
-    public function __construct(array $resourceId, $operation, $storeName, $podName, array $specTypes = [], ?ITripodStat $stat = null)
+    public function __construct(array $resourceId, string $operation, string $storeName, string $podName, array $specTypes = [], ?ITripodStat $stat = null)
     {
-        if (!is_array($resourceId) || !array_key_exists(_ID_RESOURCE, $resourceId) || !array_key_exists(_ID_CONTEXT, $resourceId)) {
+        if (!array_key_exists(_ID_RESOURCE, $resourceId) || !array_key_exists(_ID_CONTEXT, $resourceId)) {
             throw new Exception('Parameter $resourceId needs to be of type array with ' . _ID_RESOURCE . ' and ' . _ID_CONTEXT . ' keys');
         }
 
@@ -73,10 +65,7 @@ class ImpactedSubject
         return $this->operation;
     }
 
-    /**
-     * @return string
-     */
-    public function getPodName()
+    public function getPodName(): string
     {
         return $this->podName;
     }
@@ -97,10 +86,7 @@ class ImpactedSubject
         return $this->specTypes;
     }
 
-    /**
-     * @return string
-     */
-    public function getStoreName()
+    public function getStoreName(): string
     {
         return $this->storeName;
     }
@@ -127,7 +113,7 @@ class ImpactedSubject
     public function update(): void
     {
         $tripod = $this->getTripod();
-        if (property_exists($this, 'tripodStat') && $this->tripodStat !== null) {
+        if ($this->tripodStat !== null) {
             $tripod->setStat($this->tripodStat);
         }
 

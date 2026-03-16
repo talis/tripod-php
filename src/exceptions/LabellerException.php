@@ -9,21 +9,15 @@ namespace Tripod\Exceptions;
  */
 class LabellerException extends Exception
 {
-    private $target;
+    private ?string $target;
 
-    /**
-     * @param string $target
-     */
-    public function __construct($target)
+    public function __construct(?string $target)
     {
         $this->target = $target;
         parent::__construct('Could not label: ' . $target);
     }
 
-    /**
-     * @return string
-     */
-    public function getTarget()
+    public function getTarget(): ?string
     {
         return $this->target;
     }

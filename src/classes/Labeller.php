@@ -12,10 +12,7 @@ namespace Tripod;
  */
 class Labeller
 {
-    /**
-     * @var array
-     */
-    public $_labels = [
+    public array $_labels = [
         'http://www.w3.org/1999/02/22-rdf-syntax-ns#_1' => ['first', 'first', 'is first member of'],
         'http://www.w3.org/1999/02/22-rdf-syntax-ns#_2' => ['second', 'second', 'is second member of'],
         'http://www.w3.org/1999/02/22-rdf-syntax-ns#_3' => ['third', 'third', 'is third member of'],
@@ -238,15 +235,9 @@ class Labeller
         'http://purl.org/goodrelations/v1#hasGTIN-14' => ['GTIN-14'],
     ];
 
-    /**
-     * @var array
-     */
-    protected $_label_properties = [];
+    protected array $_label_properties = [];
 
-    /**
-     * @var array
-     */
-    protected $_ns = [
+    protected array $_ns = [
         'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
         'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
         'owl' => 'http://www.w3.org/2002/07/owl#',

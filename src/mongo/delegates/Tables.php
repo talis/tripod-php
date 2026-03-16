@@ -27,11 +27,9 @@ class Tables extends CompositeBase
      * Note about the "true" value - this is so that the keys are defined as keys rather than values. If we move to
      * a json schema we could define the types of attribute and whether they are required or not.
      *
-     * @var array
-     *
      * @static
      */
-    public static $predicateModifiers = [
+    public static array $predicateModifiers = [
         'join' => [
             'glue' => true,
             'predicates' => true,
@@ -47,46 +45,36 @@ class Tables extends CompositeBase
     /**
      * Computed field config - A list of valid functions to write dynamic table row field values.
      *
-     * @var array
-     *
      * @static
      */
-    public static $computedFieldFunctions = ['conditional', 'replace', 'arithmetic'];
+    public static array $computedFieldFunctions = ['conditional', 'replace', 'arithmetic'];
 
     /**
      * Computed conditional config - list of allowed conditional operators.
      *
-     * @var array
-     *
      * @static
      */
-    public static $conditionalOperators = ['>', '<', '>=', '<=', '==', '!=', 'contains', 'not contains', '~=', '!~'];
+    public static array $conditionalOperators = ['>', '<', '>=', '<=', '==', '!=', 'contains', 'not contains', '~=', '!~'];
 
     /**
      * Computed arithmetic config - list of allowed arithmetic operators.
      *
-     * @var array
-     *
      * @static
      */
-    public static $arithmeticOperators = ['+', '-', '*', '/', '%'];
+    public static array $arithmeticOperators = ['+', '-', '*', '/', '%'];
 
-    /**
-     * @var array
-     */
-    protected $temporaryFields = [];
+    protected array $temporaryFields = [];
 
     /**
      * Construct accepts actual objects rather than strings as this class is a delegate of
      * Tripod and should inherit connections set up there.
      *
-     * @param string           $storeName
      * @param ITripodStat|null $stat
      * @param string           $readPreference
      *                                         todo: MongoCollection -> podName
      */
     public function __construct(
-        $storeName,
+        string $storeName,
         Collection $collection,
         ?string $defaultContext,
         $stat = null,

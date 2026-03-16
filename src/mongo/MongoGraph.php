@@ -34,7 +34,7 @@ class MongoGraph extends ExtendedGraph
      *
      * @throws \InvalidArgumentException if you do not specify a context
      */
-    public function to_nquads($context): string
+    public function to_nquads(?string $context): string
     {
         if (empty($context)) {
             throw new \InvalidArgumentException('You must specify the context when serializing to nquads');

@@ -165,6 +165,7 @@ interface IConfigInstance extends ITripodConfigSerializer
 
     /**
      * @param string $storeName Store name
+     *
      * @return class-string<ISearchProvider>|null
      */
     public function getSearchProviderClassName(string $storeName): ?string;

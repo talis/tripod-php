@@ -27,105 +27,65 @@ class Config implements IConfigInstance
 
     /**
      * All of the defined searchDocSpecs.
-     *
-     * @var array
      */
-    protected $searchDocSpecs = [];
+    protected array $searchDocSpecs = [];
 
     /**
      * All defined namespaces.
-     *
-     * @var array
      */
-    protected $ns = [];
+    protected array $ns = [];
 
     /**
      * The transaction log db config.
-     *
-     * @var array
      */
-    protected $tConfig = [];
+    protected array $tConfig = [];
 
     /**
      * The value should be the name of a class that implement iTripodSearchProvider keyed by storename.
-     *
-     * @var array
      */
-    protected $searchProviderClassName = [];
+    protected array $searchProviderClassName = [];
 
     /**
      * All of the predicates associated with a particular spec document.
-     *
-     * @var array
      */
-    protected $specPredicates;
+    protected array $specPredicates;
 
     /**
      * A simple map between collection names and the database name they belong to.
-     *
-     * @var array
      */
-    protected $collectionDatabases = [];
+    protected array $collectionDatabases = [];
 
-    /**
-     * @var array
-     */
-    protected $activeMongoConnections = [];
+    protected array $activeMongoConnections = [];
 
-    /**
-     * @var string
-     */
-    protected $defaultDatabase;
+    protected array $dataSources = [];
 
-    /**
-     * @var array
-     */
-    protected $dataSources = [];
+    protected array $podConnections = [];
 
-    /**
-     * @var array
-     */
-    protected $podConnections = [];
-
-    /**
-     * @var string
-     */
-    protected static $validationLevel = self::VALIDATE_MIN;
+    protected static string $validationLevel = self::VALIDATE_MIN;
 
     /**
      * Database connections, keyed by datasource, so we're not inadvertently opening many db connections through getDatabase().
-     *
-     * @var array
      */
-    protected $connections = [];
+    protected array $connections = [];
 
-    /**
-     * @var int
-     */
-    protected $mongoCursorTimeout = 30000;
+    protected int $mongoCursorTimeout = 30000;
 
     /**
      * @var array<string, int>
      */
-    protected $batchSize = [
+    protected array $batchSize = [
         OP_TABLES => 100,
         OP_SEARCH => 100,
         OP_VIEWS => 25,
     ];
 
-    /**
-     * @var LoggerInterface
-     */
-    protected static $logger;
+    protected static ?LoggerInterface $logger = null;
 
     private ?array $config = null;
 
     private ?Labeller $labeller = null;
 
-    /**
-     * @var string
-     */
-    private $defaultContext;
+    private string $defaultContext;
 
     /**
      * The defined database indexes, keyed by database name.
@@ -151,10 +111,8 @@ class Config implements IConfigInstance
 
     /**
      * Defined database configuration: dbname, collections, etc.
-     *
-     * @var array
      */
-    private $databases = [];
+    private array $databases = [];
 
     /**
      * Config should not be instantiated directly: use Config::getInstance().

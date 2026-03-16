@@ -12,10 +12,7 @@ use Tripod\Mongo\Jobs\ApplyOperation;
 
 abstract class CompositeBase extends DriverBase implements IComposite
 {
-    /**
-     * @var ApplyOperation
-     */
-    protected $applyOperation;
+    protected ?ApplyOperation $applyOperation = null;
 
     /**
      * Returns an array of ImpactedSubjects based on the subjects and predicates of change.
@@ -170,10 +167,8 @@ abstract class CompositeBase extends DriverBase implements IComposite
 
     /**
      * For mocking.
-     *
-     * @return ApplyOperation
      */
-    protected function getApplyOperation()
+    protected function getApplyOperation(): ApplyOperation
     {
         if ($this->applyOperation === null) {
             $this->applyOperation = new ApplyOperation();
@@ -186,10 +181,10 @@ abstract class CompositeBase extends DriverBase implements IComposite
      * Queues a batch of ImpactedSubjects in a single ApplyOperation job.
      *
      * @param ImpactedSubject[] $subjects   Array of ImpactedSubjects
-     * @param string            $queueName  Queue name
+     * @param string|null       $queueName  Queue name
      * @param array             $jobOptions Job options
      */
-    protected function queueApplyJob(array $subjects, $queueName, array $jobOptions)
+    protected function queueApplyJob(array $subjects, ?string $queueName, array $jobOptions)
     {
         $this->getApplyOperation()->createJob($subjects, $queueName, $jobOptions);
     }
