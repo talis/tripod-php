@@ -9,6 +9,7 @@ use MongoDB\Database;
 use MongoDB\Driver\ReadPreference;
 use Psr\Log\LoggerInterface;
 use Tripod\Exceptions\ConfigException;
+use Tripod\ISearchProvider;
 use Tripod\ITripodConfigSerializer;
 
 interface IConfigInstance extends ITripodConfigSerializer
@@ -164,6 +165,7 @@ interface IConfigInstance extends ITripodConfigSerializer
 
     /**
      * @param string $storeName Store name
+     * @return class-string<ISearchProvider>|null
      */
     public function getSearchProviderClassName(string $storeName): ?string;
 

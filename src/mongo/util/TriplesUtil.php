@@ -10,12 +10,9 @@ use Tripod\Exceptions\LabellerException;
 
 class TriplesUtil
 {
-    private $collections = [];
+    private array $collections = [];
 
-    /**
-     * @var Labeller
-     */
-    private $labeller;
+    private Labeller $labeller;
 
     /**
      * Constructor.
@@ -224,11 +221,9 @@ class TriplesUtil
     }
 
     /**
-     * @param string $object
-     *
      * @return mixed
      */
-    private function isUri($object)
+    private function isUri(string $object)
     {
         return filter_var($object, FILTER_VALIDATE_URL);
     }

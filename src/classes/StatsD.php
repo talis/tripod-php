@@ -12,20 +12,18 @@ class StatsD implements ITripodStat
     /** @var int|string */
     private $port;
 
-    /** @var string|null */
-    private $prefix;
+    private ?string $prefix = null;
 
-    /** @var string|null */
-    private $pivotValue;
+    private ?string $pivotValue = null;
 
     /**
      * @param string     $host
      * @param int|string $port
      */
-    public function __construct($host, $port, ?string $prefix = '')
+    public function __construct(string $host, $port, ?string $prefix = '')
     {
-        $this->host = $host;
-        $this->port = $port;
+        $this->setHost($host);
+        $this->setPort($port);
         $this->setPrefix($prefix);
     }
 
@@ -89,10 +87,7 @@ class StatsD implements ITripodStat
         return new self($host, $port, $prefix);
     }
 
-    /**
-     * @return string
-     */
-    public function getPrefix()
+    public function getPrefix(): ?string
     {
         return $this->prefix;
     }
@@ -109,10 +104,7 @@ class StatsD implements ITripodStat
         }
     }
 
-    /**
-     * @return int|string
-     */
-    public function getPort()
+    public function getPort(): int
     {
         return $this->port;
     }
@@ -122,29 +114,20 @@ class StatsD implements ITripodStat
      */
     public function setPort($port): void
     {
-        $this->port = $port;
+        $this->port = (int) $port;
     }
 
-    /**
-     * @return string
-     */
-    public function getHost()
+    public function getHost(): string
     {
         return $this->host;
     }
 
-    /**
-     * @param string $host
-     */
-    public function setHost($host): void
+    public function setHost(string $host): void
     {
         $this->host = $host;
     }
 
-    /**
-     * @return string
-     */
-    public function getPivotValue()
+    public function getPivotValue(): ?string
     {
         return $this->pivotValue;
     }

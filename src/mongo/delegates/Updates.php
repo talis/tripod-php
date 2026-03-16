@@ -27,10 +27,7 @@ class Updates extends DriverBase
      */
     protected $labeller;
 
-    /**
-     * @var Driver
-     */
-    protected $tripod;
+    protected Driver $tripod;
 
     /**
      * @var Database
@@ -47,10 +44,7 @@ class Updates extends DriverBase
      */
     protected $discoverImpactedSubjects;
 
-    /**
-     * @var TransactionLog
-     */
-    private $transactionLog;
+    private ?TransactionLog $transactionLog = null;
 
     /**
      * @var string the original read preference gets stored here
@@ -70,9 +64,9 @@ class Updates extends DriverBase
     private $retriesToGetLock;
 
     /**
-     * @var array
+     * @var mixed[]
      */
-    private $async;
+    private array $async;
 
     /**
      * @var string
@@ -80,9 +74,9 @@ class Updates extends DriverBase
     private $queueName;
 
     /**
-     * @var array
+     * @var IEventHook[]
      */
-    private $saveChangesHooks = [];
+    private array $saveChangesHooks = [];
 
     /**
      * @param array $opts
@@ -369,11 +363,7 @@ class Updates extends DriverBase
     }
 
     // getters and setters for the delegates
-
-    /**
-     * @return TransactionLog
-     */
-    public function getTransactionLog()
+    public function getTransactionLog(): TransactionLog
     {
         if ($this->transactionLog == null) {
             $this->transactionLog = new TransactionLog();
@@ -1275,6 +1265,7 @@ class Updates extends DriverBase
                 if (!is_array($changes[$operator][$key])) {
                     $changes[$operator][$key] = [$changes[$operator][$key]];
                 }
+
                 $changes[$operator][$key][] = $value;
             } else {
                 $changes[$operator][$key] = $value;
@@ -1282,6 +1273,9 @@ class Updates extends DriverBase
         }
     }
 
+    /**
+     * @return int[]|string[]
+     */
     private function getAsyncOperations(): array
     {
         $types = [];
@@ -1294,6 +1288,9 @@ class Updates extends DriverBase
         return $types;
     }
 
+    /**
+     * @return int[]|string[]
+     */
     private function getSyncOperations(): array
     {
         $types = [];

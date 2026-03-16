@@ -70,7 +70,7 @@ abstract class DriverBase
     protected $db;
 
     /**
-     * @var string
+     * @var int|string
      */
     protected $readPreference = ReadPreference::RP_PRIMARY_PREFERRED;
 

@@ -10,7 +10,6 @@ use MongoDB\Driver\Exception\BulkWriteException;
 use MongoDB\Driver\ReadPreference;
 use Tripod\Config;
 use Tripod\Exceptions\ViewException;
-use Tripod\ExtendedGraph;
 use Tripod\ITripodStat;
 use Tripod\Mongo\DateUtil;
 use Tripod\Mongo\ImpactedSubject;
@@ -756,7 +755,7 @@ class Views extends CompositeBase
      *
      * @return string
      */
-    private function getFromCollectionForViewSpec($viewSpec)
+    private function getFromCollectionForViewSpec(?array $viewSpec)
     {
         return $viewSpec['from'] ?? $this->podName;
     }

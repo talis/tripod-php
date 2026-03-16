@@ -15,7 +15,7 @@ use Tripod\Mongo\Updates;
 
 class ConfigGeneratorTest extends MongoTripodTestBase
 {
-    private $config = [];
+    private array $config = [];
 
     protected function setUp(): void
     {

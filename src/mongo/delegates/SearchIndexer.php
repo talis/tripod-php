@@ -8,6 +8,7 @@ use MongoDB\Collection;
 use MongoDB\Driver\ReadPreference;
 use Tripod\Exceptions\SearchException;
 use Tripod\ISearchProvider;
+use Tripod\ITripodStat;
 use Tripod\Mongo\Driver;
 use Tripod\Mongo\IConfigInstance;
 use Tripod\Mongo\ImpactedSubject;
@@ -18,19 +19,16 @@ use Tripod\Timer;
 
 class SearchIndexer extends CompositeBase
 {
-    protected $labeller;
+    protected Labeller $labeller;
 
-    protected $stat;
+    protected ITripodStat $stat;
 
-    private $tripod;
+    private Driver $tripod;
 
-    /**
-     * @var ISearchProvider
-     */
-    private $searchProvider;
+    private ?ISearchProvider $searchProvider = null;
 
     /**
-     * @param string $readPreference
+     * @param int|string $readPreference
      *
      * @throws SearchException
      */
@@ -267,10 +265,7 @@ class SearchIndexer extends CompositeBase
         return $this->getSearchProvider()->deleteSearchDocumentsByTypeId($typeId);
     }
 
-    /**
-     * @return ISearchProvider
-     */
-    protected function getSearchProvider()
+    protected function getSearchProvider(): ?ISearchProvider
     {
         return $this->searchProvider;
     }

@@ -17,22 +17,19 @@ use Tripod\Timer;
 
 class MongoSearchProvider implements ISearchProvider
 {
-    /**
-     * @var string
-     */
-    protected $storeName;
+    protected string $storeName;
 
     /**
      * @var Config
      */
-    protected $config;
+    protected IConfigInstance $config;
+
+    private Labeller $labeller;
 
     /**
-     * @var Labeller
+     * @var string[]
      */
-    private $labeller;
-
-    private $stopWords = [
+    private array $stopWords = [
         'a',
         'about',
         'above',

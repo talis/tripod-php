@@ -21,10 +21,8 @@ class MongoTripodConfigTest extends MongoTripodPerformanceTestBase
 
     /**
      * Holds tripod config.
-     *
-     * @var array
      */
-    private $config = [];
+    private array $config = [];
 
     /**
      * Do some setup before each test start.

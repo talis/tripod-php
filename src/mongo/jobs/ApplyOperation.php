@@ -103,9 +103,7 @@ class ApplyOperation extends JobBase
 
         $data = [
             self::SUBJECTS_KEY => array_map(
-                function (ImpactedSubject $subject): array {
-                    return $subject->toArray();
-                },
+                fn (ImpactedSubject $subject): array => $subject->toArray(),
                 $subjects
             ),
         ];

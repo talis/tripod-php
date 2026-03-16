@@ -14,20 +14,17 @@ use Tripod\ITripodStat;
  */
 class ImpactedSubject
 {
-    /**
-     * @var string
-     */
-    private $operation;
+    private ?string $operation = null;
 
     /**
-     * @var array
+     * @var mixed[]
      */
-    private $resourceId;
+    private array $resourceId;
 
     /**
-     * @var array
+     * @var mixed[]
      */
-    private $specTypes;
+    private array $specTypes;
 
     /**
      * @var string
@@ -39,10 +36,7 @@ class ImpactedSubject
      */
     private $podName;
 
-    /**
-     * @var ITripodStat|null
-     */
-    private $tripodStat;
+    private ?ITripodStat $tripodStat;
 
     /**
      * @param string $operation
@@ -74,10 +68,7 @@ class ImpactedSubject
         }
     }
 
-    /**
-     * @return string
-     */
-    public function getOperation()
+    public function getOperation(): ?string
     {
         return $this->operation;
     }
@@ -91,17 +82,17 @@ class ImpactedSubject
     }
 
     /**
-     * @return array
+     * @return mixed[]
      */
-    public function getResourceId()
+    public function getResourceId(): array
     {
         return $this->resourceId;
     }
 
     /**
-     * @return array
+     * @return mixed[]
      */
-    public function getSpecTypes()
+    public function getSpecTypes(): array
     {
         return $this->specTypes;
     }

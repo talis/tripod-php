@@ -9,6 +9,7 @@ use Tripod\Config;
 use Tripod\Exceptions\ConfigException;
 use Tripod\ExtendedGraph;
 use Tripod\Mongo\Driver;
+use Tripod\Mongo\IConfigInstance;
 use Tripod\Mongo\Labeller;
 use Tripod\Mongo\MongoGraph;
 use Tripod\Mongo\MongoSearchProvider;
@@ -18,7 +19,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
     /**
      * @var Tripod\Mongo\Config
      */
-    private $tripodConfig;
+    private IConfigInstance $tripodConfig;
 
     protected function setUp(): void
     {
@@ -62,7 +63,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $expectedNs['bibo'] = 'http://purl.org/ontology/bibo/';
         $expectedNs['foaf'] = 'http://xmlns.com/foaf/0.1/';
         $expectedNs['baseData'] = 'http://basedata.com/b/';
-        $this->assertEquals($expectedNs, $ns, 'Incorrect namespaces');
+        $this->assertSame($expectedNs, $ns, 'Incorrect namespaces');
     }
 
     public function testTConfig(): void
@@ -1690,9 +1691,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig->expects($this->exactly(1))
             ->method('getMongoClient')
             ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])
-            ->willReturnCallback(function (): Client {
-                return new Client();
-            });
+            ->willReturnCallback(fn (): Client => new Client());
         $mockConfig->getDatabase('tripod_php_testing', 'rs1', ReadPreference::RP_SECONDARY_PREFERRED);
         $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_SECONDARY_PREFERRED);
         $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_NEAREST);
@@ -1728,9 +1727,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
                 $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')),
                 $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')),
                 $this->returnCallback(
-                    function (): Client {
-                        return new Client();
-                    }
+                    fn (): Client => new Client()
                 )
             );
 

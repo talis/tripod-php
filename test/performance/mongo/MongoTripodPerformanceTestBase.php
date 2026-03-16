@@ -6,8 +6,7 @@ use Xhgui\Profiler\Profiler;
 
 abstract class MongoTripodPerformanceTestBase extends MongoTripodTestBase
 {
-    /** @var Profiler|null */
-    private $profiler;
+    private ?Profiler $profiler = null;
 
     /**
      * Helper function to calculate difference between two microtime values.
@@ -38,7 +37,7 @@ abstract class MongoTripodPerformanceTestBase extends MongoTripodTestBase
      */
     protected function stopProfiler(): void
     {
-        if ($this->profiler) {
+        if ($this->profiler instanceof Profiler) {
             $this->profiler->stop();
             $this->profiler = null;
         }
@@ -56,9 +55,7 @@ abstract class MongoTripodPerformanceTestBase extends MongoTripodTestBase
             'save.handler.file' => [
                 'filename' => $profilerDir . '/xhgui.data.jsonl',
             ],
-            'profiler.replace_url' => function (): string {
-                return $this->getName(true) . ($this->hasFailed() ? ' FAIL' : '');
-            },
+            'profiler.replace_url' => fn (): string => $this->getName(true) . ($this->hasFailed() ? ' FAIL' : ''),
         ]);
     }
 }

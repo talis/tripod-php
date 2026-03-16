@@ -18,11 +18,9 @@ use Tripod\Mongo\TransactionLog;
 
 class MongoSearchProviderTest extends MongoTripodTestBase
 {
-    /** @var SearchIndexer */
-    private $searchIndexer;
+    private SearchIndexer $searchIndexer;
 
-    /** @var MongoSearchProvider */
-    private $mongoSearchProvider;
+    private MongoSearchProvider $mongoSearchProvider;
 
     protected function setUp(): void
     {

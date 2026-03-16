@@ -10,9 +10,9 @@ namespace Tripod\Mongo;
  */
 class NQuadSerializer
 {
-    private $raw;
+    private ?int $raw = null;
 
-    private $esc_chars;
+    private ?array $esc_chars = null;
 
     public function ___construct(): void
     {

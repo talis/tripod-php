@@ -218,7 +218,7 @@ abstract class MongoTripodTestBase extends TestCase
         }
 
         $doc = $this->getDocument($_id, $tripod);
-        if ($hasVersion == true) {
+        if ($hasVersion) {
             $this->assertArrayHasKey('_version', $doc, 'Document for ' . var_export($_id, true) . ' should have a version, but none found');
 
             if ($expectedValue !== null) {

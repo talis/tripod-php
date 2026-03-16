@@ -54,7 +54,7 @@ abstract class JobBase extends DriverBase
     /** @var Timer */
     protected $timer;
 
-    private $tripod;
+    private ?Driver $tripod = null;
 
     public function setUp(): void
     {

@@ -11,9 +11,9 @@ use Tripod\Config;
 
 class JobGroup
 {
-    private $id;
+    private ObjectId $id;
 
-    private $collection;
+    private ?Collection $collection = null;
 
     private $storeName;
 
@@ -70,20 +70,15 @@ class JobGroup
         return $updateResult->count;
     }
 
-    /**
-     * @return ObjectId
-     */
-    public function getId()
+    public function getId(): ObjectId
     {
         return $this->id;
     }
 
     /**
      * For mocking.
-     *
-     * @return Collection
      */
-    protected function getMongoCollection()
+    protected function getMongoCollection(): Collection
     {
         if ($this->collection === null) {
             $config = Config::getInstance();

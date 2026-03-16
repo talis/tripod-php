@@ -11,22 +11,22 @@ class Timer
     /**
      * @var string start time of event as returned from php microtime()
      */
-    private $start_time;
+    private ?string $start_time = null;
 
     /**
      * @var string end time of event as returned from php microtime()
      */
-    private $end_time;
+    private ?string $end_time = null;
 
     /**
      * @var int difference in milliseconds of event's start time and end time
      */
-    private $result;
+    private ?int $result = null;
 
     /**
      * @var int difference in micro-seconds of event's start time and end time
      */
-    private $micro_result;
+    private ?int $micro_result = null;
 
     /**
      * Captures current microtime as time of start. Call this before start of event.

@@ -118,15 +118,9 @@ class Config implements IConfigInstance
      */
     protected static $logger;
 
-    /**
-     * @var array
-     */
-    private $config;
+    private ?array $config = null;
 
-    /**
-     * @var Labeller
-     */
-    private $labeller;
+    private ?Labeller $labeller = null;
 
     /**
      * @var string
@@ -135,36 +129,25 @@ class Config implements IConfigInstance
 
     /**
      * The defined database indexes, keyed by database name.
-     *
-     * @var array
      */
-    private $indexes = [];
+    private array $indexes = [];
 
-    /**
-     * @var array
-     */
-    private $cardinality = [];
+    private array $cardinality = [];
 
     /**
      * The connection strings for each defined database.
-     *
-     * @var array
      */
-    private $dbConfig = [];
+    private array $dbConfig = [];
 
     /**
      * All of the defined viewSpecs.
-     *
-     * @var array
      */
-    private $viewSpecs = [];
+    private array $viewSpecs = [];
 
     /**
      * All of the defined tableSpecs.
-     *
-     * @var array
      */
-    private $tableSpecs = [];
+    private array $tableSpecs = [];
 
     /**
      * Defined database configuration: dbname, collections, etc.
@@ -1228,9 +1211,7 @@ class Config implements IConfigInstance
             $validComputingFieldFunctions = Tables::$computedFieldFunctions;
             if ($validationLevel === self::VALIDATE_MAX) {
                 $availableFields = $this->getFieldNamesInSpec($spec);
-                $availableFields = array_map(function (string $field): string {
-                    return '$' . $field;
-                }, $availableFields);
+                $availableFields = array_map(fn (string $field): string => '$' . $field, $availableFields);
             }
 
             foreach ($spec['computed_fields'] as $field) {

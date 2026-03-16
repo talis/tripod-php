@@ -9,15 +9,9 @@ use Tripod\Mongo\IConfigInstance;
 
 class Config implements ITripodConfig
 {
-    /**
-     * @var IConfigInstance|null
-     */
-    private static $configInstance;
+    private static ?IConfigInstance $configInstance = null;
 
-    /**
-     * @var array|null
-     */
-    private static $config;
+    private static ?array $config = null;
 
     /**
      * Config should not be instantiated directly: use Config::getInstance().

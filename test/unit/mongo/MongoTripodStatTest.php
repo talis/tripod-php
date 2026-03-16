@@ -17,7 +17,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $this->assertInstanceOf(StatsD::class, $stat);
         $this->assertEquals('example.com', $stat->getHost());
         $this->assertEquals(1234, $stat->getPort());
-        $this->assertEquals('somePrefix', $stat->getPrefix());
+        $this->assertSame('somePrefix', $stat->getPrefix());
 
         $noStat = TripodStatFactory::create();
         $this->assertInstanceOf(NoStat::class, $noStat);
@@ -30,14 +30,14 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $this->assertInstanceOf(StatsD::class, $stat);
         $this->assertEquals('example.com', $stat->getHost());
         $this->assertEquals(1234, $stat->getPort());
-        $this->assertEquals('somePrefix', $stat->getPrefix());
+        $this->assertSame('somePrefix', $stat->getPrefix());
 
         $this->assertEquals($this->getStatsDConfig(), $stat->getConfig());
 
         $stat = new StatsD('foo.bar', 9876);
         $this->assertEquals('foo.bar', $stat->getHost());
         $this->assertEquals(9876, $stat->getPort());
-        $this->assertEquals('', $stat->getPrefix());
+        $this->assertSame('', $stat->getPrefix());
         $this->assertSame(['class' => StatsD::class, 'config' => ['host' => 'foo.bar', 'port' => 9876, 'prefix' => '']], $stat->getConfig());
 
         $stat->setHost('bar.baz');
@@ -46,7 +46,7 @@ class MongoTripodStatTest extends MongoTripodTestBase
         $stat->setPort(4567);
         $this->assertEquals(4567, $stat->getPort());
         $stat->setPrefix('FOO_BAR');
-        $this->assertEquals('FOO_BAR', $stat->getPrefix());
+        $this->assertSame('FOO_BAR', $stat->getPrefix());
 
         $this->assertSame(['class' => StatsD::class, 'config' => ['host' => 'bar.baz', 'port' => 4567, 'prefix' => 'FOO_BAR']], $stat->getConfig());
     }

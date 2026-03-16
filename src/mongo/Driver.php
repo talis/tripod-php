@@ -19,35 +19,23 @@ use Tripod\Timer;
 
 class Driver extends DriverBase implements IDriver
 {
-    /**
-     * @var Views
-     */
-    private $tripod_views;
+    private ?Views $tripod_views = null;
+
+    private ?Tables $tripod_tables = null;
+
+    private ?SearchIndexer $searchIndexer = null;
 
     /**
-     * @var Tables
+     * @var mixed[]
      */
-    private $tripod_tables;
-
-    /**
-     * @var SearchIndexer
-     */
-    private $searchIndexer;
-
-    /**
-     * @var array
-     */
-    private $async;
+    private array $async;
 
     /**
      * @var int
      */
     private $retriesToGetLock;
 
-    /**
-     * @var Updates
-     */
-    private $updates;
+    private ?Updates $updates = null;
 
     /**
      * Constructor for Driver.

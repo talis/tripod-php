@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tripod\Mongo;
 
+use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
 use MongoDB\Database;
 use MongoDB\Driver\Cursor;
@@ -14,10 +15,9 @@ use Tripod\Config;
 class TransactionLog
 {
     /** @var IConfigInstance */
-    protected $config;
+    protected array $config;
 
-    /** @var Database */
-    private $transaction_db;
+    private Database $transaction_db;
 
     /** @var Collection */
     private $transaction_collection;

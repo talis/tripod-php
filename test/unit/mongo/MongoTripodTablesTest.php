@@ -45,7 +45,7 @@ class MongoTripodTablesTest extends MongoTripodTestBase
 
     protected $defaultPodName = 'CBD_testing';
 
-    private $tablesConstParams;
+    private array $tablesConstParams;
 
     protected function setUp(): void
     {

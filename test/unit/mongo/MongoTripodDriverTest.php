@@ -2259,7 +2259,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
 
         $this->assertEquals('example.com', $stat->getHost());
         $this->assertEquals(1234, $stat->getPort());
-        $this->assertEquals('somePrefix', $stat->getPrefix());
+        $this->assertSame('somePrefix', $stat->getPrefix());
 
         $config = $stat->getConfig();
         $this->assertEquals(
