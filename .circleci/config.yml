@@ -152,10 +152,6 @@ workflows:
     jobs:
       - lint
       - test:
-          name: test-php73
-          php_version: php73
-          mongo_version: 3.6.23
-      - test:
           name: test-php74
           php_version: php74
           mongo_version: 4.0.28

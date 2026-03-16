@@ -17,16 +17,11 @@
             "homepage": "http://talis.com/"
         }
     ],
-    "config": {
-        "audit": {
-            "ignore": ["PKSA-gk21-j82g-2hhy"]
-        }
-    },
     "suggest": {
         "resque/php-resque": "Redis backed library for background jobs"
     },
     "require": {
-        "php" : ">=7.3",
+        "php" : ">=7.4",
         "mongodb/mongodb": "*",
         "monolog/monolog" : "~1.13",
         "semsol/arc2": "2.2.6"
