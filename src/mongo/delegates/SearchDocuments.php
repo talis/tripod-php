@@ -147,7 +147,7 @@ class SearchDocuments extends DriverBase
         return SEARCH_INDEX_COLLECTION;
     }
 
-    protected function doJoin(array $source, array $joins, array &$target, string $from)
+    protected function doJoin(array $source, array $joins, array &$target, string $from): void
     {
         // expand sequences before proceeding
         $this->expandSequence($joins, $source);
@@ -201,7 +201,7 @@ class SearchDocuments extends DriverBase
         }
     }
 
-    protected function addFields(array $source, array $fieldsOrIndices, array &$target, bool $isIndex = false)
+    protected function addFields(array $source, array $fieldsOrIndices, array &$target, bool $isIndex = false): void
     {
         foreach ($fieldsOrIndices as $f) {
             if (isset($f['predicates'])) {

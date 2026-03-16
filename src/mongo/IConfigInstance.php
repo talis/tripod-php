@@ -19,7 +19,7 @@ interface IConfigInstance extends ITripodConfigSerializer
     /**
      * @param int $mongoCursorTimeout Timeout in ms
      */
-    public function setMongoCursorTimeout(int $mongoCursorTimeout);
+    public function setMongoCursorTimeout(int $mongoCursorTimeout): void;
 
     /**
      * Returns an array of associated predicates in a table or search document specification

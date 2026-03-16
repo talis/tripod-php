@@ -90,7 +90,7 @@ abstract class JobBase extends DriverBase
     /**
      * The main method of the job.
      */
-    abstract public function perform();
+    abstract public function perform(): void;
 
     /**
      * Called in every job prior to perform().

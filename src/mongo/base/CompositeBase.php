@@ -182,7 +182,7 @@ abstract class CompositeBase extends DriverBase implements IComposite
      * @param string|null       $queueName  Queue name
      * @param array             $jobOptions Job options
      */
-    protected function queueApplyJob(array $subjects, ?string $queueName, array $jobOptions)
+    protected function queueApplyJob(array $subjects, ?string $queueName, array $jobOptions): void
     {
         $this->getApplyOperation()->createJob($subjects, $queueName, $jobOptions);
     }

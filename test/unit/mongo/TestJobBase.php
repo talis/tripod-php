@@ -14,7 +14,7 @@ class TestJobBase extends JobBase
         return parent::getTripodConfig();
     }
 
-    public function perform() {}
+    public function perform(): void {}
 
     protected function getStatTimerSuccessKey(): string
     {

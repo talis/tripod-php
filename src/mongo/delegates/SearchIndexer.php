@@ -279,7 +279,7 @@ class SearchIndexer extends CompositeBase
      *
      * @throws SearchException If provider class cannot be found
      */
-    protected function setSearchProvider(Driver $tripod, ?IConfigInstance $config = null)
+    protected function setSearchProvider(Driver $tripod, ?IConfigInstance $config = null): void
     {
         if (is_null($config)) {
             $config = $this->getConfigInstance();

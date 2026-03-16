@@ -532,7 +532,7 @@ class Tables extends CompositeBase
      * @param string|null       $context  Optional context
      * @param array|string|null $specType Optional table type or array of table types to delete from
      */
-    protected function deleteTableRowsForResource(string $resource, ?string $context = null, $specType = null)
+    protected function deleteTableRowsForResource(string $resource, ?string $context = null, $specType = null): void
     {
         $t = new Timer();
         $t->start();
@@ -567,7 +567,7 @@ class Tables extends CompositeBase
      * This method handles invalidation and regeneration of table rows based on impact index, before delegating to
      * generateTableRowsForType() for re-generation of any table rows for the $resource.
      */
-    protected function generateTableRowsForResource(string $resource, ?string $context = null, array $specTypes = [])
+    protected function generateTableRowsForResource(string $resource, ?string $context = null, array $specTypes = []): void
     {
         $resourceAlias = $this->labeller->uri_to_alias($resource);
         $contextAlias = $this->getContextAlias($context);
@@ -611,7 +611,7 @@ class Tables extends CompositeBase
      *
      * @throws \Exception
      */
-    protected function truncatingSave(Collection $collection, array $generatedRow)
+    protected function truncatingSave(Collection $collection, array $generatedRow): void
     {
         try {
             $this->upsertGeneratedRow($collection, $generatedRow);
@@ -638,7 +638,7 @@ class Tables extends CompositeBase
      *
      * @param array<string, mixed> $generatedRow - Pass by reference so that the contents is truncated
      */
-    protected function truncateFields(Collection $collection, array &$generatedRow)
+    protected function truncateFields(Collection $collection, array &$generatedRow): void
     {
         // Find the name of any indexed fields
         $indexedFields = [];
@@ -683,7 +683,7 @@ class Tables extends CompositeBase
      * @param array<string, mixed> $spec The table spec
      * @param mixed[]              $dest The table row document to save
      */
-    protected function doComputedFields(array $spec, array &$dest)
+    protected function doComputedFields(array $spec, array &$dest): void
     {
         if (isset($spec['computed_fields'])) {
             foreach ($spec['computed_fields'] as $f) {
@@ -1156,7 +1156,7 @@ class Tables extends CompositeBase
         return $predicateFunctions;
     }
 
-    protected function doJoins(array $source, array $joins, array &$dest, string $from, string $contextAlias)
+    protected function doJoins(array $source, array $joins, array &$dest, string $from, string $contextAlias): void
     {
         $this->expandSequence($joins, $source);
         foreach ($joins as $predicate => $ruleset) {

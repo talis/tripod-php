@@ -508,7 +508,7 @@ class Views extends CompositeBase
     /**
      * Joins data to $dest from $source according to specification in $joins, or queries DB if data is not available in $source.
      */
-    protected function doJoins(array $source, array $joins, array &$dest, string $from, string $contextAlias, bool $buildImpactIndex = true)
+    protected function doJoins(array $source, array $joins, array &$dest, string $from, string $contextAlias, bool $buildImpactIndex = true): void
     {
         // expand sequences before doing any joins...
         $this->expandSequence($joins, $source);
