@@ -14,37 +14,27 @@ interface ISearchProvider
      *
      * @param array $document the document to index
      *
-     * @return mixed
-     *
      * @throws SearchException if there was an error indexing the document
      */
-    public function indexDocument($document);
+    public function indexDocument(array $document): void;
 
     /**
      * Removes a single document from the search index based on the specified resource and context and spec id.
      * If spec id is not specified this method will delete all search documents that match the resource and context.
      *
-     * @param string            $resource
-     * @param string            $context
      * @param array|string|null $specId
-     *
-     * @return mixed
      *
      * @throws SearchException if there was an error removing the document
      */
-    public function deleteDocument($resource, $context, $specId = []);
+    public function deleteDocument(string $resource, string $context, $specId = []): void;
 
     /**
      * Returns the ids of all documents that contain and impact index entry
      * matching the resource and context specified.
      *
-     * @param string $context
-     *
-     * @internal param $resource
-     *
      * @return array the ids of search documents that had matching entries in their impact index
      */
-    public function findImpactedDocuments(array $resourcesAndPredicates, $context);
+    public function findImpactedDocuments(array $resourcesAndPredicates, string $context): array;
 
     /**
      * Executes the query and returns a structure representing a search results.

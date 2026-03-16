@@ -15,12 +15,9 @@ class SearchDocuments extends DriverBase
      * Construct accepts actual objects rather than strings as this class is a delegate of
      * Tripod and should inherit connections set up there.
      *
-     * @param string           $storeName
-     * @param string           $defaultContext
-     * @param ITripodStat|null $stat
-     * @param string           $readPreference
+     * @param int|string $readPreference
      */
-    public function __construct($storeName, Collection $collection, $defaultContext, $stat = null, $readPreference = ReadPreference::RP_PRIMARY)
+    public function __construct(string $storeName, Collection $collection, string $defaultContext, ?ITripodStat $stat = null, $readPreference = ReadPreference::RP_PRIMARY)
     {
         $this->labeller = new Labeller();
         $this->storeName = $storeName;
@@ -119,22 +116,8 @@ class SearchDocuments extends DriverBase
         return $generatedDocument;
     }
 
-    /**
-     * @param string $resource
-     * @param string $context
-     *
-     * @throws \Exception
-     */
-    public function generateSearchDocumentsBasedOnRdfTypes(array $rdfTypes, $resource, $context): array
+    public function generateSearchDocumentsBasedOnRdfTypes(array $rdfTypes, string $resource, string $context): array
     {
-        if (empty($resource)) {
-            throw new \Exception('Resource must be specified');
-        }
-
-        if (empty($context)) {
-            throw new \Exception('Context must be specified');
-        }
-
         // this is what is returned
         $generatedSearchDocuments = [];
 
@@ -164,12 +147,7 @@ class SearchDocuments extends DriverBase
         return SEARCH_INDEX_COLLECTION;
     }
 
-    /**
-     * @param array  $joins
-     * @param array  $target
-     * @param string $from
-     */
-    protected function doJoin(array $source, $joins, &$target, $from)
+    protected function doJoin(array $source, array $joins, array &$target, string $from)
     {
         // expand sequences before proceeding
         $this->expandSequence($joins, $source);
@@ -223,10 +201,7 @@ class SearchDocuments extends DriverBase
         }
     }
 
-    /**
-     * @param bool $isIndex
-     */
-    protected function addFields(array $source, array $fieldsOrIndices, array &$target, $isIndex = false)
+    protected function addFields(array $source, array $fieldsOrIndices, array &$target, bool $isIndex = false)
     {
         foreach ($fieldsOrIndices as $f) {
             if (isset($f['predicates'])) {

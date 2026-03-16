@@ -489,10 +489,13 @@ class MongoTripodTablesTest extends MongoTripodTestBase
             ->onlyMethods(['generateTableRows'])
             ->setConstructorArgs([$this->tripod->getStoreName(), $this->getTripodCollection($this->tripod), 'http://talisaspire.com/'])
             ->getMock();
-        $mockTripodTables->expects($this->atLeastOnce())->method('generateTableRows')->willReturn(['ok' => true]);
+        $mockTripodTables->expects($this->atLeastOnce())
+            ->method('generateTableRows')
+            ->with('t_work2', 'http://example.com/1', 'http://talisaspire.com/', null)
+            ->willReturn(['ok' => true]);
 
         // check where referred to as acorn:Work2 in spec...
-        $mockTripodTables->generateTableRowsForType('http://talisaspire.com/schema#Work2');
+        $mockTripodTables->generateTableRowsForType('http://talisaspire.com/schema#Work2', 'http://example.com/1', 'http://talisaspire.com/');
 
         $mockTripodTables = $this->getMockBuilder(Tripod\Mongo\Composites\Tables::class)
             ->onlyMethods(['generateTableRows'])
@@ -501,7 +504,7 @@ class MongoTripodTablesTest extends MongoTripodTestBase
         $mockTripodTables->expects($this->atLeastOnce())->method('generateTableRows')->willReturn(['ok' => true]);
 
         // check where referred to as http://talisaspire.com/schema#Resource in spec...
-        $mockTripodTables->generateTableRowsForType('acorn:Resource');
+        $mockTripodTables->generateTableRowsForType('acorn:Resource', 'http://example.com/2', 'http://talisaspire.com/');
     }
 
     /**

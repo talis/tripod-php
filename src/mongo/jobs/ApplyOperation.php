@@ -89,10 +89,8 @@ class ApplyOperation extends JobBase
 
     /**
      * @param ImpactedSubject[] $subjects
-     * @param string|null       $queueName
-     * @param array             $otherData
      */
-    public function createJob(array $subjects, $queueName = null, $otherData = []): void
+    public function createJob(array $subjects, ?string $queueName = null, array $otherData = []): void
     {
         $configInstance = $this->getConfigInstance();
         if (!$queueName) {
@@ -154,7 +152,7 @@ class ApplyOperation extends JobBase
      * @param string          $storeName   Tripod store (database) name
      * @param ObjectId|string $trackingKey JobGroup ID
      */
-    protected function getJobGroup($storeName, $trackingKey): JobGroup
+    protected function getJobGroup(string $storeName, $trackingKey): JobGroup
     {
         return new JobGroup($storeName, $trackingKey);
     }

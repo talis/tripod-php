@@ -6,9 +6,9 @@ namespace Tripod;
 
 class StatsD implements ITripodStat
 {
-    private string $host;
+    private string $host = '';
 
-    private int $port;
+    private int $port = 0;
 
     private ?string $prefix = null;
 
@@ -24,11 +24,7 @@ class StatsD implements ITripodStat
         $this->setPrefix($prefix);
     }
 
-    /**
-     * @param string $operation
-     * @param int    $inc
-     */
-    public function increment($operation, $inc = 1): void
+    public function increment(string $operation, int $inc = 1): void
     {
         $this->send(
             $this->generateStatData($operation, $inc . '|c')
@@ -36,10 +32,9 @@ class StatsD implements ITripodStat
     }
 
     /**
-     * @param string $operation
-     * @param number $duration
+     * @param float|int $duration
      */
-    public function timer($operation, $duration): void
+    public function timer(string $operation, $duration): void
     {
         $this->send(
             $this->generateStatData($operation, ['1|c', $duration . '|ms'])
@@ -143,13 +138,8 @@ class StatsD implements ITripodStat
 
     /**
      * Sends the stat(s) using UDP protocol.
-     *
-     * @param array $data
-     * @param int   $sampleRate
-     *
-     * @return void
      */
-    protected function send($data, $sampleRate = 1)
+    protected function send(array $data, int $sampleRate = 1): void
     {
         if (empty($this->host)) {
             return;

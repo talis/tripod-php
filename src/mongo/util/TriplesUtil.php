@@ -67,11 +67,8 @@ class TriplesUtil
     /**
      * Add $triples about a given $subject to Mongo. Only $triples with subject matching $subject will be added, others will be ignored.
      * Make them quads with a $context.
-     *
-     * @param string      $subject
-     * @param string|null $context
      */
-    public function bsonizeTriplesAbout($subject, array $triples, $context = null): ?array
+    public function bsonizeTriplesAbout(string $subject, array $triples, ?string $context = null): ?array
     {
         $context = ($context == null) ? Config::getInstance()->getDefaultContextAlias() : $this->labeller->uri_to_alias($context);
         $graph = new MongoGraph();
@@ -135,10 +132,7 @@ class TriplesUtil
         return array_unique($missingNs);
     }
 
-    /**
-     * @param string $ns
-     */
-    public function suggestPrefix($ns): string
+    public function suggestPrefix(string $ns): string
     {
         $parts = preg_split('/[\/#]/', $ns);
         for ($i = count($parts) - 1; $i >= 0; $i--) {
@@ -150,10 +144,7 @@ class TriplesUtil
         return 'unknown' . uniqid();
     }
 
-    /**
-     * @param string $subject
-     */
-    public function getTArrayAbout($subject, array $triples, ?string $context): ?array
+    public function getTArrayAbout(string $subject, array $triples, ?string $context): ?array
     {
         $graph = new MongoGraph();
         foreach ($triples as $triple) {
@@ -175,11 +166,9 @@ class TriplesUtil
     }
 
     /**
-     * @param string $cbdSubject
-     *
      * @throws \Exception
      */
-    protected function saveCBD($cbdSubject, MongoGraph $cbdGraph, Collection $collection, ?string $context)
+    protected function saveCBD(string $cbdSubject, MongoGraph $cbdGraph, Collection $collection, ?string $context)
     {
         $cbdSubject = $this->labeller->uri_to_alias($cbdSubject);
         if ($cbdGraph == null || $cbdGraph->is_empty()) {
@@ -208,12 +197,9 @@ class TriplesUtil
         }
     }
 
-    /**
-     * @return mixed
-     */
-    private function isUri(string $object)
+    private function isUri(string $object): bool
     {
-        return filter_var($object, FILTER_VALIDATE_URL);
+        return filter_var($object, FILTER_VALIDATE_URL) !== false;
     }
 
     /**

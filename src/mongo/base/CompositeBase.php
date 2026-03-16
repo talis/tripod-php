@@ -139,10 +139,8 @@ abstract class CompositeBase extends DriverBase implements IComposite
     /**
      * Test if the a particular type appears in the array of types associated with a particular spec and that the changeset
      * includes rdf:type (or is empty, meaning addition or deletion vs. update).
-     *
-     * @return bool
      */
-    protected function checkIfTypeShouldTriggerOperation(?string $rdfType, array $validTypes, array $subjectPredicates)
+    protected function checkIfTypeShouldTriggerOperation(string $rdfType, array $validTypes, array $subjectPredicates): bool
     {
         // We don't know if this is an alias or a fqURI, nor what is in the valid types, necessarily
         $types = [$rdfType];
@@ -191,12 +189,8 @@ abstract class CompositeBase extends DriverBase implements IComposite
 
     /**
      * For mocking.
-     *
-     * @param string $storeName
-     *
-     * @return JobGroup
      */
-    protected function getJobGroup($storeName)
+    protected function getJobGroup(string $storeName): JobGroup
     {
         return new JobGroup($storeName);
     }

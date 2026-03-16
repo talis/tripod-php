@@ -157,11 +157,15 @@ interface IConfigInstance extends ITripodConfigSerializer
 
     /**
      * Returns an array of database names.
+     *
+     * @return string[]
      */
     public function getDbs(): array;
 
     /**
      * Returns an array of defined namespaces.
+     *
+     * @return array<string, string>
      */
     public function getNamespaces(): array;
 

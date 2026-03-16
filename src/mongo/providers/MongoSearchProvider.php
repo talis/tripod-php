@@ -218,7 +218,7 @@ class MongoSearchProvider implements ISearchProvider
      *
      * @throws SearchException if there was an error indexing the document
      */
-    public function indexDocument($document): void
+    public function indexDocument(array $document): void
     {
         if (isset($document['_id']['type'])) {
             $collection = $this->config->getCollectionForSearchDocument($this->storeName, $document['_id']['type']);
@@ -240,13 +240,11 @@ class MongoSearchProvider implements ISearchProvider
      * Removes a single document from the search index based on the specified resource and context and spec id.
      * If spec id is not specified this method will delete all search documents that match the resource and context.
      *
-     * @param string            $resource
-     * @param string            $context
      * @param array|string|null $specId
      *
      * @throws SearchException if there was an error removing the document
      */
-    public function deleteDocument($resource, $context, $specId = []): void
+    public function deleteDocument(string $resource, string $context, $specId = []): void
     {
         $query = [_ID_KEY . '.' . _ID_RESOURCE => $this->labeller->uri_to_alias($resource), _ID_KEY . '.' . _ID_CONTEXT => $context];
 
@@ -285,11 +283,9 @@ class MongoSearchProvider implements ISearchProvider
      * Returns the ids of all documents that contain and impact index entry
      * matching the resource and context specified.
      *
-     * @param string $context
-     *
      * @return array the ids of search documents that had matching entries in their impact index
      */
-    public function findImpactedDocuments(array $resourcesAndPredicates, $context): array
+    public function findImpactedDocuments(array $resourcesAndPredicates, string $context): array
     {
         $contextAlias = $this->labeller->uri_to_alias($context);
 

@@ -69,15 +69,13 @@ class Tables extends CompositeBase
      * Construct accepts actual objects rather than strings as this class is a delegate of
      * Tripod and should inherit connections set up there.
      *
-     * @param ITripodStat|null $stat
-     * @param string           $readPreference
-     *                                         todo: MongoCollection -> podName
+     * @param int|string $readPreference
      */
     public function __construct(
         string $storeName,
         Collection $collection,
         ?string $defaultContext,
-        $stat = null,
+        ?ITripodStat $stat = null,
         $readPreference = ReadPreference::RP_PRIMARY
     ) {
         $this->labeller = new Labeller();
@@ -210,8 +208,6 @@ class Tables extends CompositeBase
     /**
      * Query the tables collection and return the results.
      *
-     * @param int                  $offset
-     * @param int                  $limit
      * @param array<string, mixed> $options Table query options
      * @param array<string, mixed> $filter
      *
@@ -221,8 +217,8 @@ class Tables extends CompositeBase
         string $tableSpecId,
         array $filter = [],
         array $sortBy = [],
-        $offset = 0,
-        $limit = 10,
+        int $offset = 0,
+        int $limit = 10,
         array $options = []
     ): array {
         $t = new Timer();
@@ -247,8 +243,8 @@ class Tables extends CompositeBase
 
         $findOptions = [];
         if (!empty($limit)) {
-            $findOptions['skip'] = (int) $offset;
-            $findOptions['limit'] = (int) $limit;
+            $findOptions['skip'] = $offset;
+            $findOptions['limit'] = $limit;
         }
 
         $findOptions['sort'] = $sortBy;
@@ -349,13 +345,8 @@ class Tables extends CompositeBase
 
     /**
      * This method finds all the table specs for the given $rdfType and generates the table rows for the $subject one by one.
-     *
-     * @param string      $rdfType
-     * @param string|null $subject
-     * @param string|null $context
-     * @param array       $specTypes
      */
-    public function generateTableRowsForType($rdfType, $subject = null, $context = null, $specTypes = []): void
+    public function generateTableRowsForType(string $rdfType, string $subject, string $context, array $specTypes = []): void
     {
         $rdfType = $this->labeller->qname_to_alias($rdfType);
         $rdfTypeAlias = $this->labeller->uri_to_alias($rdfType);
@@ -396,11 +387,9 @@ class Tables extends CompositeBase
     }
 
     /**
-     * @param string|null $resource
-     * @param string|null $context
      * @param string|null $queueName Queue for background bulk generation
      */
-    public function generateTableRows(string $tableType, $resource = null, $context = null, $queueName = null): ?array
+    public function generateTableRows(string $tableType, ?string $resource = null, ?string $context = null, ?string $queueName = null): ?array
     {
         $t = new Timer();
         $t->start();
@@ -543,7 +532,7 @@ class Tables extends CompositeBase
      * @param string|null       $context  Optional context
      * @param array|string|null $specType Optional table type or array of table types to delete from
      */
-    protected function deleteTableRowsForResource(?string $resource, $context = null, $specType = null)
+    protected function deleteTableRowsForResource(string $resource, ?string $context = null, $specType = null)
     {
         $t = new Timer();
         $t->start();
@@ -577,11 +566,8 @@ class Tables extends CompositeBase
     /**
      * This method handles invalidation and regeneration of table rows based on impact index, before delegating to
      * generateTableRowsForType() for re-generation of any table rows for the $resource.
-     *
-     * @param string|null $context
-     * @param array       $specTypes
      */
-    protected function generateTableRowsForResource(?string $resource, $context = null, $specTypes = [])
+    protected function generateTableRowsForResource(string $resource, ?string $context = null, array $specTypes = [])
     {
         $resourceAlias = $this->labeller->uri_to_alias($resource);
         $contextAlias = $this->getContextAlias($context);
@@ -885,7 +871,7 @@ class Tables extends CompositeBase
      *
      * @return mixed
      */
-    protected function rewriteVariableValue($value, array &$dest, $setType = null)
+    protected function rewriteVariableValue($value, array &$dest, ?string $setType = null)
     {
         if (is_string($value)) {
             if (strpos($value, '$') === 0) {
@@ -927,12 +913,11 @@ class Tables extends CompositeBase
     }
 
     /**
-     * @param mixed       $value
-     * @param string|null $type
+     * @param mixed $value
      *
      * @return mixed
      */
-    protected function castValueType($value, $type = null)
+    protected function castValueType($value, ?string $type = null)
     {
         // If value is a UTCDateTime, turn into a DateTime object in order to perform comparison
         if ($value instanceof UTCDateTime) {
@@ -963,22 +948,20 @@ class Tables extends CompositeBase
     }
 
     /**
-     * @param mixed  $left     The left value of the condition
-     * @param string $operator The comparison operator
-     * @param mixed  $right    The right value of the condition
-     *
-     * @return bool
+     * @param mixed       $left     The left value of the condition
+     * @param string|null $operator The comparison operator
+     * @param mixed|null  $right    The right value of the condition
      *
      * @throws \InvalidArgumentException
      */
-    protected function doConditional($left, $operator, $right)
+    protected function doConditional($left, ?string $operator, $right): bool
     {
-        if ((!empty($operator)) && !in_array($operator, self::$conditionalOperators)) {
-            throw new \InvalidArgumentException('Invalid conditional operator');
-        }
-
         if (!$operator) {
             return (bool) $left;
+        }
+
+        if (!in_array($operator, self::$conditionalOperators)) {
+            throw new \InvalidArgumentException('Invalid conditional operator');
         }
 
         $result = false;
@@ -1173,13 +1156,7 @@ class Tables extends CompositeBase
         return $predicateFunctions;
     }
 
-    /**
-     * @param array  $joins
-     * @param array  $dest
-     * @param string $from
-     * @param string $contextAlias
-     */
-    protected function doJoins(array $source, $joins, &$dest, $from, $contextAlias)
+    protected function doJoins(array $source, array $joins, array &$dest, string $from, string $contextAlias)
     {
         $this->expandSequence($joins, $source);
         foreach ($joins as $predicate => $ruleset) {
@@ -1277,10 +1254,8 @@ class Tables extends CompositeBase
     /**
      * Test if the a particular type appears in the array of types associated with a particular spec and that the changeset
      * includes rdf:type (or is empty, meaning addition or deletion vs. update).
-     *
-     * @param string $rdfType
      */
-    protected function checkIfTypeShouldTriggerOperation($rdfType, array $validTypes, array $subjectPredicates): bool
+    protected function checkIfTypeShouldTriggerOperation(string $rdfType, array $validTypes, array $subjectPredicates): bool
     {
         // We don't know if this is an alias or a fqURI, nor what is in the valid types, necessarily
         $types = [$rdfType];
@@ -1387,14 +1362,13 @@ class Tables extends CompositeBase
     /**
      * Apply a regex to the RDF property value defined in $value.
      *
-     * @param mixed                $regex
      * @param array<string, mixed> $value
      *
-     * @return int
+     * @return false|int
      *
      * @throws \Tripod\Exceptions\Exception
      */
-    private function applyRegexToValue($regex, array $value)
+    private function applyRegexToValue(string $regex, array $value)
     {
         if (isset($value[VALUE_URI]) || isset($value[VALUE_LITERAL])) {
             $v = $value[VALUE_URI] ?: $value[VALUE_LITERAL];

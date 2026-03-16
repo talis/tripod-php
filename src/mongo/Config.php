@@ -12,6 +12,7 @@ use MongoDB\Driver\ReadPreference;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 use Tripod\Exceptions\ConfigException;
+use Tripod\ISearchProvider;
 use Tripod\Mongo\Composites\Tables;
 
 /**
@@ -32,6 +33,8 @@ class Config implements IConfigInstance
 
     /**
      * All defined namespaces.
+     *
+     * @var array<string, string> An associative array of namespaces, keyed by prefix
      */
     protected array $ns = [];
 
@@ -41,7 +44,9 @@ class Config implements IConfigInstance
     protected array $tConfig = [];
 
     /**
-     * The value should be the name of a class that implement iTripodSearchProvider keyed by storename.
+     * The value should be the name of a class that implement ISearchProvider keyed by storename.
+     *
+     * @var array<string, class-string<ISearchProvider>>
      */
     protected array $searchProviderClassName = [];
 
@@ -490,7 +495,7 @@ class Config implements IConfigInstance
     /**
      * This method returns a unique list of every rdf type configured in a specifications ['type'] restriction.
      *
-     * @return array of types
+     * @return string[] array of types
      */
     public function getAllTypesInSpecifications(string $storeName): array
     {
@@ -504,30 +509,38 @@ class Config implements IConfigInstance
 
     /**
      * Returns a unique list of every rdf type configured in the view spec ['type'] restriction.
+     *
+     * @return string[]
      */
     public function getTypesInViewSpecifications(string $storeName, ?string $pod = null): array
     {
-        return array_unique($this->getSpecificationTypes($this->getViewSpecifications($storeName), $pod));
+        return array_values(array_unique($this->getSpecificationTypes($this->getViewSpecifications($storeName), $pod)));
     }
 
     /**
      * Returns a unique list of every rdf type configured in the table spec ['type'] restriction.
+     *
+     * @return string[]
      */
     public function getTypesInTableSpecifications(string $storeName, ?string $pod = null): array
     {
-        return array_unique($this->getSpecificationTypes($this->getTableSpecifications($storeName), $pod));
+        return array_values(array_unique($this->getSpecificationTypes($this->getTableSpecifications($storeName), $pod)));
     }
 
     /**
      * Returns a unique list of every rdf type configured in the search doc spec ['type'] restriction.
+     *
+     * @return string[]
      */
     public function getTypesInSearchSpecifications(string $storeName, ?string $pod = null): array
     {
-        return array_unique($this->getSpecificationTypes($this->getSearchDocumentSpecifications($storeName), $pod));
+        return array_values(array_unique($this->getSpecificationTypes($this->getSearchDocumentSpecifications($storeName), $pod)));
     }
 
     /**
      * Returns an array of database names.
+     *
+     * @return string[]
      */
     public function getDbs(): array
     {
@@ -536,6 +549,8 @@ class Config implements IConfigInstance
 
     /**
      * Returns an array of defined namespaces.
+     *
+     * @return array<string, string> An associative array of namespaces, keyed by prefix
      */
     public function getNamespaces(): array
     {
@@ -852,9 +867,6 @@ class Config implements IConfigInstance
         return $resqueServer;
     }
 
-    /**
-     * @static
-     */
     public static function getLogger(): LoggerInterface
     {
         if (self::$logger == null) {
@@ -1676,6 +1688,8 @@ class Config implements IConfigInstance
     // PRIVATE FUNCTIONS
     /**
      * Returns a unique list of every rdf type configured in the supplied specs' ['type'] restriction.
+     *
+     * @return string[]
      */
     private function getSpecificationTypes(array $specifications, ?string $podName = null): array
     {

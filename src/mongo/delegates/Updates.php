@@ -56,10 +56,7 @@ class Updates extends DriverBase
      */
     private array $saveChangesHooks = [];
 
-    /**
-     * @param array $opts
-     */
-    public function __construct(Driver $tripod, $opts = [])
+    public function __construct(Driver $tripod, array $opts = [])
     {
         $this->tripod = $tripod;
         $this->storeName = $tripod->getStoreName();
@@ -117,16 +114,13 @@ class Updates extends DriverBase
     /**
      * Create and apply a changeset which is the delta between $oldGraph and $newGraph.
      *
-     * @param string|null $context
-     * @param string|null $description
-     *
      * @throws \Exception
      */
     public function saveChanges(
         ExtendedGraph $oldGraph,
         ExtendedGraph $newGraph,
-        $context = null,
-        $description = null
+        ?string $context = null,
+        ?string $description = null
     ): bool {
         $this->applyHooks($this::HOOK_FN_PRE, $this->saveChangesHooks, [
             'pod' => $this->getPodName(),
@@ -201,11 +195,8 @@ class Updates extends DriverBase
     // ////// LOCKS \\\\\\\\
     /**
      * Get locked documents for a date range or all documents if no date range is given.
-     *
-     * @param string $fromDateTime
-     * @param string $tillDateTime
      */
-    public function getLockedDocuments($fromDateTime = null, $tillDateTime = null): array
+    public function getLockedDocuments(?string $fromDateTime = null, ?string $tillDateTime = null): array
     {
         $query = [];
         if (!empty($fromDateTime) || !empty($tillDateTime)) {
@@ -237,11 +228,9 @@ class Updates extends DriverBase
     /**
      * Remove locks that are there forever, creates a audit entry to keep track who and why removed these locks.
      *
-     * @param string $reason
-     *
      * @throws \Exception If something goes wrong when unlocking documents, or creating audit entries
      */
-    public function removeInertLocks(string $transaction_id, $reason): bool
+    public function removeInertLocks(string $transaction_id, string $reason): bool
     {
         $query = [_LOCKED_FOR_TRANS => $transaction_id];
         $docs = $this->getLocksCollection()->find($query);
@@ -330,7 +319,7 @@ class Updates extends DriverBase
      * @param string|null $fromDate only transactions after this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
      * @param string|null $toDate   only transactions before this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
      */
-    public function replayTransactionLog($fromDate = null, $toDate = null): bool
+    public function replayTransactionLog(?string $fromDate = null, ?string $toDate = null): bool
     {
         $cursor = $this->getTransactionLog()->getCompletedTransactions($this->storeName, $this->podName, $fromDate, $toDate);
         foreach ($cursor as $result) {
@@ -367,7 +356,7 @@ class Updates extends DriverBase
      * Change the read preferences to RP_PRIMARY
      * Used for a write operation.
      */
-    protected function setReadPreferenceToPrimary()
+    protected function setReadPreferenceToPrimary(): void
     {
         // Set db preference
         /** @var ReadPreference $dbReadPref */
@@ -396,7 +385,7 @@ class Updates extends DriverBase
     /**
      * Reset the original read preference after changing with setReadPreferenceToPrimary.
      */
-    protected function resetOriginalReadPreference()
+    protected function resetOriginalReadPreference(): void
     {
         $dbReadPref = $this->db->getReadPreference();
         if ($this->originalDbReadPreference !== $dbReadPref->getMode()) {
@@ -424,7 +413,7 @@ class Updates extends DriverBase
      *
      * @throws CardinalityException
      */
-    protected function validateGraphCardinality(ExtendedGraph $graph)
+    protected function validateGraphCardinality(ExtendedGraph $graph): void
     {
         $config = $this->getConfigInstance();
         $cardinality = $config->getCardinality($this->getStoreName(), $this->getPodName());
@@ -467,7 +456,7 @@ class Updates extends DriverBase
      *
      * @throws Exception
      */
-    protected function storeChanges(ChangeSet $cs, $contextAlias)
+    protected function storeChanges(ChangeSet $cs, $contextAlias): array
     {
         $t = new Timer();
         $t->start();
@@ -536,12 +525,12 @@ class Updates extends DriverBase
     }
 
     /**
-     * @param string $transaction_id id of the transaction
-     * @param array  $originalCBDs   containing the original CBDS
+     * @param string     $transaction_id id of the transaction
+     * @param array|null $originalCBDs   containing the original CBDS
      *
-     * @throws \Exception
+     * @throws \Throwable
      */
-    protected function rollbackTransaction(string $transaction_id, $originalCBDs, \Exception $exception): bool
+    protected function rollbackTransaction(string $transaction_id, ?array $originalCBDs, \Throwable $exception): bool
     {
         // set transaction to cancelling
         $this->getTransactionLog()->cancelTransaction($transaction_id, $exception);
@@ -603,14 +592,11 @@ class Updates extends DriverBase
     /**
      * Adds/updates/deletes the graph in the database.
      *
-     * @param string $contextAlias
-     * @param string $transaction_id
-     *
      * @return array<string, mixed[]|string>
      *
      * @throws \Exception
      */
-    protected function applyChangeSet(ChangeSet $cs, array $originalCBDs, $contextAlias, $transaction_id)
+    protected function applyChangeSet(ChangeSet $cs, array $originalCBDs, string $contextAlias, string $transaction_id): array
     {
         $subjectsAndPredicatesOfChange = [];
         if (in_array($this->getCollection()->getCollectionName(), $this->getConfigInstance()->getPods($this->getStoreName()))) {
@@ -777,12 +763,9 @@ class Updates extends DriverBase
     /**
      * Given a set of CBD's return the CBD that matches the Subject of Change.
      *
-     * @param string $subjectOfChange
-     * @param string $contextAlias
-     *
      * @return array|null the document from the collection of $cbds that matches the subject of change
      */
-    protected function getDocumentForUpdate($subjectOfChange, $contextAlias, array $cbds)
+    protected function getDocumentForUpdate(string $subjectOfChange, string $contextAlias, array $cbds): ?array
     {
         foreach ($cbds as $c) {
             if ($c[_ID_KEY] == [_ID_RESOURCE => $this->labeller->uri_to_alias($subjectOfChange), _ID_CONTEXT => $contextAlias]) {
@@ -796,7 +779,7 @@ class Updates extends DriverBase
     /**
      * Processes each subject synchronously.
      */
-    protected function processSyncOperations(array $subjectsAndPredicatesOfChange, string $contextAlias)
+    protected function processSyncOperations(array $subjectsAndPredicatesOfChange, string $contextAlias): void
     {
         foreach ($this->getSyncOperations() as $op) {
             /** @var IComposite $composite */
@@ -830,10 +813,8 @@ class Updates extends DriverBase
 
     /**
      * Adds the operations to the queue to be performed asynchronously.
-     *
-     * @param string $contextAlias
      */
-    protected function queueASyncOperations(array $subjectsAndPredicatesOfChange, $contextAlias)
+    protected function queueASyncOperations(array $subjectsAndPredicatesOfChange, string $contextAlias): void
     {
         $operations = $this->getAsyncOperations();
         if ($operations !== []) {
@@ -860,10 +841,8 @@ class Updates extends DriverBase
 
     /**
      * For mocking.
-     *
-     * @return DiscoverImpactedSubjects
      */
-    protected function getDiscoverImpactedSubjects()
+    protected function getDiscoverImpactedSubjects(): DiscoverImpactedSubjects
     {
         if ($this->discoverImpactedSubjects === null) {
             $this->discoverImpactedSubjects = new DiscoverImpactedSubjects();
@@ -877,13 +856,12 @@ class Updates extends DriverBase
      *
      * @param array  $subjectsOfChange array of the subjects that are part of this transaction
      * @param string $transaction_id   id for this transaction
-     * @param string $contextAlias
      *
      * @return array|null returns an array of CBDs, each CBD is the version at the time at which the lock was attained
      *
      * @throws \Exception
      */
-    protected function lockAllDocuments($subjectsOfChange, $transaction_id, $contextAlias): ?array
+    protected function lockAllDocuments(array $subjectsOfChange, string $transaction_id, string $contextAlias): ?array
     {
         for ($retry = 1; $retry <= $this->retriesToGetLock; $retry++) {
             $originalCBDs = [];
@@ -1085,7 +1063,7 @@ class Updates extends DriverBase
      *
      * @param array<string, mixed> $transaction
      */
-    protected function applyTransaction(array $transaction)
+    protected function applyTransaction(array $transaction): void
     {
         $changes = $transaction['changes'];
         $newCBDs = $transaction['newCBDs'];

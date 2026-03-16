@@ -77,11 +77,9 @@ class SearchIndexer extends CompositeBase
     /**
      * Removes all existing documents for the supplied resource and regenerate the search documents.
      *
-     * @param string            $resourceUri
-     * @param string            $context
      * @param array|string|null $specType
      */
-    public function generateAndIndexSearchDocuments($resourceUri, $context, string $podName, $specType = []): void
+    public function generateAndIndexSearchDocuments(string $resourceUri, string $context, string $podName, $specType = []): void
     {
         $mongoCollection = $this->config->getCollectionForCBD($this->storeName, $podName);
 
@@ -256,10 +254,7 @@ class SearchIndexer extends CompositeBase
         return $this->searchProvider;
     }
 
-    /**
-     * @param string $context
-     */
-    protected function getSearchDocumentGenerator(Collection $collection, $context): SearchDocuments
+    protected function getSearchDocumentGenerator(Collection $collection, string $context): SearchDocuments
     {
         return new SearchDocuments($this->storeName, $collection, $context, $this->tripod->getStat());
     }

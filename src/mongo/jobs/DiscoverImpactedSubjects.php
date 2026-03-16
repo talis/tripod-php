@@ -156,10 +156,7 @@ class DiscoverImpactedSubjects extends JobBase
         }
     }
 
-    /**
-     * @param string|null $queueName
-     */
-    public function createJob(array $data, $queueName = null): void
+    public function createJob(array $data, ?string $queueName = null): void
     {
         $configInstance = $this->getConfigInstance();
         if (!$queueName) {
@@ -187,10 +184,7 @@ class DiscoverImpactedSubjects extends JobBase
         return MONGO_QUEUE_DISCOVER_FAIL;
     }
 
-    /**
-     * @param string $queueName
-     */
-    protected function addSubjectToQueue(ImpactedSubject $subject, $queueName)
+    protected function addSubjectToQueue(ImpactedSubject $subject, string $queueName): void
     {
         if (!array_key_exists($queueName, $this->subjectsGroupedByQueue)) {
             $this->subjectsGroupedByQueue[$queueName] = [];
