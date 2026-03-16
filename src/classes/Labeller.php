@@ -12,6 +12,9 @@ namespace Tripod;
  */
 class Labeller
 {
+    /**
+     * @var array<string, non-empty-list<string>>
+     */
     public array $_labels = [
         'http://www.w3.org/1999/02/22-rdf-syntax-ns#_1' => ['first', 'first', 'is first member of'],
         'http://www.w3.org/1999/02/22-rdf-syntax-ns#_2' => ['second', 'second', 'is second member of'],
@@ -235,8 +238,14 @@ class Labeller
         'http://purl.org/goodrelations/v1#hasGTIN-14' => ['GTIN-14'],
     ];
 
+    /**
+     * @var string[]
+     */
     protected array $_label_properties = [];
 
+    /**
+     * @var array<string, string>
+     */
     protected array $_ns = [
         'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
         'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
@@ -340,11 +349,12 @@ class Labeller
             return $prefix;
         }
 
+        /** @var non-empty-list<string> $parts */
         $parts = preg_split('/[\/#]/', $ns);
         for ($i = count($parts) - 1; $i >= 0; $i--) {
             if (
                 preg_match('~^[a-zA-Z][a-zA-Z0-9\-]+$~', $parts[$i])
-                && !array_key_exists($parts[$i], $this->_ns)
+                && !isset($this->_ns[$parts[$i]])
                 && $parts[$i] != 'schema'
                 && $parts[$i] != 'ontology'
                 && $parts[$i] != 'vocab'
@@ -361,7 +371,7 @@ class Labeller
         }
 
         $index = 0;
-        while (array_key_exists('ns' . $index, $this->_ns)) {
+        while (isset($this->_ns['ns' . $index])) {
             $index++;
         }
 
@@ -385,54 +395,54 @@ class Labeller
     {
         if ($g instanceof ExtendedGraph) {
             $label = $g->get_first_literal($uri, 'http://www.w3.org/2004/02/skos/core#prefLabel', '', 'en');
-            if (strlen($label) !== 0) {
+            if ($label) {
                 return $label;
             }
 
             $label = $g->get_first_literal($uri, RDFS_LABEL, '', 'en');
-            if (strlen($label) !== 0) {
+            if ($label) {
                 return $label;
             }
 
             $label = $g->get_first_literal($uri, 'http://purl.org/dc/terms/title', '', 'en');
-            if (strlen($label) !== 0) {
+            if ($label) {
                 return $label;
             }
 
             $label = $g->get_first_literal($uri, DC_TITLE, '', 'en');
-            if (strlen($label) !== 0) {
+            if ($label) {
                 return $label;
             }
 
             $label = $g->get_first_literal($uri, FOAF_NAME, '', 'en');
-            if (strlen($label) !== 0) {
+            if ($label) {
                 return $label;
             }
 
             $label = $g->get_first_literal($uri, 'http://www.geonames.org/ontology#name', '', 'en');
-            if (strlen($label) !== 0) {
+            if ($label) {
                 return $label;
             }
 
             $label = $g->get_first_literal($uri, RDF_VALUE, '', 'en');
-            if (strlen($label) !== 0) {
+            if ($label) {
                 return $label;
             }
 
             $label = $g->get_first_literal($uri, 'http://purl.org/rss/1.0/title', '', 'en');
-            if (strlen($label) !== 0) {
+            if ($label) {
                 return $label;
             }
 
             foreach ($this->_label_properties as $p) {
                 $label = $g->get_first_literal($uri, $p, '', 'en');
-                if (strlen($label) !== 0) {
+                if ($label) {
                     return $label;
                 }
             }
         }
 
-        if (array_key_exists($uri, $this->_labels)) {
+        if (isset($this->_labels[$uri])) {
             if ($capitalize) {
                 return ucfirst($this->_labels[$uri][0]);
             }
@@ -456,6 +466,7 @@ class Labeller
         } elseif (preg_match('~^.*[\/\#]([^\/\#]+)$~', $uri, $m)) {
             $localname = $m[1];
             if (preg_match('~[^A-Z][A-Z][^A-Z]~', $localname)) {
+                /** @var non-empty-list<string> $parts */
                 $parts = preg_split('/([A-Z][^A-Z]*)/', $localname, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
                 $parts = array_map('strtolower', $parts);
                 if ($parts[0] == 'has') {
@@ -484,12 +495,12 @@ class Labeller
     {
         if ($g instanceof ExtendedGraph) {
             $label = $g->get_first_literal($uri, 'http://purl.org/net/vocab/2004/03/label#plural', '', 'en');
-            if (strlen($label) !== 0) {
+            if ($label) {
                 return $label;
             }
         }
 
-        if (array_key_exists($uri, $this->_labels)) {
+        if (isset($this->_labels[$uri])) {
             $label = count($this->_labels[$uri]) > 1 ? $this->_labels[$uri][1] : $this->_labels[$uri][0] . 's';
 
             if ($capitalize) {
@@ -515,12 +526,12 @@ class Labeller
     {
         if ($g instanceof ExtendedGraph) {
             $label = $g->get_first_literal($uri, 'http://purl.org/net/vocab/2004/03/label#inverseSingular', '', 'en');
-            if (strlen($label) !== 0) {
+            if ($label) {
                 return $label;
             }
         }
 
-        if (array_key_exists($uri, $this->_labels)) {
+        if (isset($this->_labels[$uri])) {
             $label = count($this->_labels[$uri]) > 2 ? $this->_labels[$uri][2] : 'is ' . $this->_labels[$uri][0] . ' of';
 
             if ($capitalize) {
@@ -545,7 +556,7 @@ class Labeller
         foreach ($index as $p_list) {
             foreach ($p_list as $p => $val) {
                 if (!array_key_exists($p, $labelled_properties)) {
-                    if (array_key_exists($p, $this->_labels)) {
+                    if (isset($this->_labels[$p])) {
                         if (!$graph->subject_has_property($p, RDFS_LABEL)) {
                             $graph->add_literal_triple($p, RDFS_LABEL, $this->_labels[$p][0]);
                         }
