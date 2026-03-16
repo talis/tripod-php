@@ -27,7 +27,7 @@ class Labeller
         'http://www.w3.org/1999/02/22-rdf-syntax-ns#_9' => ['ninth', 'ninth', 'is ninth member of'],
         'http://www.w3.org/1999/02/22-rdf-syntax-ns#_10' => ['tenth', 'tenth', 'is tenth member of'],
         'http://www.w3.org/1999/02/22-rdf-syntax-ns#_11' => ['eleventh', 'eleventh', 'is eleventh member of'],
-        'http://www.w3.org/1999/02/22-rdf-syntax-ns#_12' => ['twelth', 'twelth', 'is twelth member of'],
+        'http://www.w3.org/1999/02/22-rdf-syntax-ns#_12' => ['twelfth', 'twelfth', 'is twelfth member of'],
         'http://www.w3.org/1999/02/22-rdf-syntax-ns#_13' => ['thirteenth', 'thirteenth', 'is thirteenth member of'],
         'http://www.w3.org/1999/02/22-rdf-syntax-ns#_14' => ['fourteenth', 'fourteenth', 'is fourteenth member of'],
         'http://www.w3.org/1999/02/22-rdf-syntax-ns#_15' => ['fifteenth', 'fifteenth', 'is fifteenth member of'],
