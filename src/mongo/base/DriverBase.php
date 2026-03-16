@@ -199,8 +199,6 @@ abstract class DriverBase
             ]);
         }
 
-        $ttlExpiredResources = false;
-
         $retries = 1;
         $exception = null;
         $cursorSuccess = false;
@@ -210,10 +208,11 @@ abstract class DriverBase
                 foreach ($cursor as $result) {
                     // handle MONGO_VIEWS that have expired due to ttl. These are expired
                     // on read (lazily) rather than on write
-                    if ($this instanceof Views && $type == MONGO_VIEW && array_key_exists(_EXPIRES, $result['value'])) {
+                    if ($this instanceof Views && $type == MONGO_VIEW && isset($result['value'][_EXPIRES])) {
                         // if expires < current date, regenerate view..
+                        $expires = $result['value'][_EXPIRES];
                         $currentDate = DateUtil::getMongoDate();
-                        if ($result['value'][_EXPIRES]->__toString() < $currentDate) {
+                        if ($expires < $currentDate) {
                             // regenerate!
                             $this->generateView($result['_id']['type'], $result['_id']['r']);
                         }
@@ -235,12 +234,6 @@ abstract class DriverBase
             self::getLogger()->error('CursorException failed after ' . $retries . ' attempts (MAX:' . Config::CONNECTION_RETRIES . '): ' . $exception->getMessage());
 
             throw $exception;
-        }
-
-        if ($ttlExpiredResources) {
-            // generate views and retry...
-            $this->debugLog('One or more view had exceeded TTL was regenerated - request again...');
-            $graph = $this->fetchGraph($query, $type, $collection);
         }
 
         $t->stop();
