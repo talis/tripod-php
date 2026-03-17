@@ -66,7 +66,7 @@ abstract class DriverBase
     public function setStat(ITripodStat $stat): void
     {
         // TODO: how do we decouple this and still allow StatsD to know which db we're using?
-        if ($stat instanceof StatsD) {
+        if ($stat instanceof StatsD && isset($this->storeName)) {
             $stat->setPivotValue($this->getStoreName());
         }
 
