@@ -717,7 +717,9 @@ class Updates extends DriverBase
                         'upsert' => $update['upsert'],
                         'returnDocument' => FindOneAndUpdate::RETURN_DOCUMENT_AFTER,
                     ]);
-                    $newCBDs[] = $newDoc;
+                    if ($newDoc) {
+                        $newCBDs[] = $newDoc;
+                    }
                 } catch (\Exception $e) {
                     $this->errorLog(
                         MONGO_WRITE,
