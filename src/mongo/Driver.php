@@ -360,7 +360,7 @@ class Driver extends DriverBase implements IDriver
      *
      * @return array<string, array<int|string, int|mixed[]|null>>
      */
-    public function select(array $query, array $fields, ?array $sortBy = null, ?int $limit = null, int $offset = 0, ?string $context = null): array
+    public function select(array $query, array $fields, ?array $sortBy = null, ?int $limit = null, ?int $offset = 0, ?string $context = null): array
     {
         $t = new Timer();
         $t->start();
@@ -394,7 +394,7 @@ class Driver extends DriverBase implements IDriver
             'projection' => $fields,
         ];
         if (!empty($limit)) {
-            $findOptions['skip'] = $offset;
+            $findOptions['skip'] = $offset ?? 0;
             $findOptions['limit'] = (int) $limit;
         }
 

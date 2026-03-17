@@ -67,7 +67,14 @@ interface IDriver
      *
      * @param array<string, mixed> $fields array of fields, in the same format as prescribed by MongoPHP
      */
-    public function select(array $query, array $fields, ?array $sortBy = null, ?int $limit = null, int $offset = 0, ?string $context = null): array;
+    public function select(
+        array $query,
+        array $fields,
+        ?array $sortBy = null,
+        ?int $limit = null,
+        ?int $offset = 0,
+        ?string $context = null
+    ): array;
 
     /**
      * Select data from a table.
