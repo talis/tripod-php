@@ -125,9 +125,9 @@ class TransactionLog
      *
      * @param string $transaction_id - the id of the transaction you wish to retrieve from the transaction log
      *
-     * @return array representing the transaction document
+     * @return array|null representing the transaction document
      */
-    public function getTransaction(string $transaction_id): array
+    public function getTransaction(string $transaction_id): ?array
     {
         return $this->transaction_collection->findOne(['_id' => $transaction_id]);
     }

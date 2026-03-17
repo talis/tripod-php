@@ -963,7 +963,7 @@ class Updates extends DriverBase
      *
      * @param string $s subject URI of resource to lock
      *
-     * @return array|false
+     * @return array|null|false
      */
     protected function lockSingleDocument(string $s, string $transaction_id, string $contextAlias)
     {
