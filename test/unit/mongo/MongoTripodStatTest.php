@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Tripod\Mongo\NoStat;
+use Tripod\NoStat;
 use Tripod\StatsD;
 use Tripod\TripodStatFactory;
 

@@ -22,6 +22,13 @@ use Tripod\Timer;
 
 class Updates extends DriverBase
 {
+    /**
+     * constants for the supported hook functions that can be applied.
+     */
+    public const HOOK_FN_PRE = 'pre';
+    public const HOOK_FN_SUCCESS = 'success';
+    public const HOOK_FN_FAILURE = 'failure';
+
     protected Driver $tripod;
 
     protected ?Database $locksDb = null;
@@ -350,6 +357,33 @@ class Updates extends DriverBase
     public function registerSaveChangesEventHook(IEventHook $hook): void
     {
         $this->saveChangesHooks[] = $hook;
+    }
+
+    /**
+     * @param IEventHook[] $hooks
+     *
+     * @throws Exception If an invalid hook function is requested
+     */
+    protected function applyHooks(string $fn, array $hooks, array $args = []): void
+    {
+        switch ($fn) {
+            case $this::HOOK_FN_PRE:
+            case $this::HOOK_FN_SUCCESS:
+            case $this::HOOK_FN_FAILURE:
+                break;
+
+            default:
+                throw new Exception(sprintf('Invalid hook function %s requested', $fn));
+        }
+
+        foreach ($hooks as $hook) {
+            try {
+                call_user_func([$hook, $fn], $args);
+            } catch (\Exception $e) {
+                // don't let rabid hooks stop tripod
+                static::getLogger()->error('Hook ' . get_class($hook) . sprintf(' threw exception %s, continuing', $e->getMessage()));
+            }
+        }
     }
 
     /**
@@ -965,7 +999,7 @@ class Updates extends DriverBase
      *
      * @param string $s subject URI of resource to lock
      *
-     * @return array|null|false
+     * @return array|false|null
      */
     protected function lockSingleDocument(string $s, string $transaction_id, string $contextAlias)
     {

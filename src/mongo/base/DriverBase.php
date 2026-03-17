@@ -10,8 +10,6 @@ use MongoDB\Driver\ReadPreference;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
-use Tripod\Exceptions\Exception;
-use Tripod\IEventHook;
 use Tripod\ITripodStat;
 use Tripod\Mongo\Composites\Views;
 use Tripod\StatsD;
@@ -20,15 +18,6 @@ use Tripod\TripodStatFactory;
 
 abstract class DriverBase
 {
-    /**
-     * constants for the supported hook functions that can be applied.
-     */
-    public const HOOK_FN_PRE = 'pre';
-
-    public const HOOK_FN_SUCCESS = 'success';
-
-    public const HOOK_FN_FAILURE = 'failure';
-
     public static ?LoggerInterface $logger = null;
 
     protected string $storeName;
@@ -155,11 +144,6 @@ abstract class DriverBase
     protected function getStatFromStatFactory(): ITripodStat
     {
         return TripodStatFactory::create($this->statsConfig);
-    }
-
-    protected function getExpirySecFromNow(int $secs): int
-    {
-        return time() + $secs;
     }
 
     protected function getContextAlias(?string $context = null): string
@@ -338,80 +322,10 @@ abstract class DriverBase
     }
 
     /**
-     * @param IEventHook[] $hooks
-     *
-     * @throws Exception If an invalid hook function is requested
-     */
-    protected function applyHooks(string $fn, array $hooks, array $args = []): void
-    {
-        switch ($fn) {
-            case $this::HOOK_FN_PRE:
-            case $this::HOOK_FN_SUCCESS:
-            case $this::HOOK_FN_FAILURE:
-                break;
-
-            default:
-                throw new Exception(sprintf('Invalid hook function %s requested', $fn));
-        }
-
-        foreach ($hooks as $hook) {
-            try {
-                call_user_func([$hook, $fn], $args);
-            } catch (\Exception $e) {
-                // don't let rabid hooks stop tripod
-                static::getLogger()->error('Hook ' . get_class($hook) . sprintf(' threw exception %s, continuing', $e->getMessage()));
-            }
-        }
-    }
-
-    /**
      * @codeCoverageIgnore
      */
     private function log(string $level, string $message, ?array $params): void
     {
         self::getLogger()->log($level, $message, $params ?: []);
-    }
-}
-
-final class NoStat implements ITripodStat
-{
-    /**
-     * @var self
-     */
-    public static $instance;
-
-    public function increment(string $operation, int $inc = 1): void
-    {
-        // do nothing
-    }
-
-    /**
-     * @param float|int $duration
-     */
-    public function timer(string $operation, $duration): void
-    {
-        // do nothing
-    }
-
-    public function getConfig(): array
-    {
-        return [];
-    }
-
-    public static function getInstance(): self
-    {
-        if (self::$instance == null) {
-            self::$instance = new NoStat();
-        }
-
-        return self::$instance;
-    }
-
-    /**
-     * @return self
-     */
-    public static function createFromConfig(array $config = [])
-    {
-        return self::getInstance();
     }
 }

@@ -505,6 +505,11 @@ class Views extends CompositeBase
         return $this->getCollectionForViewSpec($viewSpec)->count($filters);
     }
 
+    protected function getExpirySecFromNow(int $secs): int
+    {
+        return time() + $secs;
+    }
+
     /**
      * Joins data to $dest from $source according to specification in $joins, or queries DB if data is not available in $source.
      */
