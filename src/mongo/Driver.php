@@ -173,9 +173,9 @@ class Driver extends DriverBase implements IDriver
     public function getTableRows(
         string $tableType,
         array $filter = [],
-        array $sortBy = [],
-        int $offset = 0,
-        int $limit = 10,
+        ?array $sortBy = [],
+        ?int $offset = 0,
+        ?int $limit = 10,
         array $options = []
     ): array {
         return $this->getTripodTables()->getTableRows(
@@ -395,7 +395,7 @@ class Driver extends DriverBase implements IDriver
         ];
         if (!empty($limit)) {
             $findOptions['skip'] = $offset ?? 0;
-            $findOptions['limit'] = (int) $limit;
+            $findOptions['limit'] = $limit;
         }
 
         if (isset($sortBy)) {

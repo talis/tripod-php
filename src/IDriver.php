@@ -82,9 +82,9 @@ interface IDriver
     public function getTableRows(
         string $tableType,
         array $filter = [],
-        array $sortBy = [],
-        int $offset = 0,
-        int $limit = 10,
+        ?array $sortBy = [],
+        ?int $offset = 0,
+        ?int $limit = 10,
         array $options = []
     ): array;
 

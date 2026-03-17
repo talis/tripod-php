@@ -216,9 +216,9 @@ class Tables extends CompositeBase
     public function getTableRows(
         string $tableSpecId,
         array $filter = [],
-        array $sortBy = [],
-        int $offset = 0,
-        int $limit = 10,
+        ?array $sortBy = [],
+        ?int $offset = 0,
+        ?int $limit = 10,
         array $options = []
     ): array {
         $t = new Timer();
@@ -243,11 +243,13 @@ class Tables extends CompositeBase
 
         $findOptions = [];
         if (!empty($limit)) {
-            $findOptions['skip'] = $offset;
+            $findOptions['skip'] = $offset ?? 0;
             $findOptions['limit'] = $limit;
         }
 
-        $findOptions['sort'] = $sortBy;
+        if (isset($sortBy)) {
+            $findOptions['sort'] = $sortBy;
+        }
 
         $results = $collection->find($filter, $findOptions);
 
