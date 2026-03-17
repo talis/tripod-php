@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Tripod\Mongo;
 
-require_once TRIPOD_DIR . 'ITripodStat.php';
-
 use MongoDB\Collection;
 use MongoDB\Database;
 use MongoDB\Driver\ReadPreference;
