@@ -2,7 +2,7 @@ parameters:
   level: 6
   phpVersion:
     min: 70400 # PHP 7.4
-    max: 80419 # PHP 8.4.19
+    max: 80599 # PHP 8.5
   tips:
     treatPhpDocTypesAsCertain: false
   ignoreErrors:

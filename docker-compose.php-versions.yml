@@ -1,0 +1,26 @@
+# An override file to allow using separate vendor directories for each PHP version.
+# Usage:
+# 1. Create the directories and composer.lock files for each PHP version:
+#    mkdir -p docker/{php74,php84,php85}/vendor
+#    echo '{}' > docker/{php74,php84,php85}/composer.lock
+# 2. Run the desired PHP version with the appropriate vendor directory:
+#    docker compose -f docker-compose.yml -f docker-compose.php-versions.yml run --rm -it php84
+
+services:
+  php74:
+    volumes:
+      - ./docker/php74/vendor:/var/tripod-php/vendor
+      - ./docker/php74/composer.lock:/var/tripod-php/composer.lock
+
+  php84:
+    volumes:
+      - ./docker/php84/vendor:/var/tripod-php/vendor
+      - ./docker/php84/composer.lock:/var/tripod-php/composer.lock
+
+  php85:
+    volumes:
+      - ./docker/php85/vendor:/var/tripod-php/vendor
+      - ./docker/php85/composer.lock:/var/tripod-php/composer.lock
+
+  mongodb2:
+    image: mongo:4.4
