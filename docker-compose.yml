@@ -11,12 +11,26 @@ services:
   php74:
     build:
       context: ./docker
-      dockerfile: Dockerfile-php74
+      dockerfile: php74.Dockerfile
     image: talis/tripod-php:php74-latest
     <<: *base-config
 
+  php84:
+    build:
+      context: ./docker
+      dockerfile: php84.Dockerfile
+    image: talis/tripod-php:php84-latest
+    <<: *base-config
+
+  php85:
+    build:
+      context: ./docker
+      dockerfile: php85.Dockerfile
+    image: talis/tripod-php:php85-latest
+    <<: *base-config
+
   mongodb:
-    image: mongo:3.6.23
+    image: mongo:4.0
 
   redis:
     image: valkey/valkey:8-alpine
