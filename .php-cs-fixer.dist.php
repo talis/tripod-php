@@ -41,4 +41,5 @@ return (new Config())
             ->ignoreVCSIgnored(true)
             ->ignoreDotFiles(false)
             ->notPath('rector.php')
+            ->notPath('test/unit/mongo/mocks')
     );
