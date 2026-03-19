@@ -125,7 +125,7 @@ jobs:
       - check_mongodb_lib_version
       - run_test
 
-  test-replica-set:
+  test-replica-set-mongo:
     parameters:
       mongo_version: { type: string }
     docker:
@@ -153,12 +153,16 @@ workflows:
     jobs:
       - lint
       - test:
-          name: test-php74
-          php_version: php74
-          mongo_version: 4.0.28
+          mongo_version: "4.2"
+          matrix:
+            parameters:
+              php_version:
+                - php74
+                - php84
+                - php85
       - test-multiple-stores
       - test-replica-set-mmap
-      - test-replica-set:
+      - test-replica-set-mongo:
           matrix:
             parameters:
               mongo_version:
