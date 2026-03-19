@@ -685,7 +685,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
             ->setConstructorArgs([
                 'CBD_testing',
                 'tripod_php_testing',
-                ['defaultContext' => 'http://talisaspire.com/', 'readPreference' => ReadPreference::RP_SECONDARY_PREFERRED],
+                ['defaultContext' => 'http://talisaspire.com/', 'readPreference' => ReadPreference::SECONDARY_PREFERRED],
             ])
             ->getMock();
 
@@ -704,7 +704,7 @@ class MongoTripodDriverTest extends MongoTripodTestBase
             ->willReturn($tripodUpdate);
 
         $expectedCollectionReadPreference = $tripodMock->getCollectionReadPreference();
-        $this->assertEquals(ReadPreference::RP_SECONDARY_PREFERRED, $expectedCollectionReadPreference->getMode());
+        $this->assertEquals(ReadPreference::SECONDARY_PREFERRED, $expectedCollectionReadPreference->getModeString());
 
         // Assert that a simple save results in read preferences being restored
         $g = new MongoGraph();
