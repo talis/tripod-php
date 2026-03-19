@@ -21,6 +21,7 @@ use Tripod\Mongo\Labeller;
 use Tripod\Mongo\MongoGraph;
 use Tripod\Mongo\TransactionLog;
 use Tripod\Mongo\Updates;
+use Tripod\Test\Mongo\Mocks\Cursor as FakeCursor;
 
 class MongoTripodTablesTest extends MongoTripodTestBase
 {
@@ -338,7 +339,7 @@ class MongoTripodTablesTest extends MongoTripodTestBase
             $docs[] = ['_id' => ['r' => 'tenantLists:batch' . $i, 'c' => 'tenantContexts:DefaultGraph']];
         }
 
-        $fakeCursor = new ArrayIterator($docs);
+        $fakeCursor = new FakeCursor($docs);
         $configInstance = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getCollectionForTable', 'getCollectionForCBD'])
             ->disableOriginalConstructor()
