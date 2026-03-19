@@ -19,6 +19,7 @@ use Tripod\Mongo\Labeller;
 use Tripod\Mongo\MongoGraph;
 use Tripod\Mongo\TransactionLog;
 use Tripod\Mongo\Updates;
+use Tripod\Test\Mongo\Mocks\Cursor as FakeCursor;
 
 class MongoTripodViewsTest extends MongoTripodTestBase
 {
@@ -1956,7 +1957,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             ->setConstructorArgs([new Manager(), 'db', 'view'])
             ->onlyMethods(['find'])
             ->getMock();
-        $mockCursor = $this->getMockBuilder(ArrayIterator::class)
+        $mockCursor = $this->getMockBuilder(FakeCursor::class)
+            ->setConstructorArgs([[]])
             ->onlyMethods(['rewind'])
             ->getMock();
 
@@ -2015,7 +2017,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             ->setConstructorArgs([new Manager(), 'db', 'view'])
             ->onlyMethods(['findOne', 'find'])
             ->getMock();
-        $mockCursor = $this->getMockBuilder(ArrayIterator::class)
+        $mockCursor = $this->getMockBuilder(FakeCursor::class)
+            ->setConstructorArgs([[]])
             ->onlyMethods(['rewind'])
             ->getMock();
 
@@ -2075,7 +2078,8 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             ->setConstructorArgs([new Manager(), 'db', 'view'])
             ->onlyMethods(['find', 'findOne'])
             ->getMock();
-        $mockCursor = $this->getMockBuilder(ArrayIterator::class)
+        $mockCursor = $this->getMockBuilder(FakeCursor::class)
+            ->setConstructorArgs([[]])
             ->onlyMethods(['rewind'])
             ->getMock();
 
@@ -2320,7 +2324,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             $docs[] = ['_id' => ['r' => 'tenantLists:batch' . $i, 'c' => 'tenantContexts:DefaultGraph']];
         }
 
-        $fakeCursor = new ArrayIterator($docs);
+        $fakeCursor = new FakeCursor($docs);
         $configInstance = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getCollectionForView', 'getCollectionForCBD'])
             ->disableOriginalConstructor()

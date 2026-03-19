@@ -14,6 +14,7 @@ use Tripod\Mongo\Labeller;
 use Tripod\Mongo\MongoGraph;
 use Tripod\Mongo\MongoSearchProvider;
 use Tripod\Mongo\Updates;
+use Tripod\Test\Mongo\Mocks\Cursor as FakeCursor;
 
 class MongoTripodSearchIndexerTest extends MongoTripodTestBase
 {
@@ -508,7 +509,7 @@ class MongoTripodSearchIndexerTest extends MongoTripodTestBase
             $docs[] = ['_id' => ['r' => 'tenantLists:batch' . $i, 'c' => 'tenantContexts:DefaultGraph']];
         }
 
-        $fakeCursor = new ArrayIterator($docs);
+        $fakeCursor = new FakeCursor($docs);
         $configInstance = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getCollectionForCBD'])
             ->disableOriginalConstructor()
