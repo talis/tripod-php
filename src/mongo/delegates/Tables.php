@@ -68,15 +68,13 @@ class Tables extends CompositeBase
     /**
      * Construct accepts actual objects rather than strings as this class is a delegate of
      * Tripod and should inherit connections set up there.
-     *
-     * @param int|string $readPreference
      */
     public function __construct(
         string $storeName,
         Collection $collection,
         ?string $defaultContext,
         ?ITripodStat $stat = null,
-        $readPreference = ReadPreference::RP_PRIMARY
+        string $readPreference = ReadPreference::PRIMARY
     ) {
         $this->labeller = new Labeller();
         $this->storeName = $storeName;

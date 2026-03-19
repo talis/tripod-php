@@ -34,10 +34,7 @@ abstract class DriverBase
 
     protected ?Collection $collection = null;
 
-    /**
-     * @var int|string
-     */
-    protected $readPreference = ReadPreference::RP_PRIMARY_PREFERRED;
+    protected string $readPreference = ReadPreference::PRIMARY_PREFERRED;
 
     protected Labeller $labeller;
 

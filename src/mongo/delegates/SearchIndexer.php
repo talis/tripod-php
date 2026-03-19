@@ -23,11 +23,9 @@ class SearchIndexer extends CompositeBase
     private ?ISearchProvider $searchProvider = null;
 
     /**
-     * @param int|string $readPreference
-     *
      * @throws SearchException
      */
-    public function __construct(Driver $tripod, $readPreference = ReadPreference::RP_PRIMARY)
+    public function __construct(Driver $tripod, string $readPreference = ReadPreference::PRIMARY)
     {
         $this->tripod = $tripod;
         $this->storeName = $tripod->getStoreName();
