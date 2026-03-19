@@ -118,8 +118,8 @@ class MongoGraph extends ExtendedGraph
         $_i = [];
         $predObjects = [];
         foreach ($tarray as $key => $value) {
-            if (empty($key)) {
-                throw new Exception('The predicate cannot be an empty string');
+            if (!$this->isValidResource($key)) {
+                throw new Exception('The predicate must be a non-empty string, ' . var_export($key, true) . ' given');
             }
 
             if ($key[0] != '_') {
@@ -131,14 +131,14 @@ class MongoGraph extends ExtendedGraph
                 }
             } elseif ($key == '_id') {
                 // If the subject is invalid then throw an exception
-                if (!isset($value['r']) || !$this->isValidResource($value['r'])) {
-                    throw new Exception('The subject cannot be an empty string');
+                if (!isset($value[_ID_RESOURCE]) || !$this->isValidResource($value[_ID_RESOURCE])) {
+                    throw new Exception('The subject must be a non-empty string, ' . var_export($value[_ID_RESOURCE], true) . ' given');
                 }
             }
         }
 
         $_i[$this->_labeller->qname_to_alias($tarray['_id'][_ID_RESOURCE])] = $predObjects;
-        $this->add_json(json_encode($_i));
+        $this->_index = $this->merge($this->_index, $_i);
     }
 
     /**

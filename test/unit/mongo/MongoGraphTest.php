@@ -179,7 +179,7 @@ class MongoGraphTest extends MongoTripodTestBase
      */
     public function testAddTripodArrayContainingInvalidPredicates($value): void
     {
-        $this->expectExceptionMessageMatches('/Argument 1 .* must be of the type string or null/');
+        $this->expectExceptionMessage('The predicate must be a non-empty string');
         $doc = [
             '_id' => ['r' => 'http://talisaspire.com/works/4d101f63c10a6-2', 'c' => 'http://talisaspire.com/works/4d101f63c10a6-2'],
             '_version' => 0,
@@ -212,7 +212,7 @@ class MongoGraphTest extends MongoTripodTestBase
     {
         // Should not be able to label ''
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('The predicate cannot be an empty string');
+        $this->expectExceptionMessage('The predicate must be a non-empty string');
         $doc = [
             '_id' => ['r' => 'http://talisaspire.com/works/4d101f63c10a6-2', 'c' => 'http://talisaspire.com/works/4d101f63c10a6-2'],
             '_version' => 0,
