@@ -161,7 +161,7 @@ abstract class JobBase extends DriverBase
             $opts,
             [
                 'stat' => $this->getStat(),
-                'readPreference' => ReadPreference::RP_PRIMARY, // important: make sure we always read from the primary
+                'readPreference' => ReadPreference::PRIMARY, // important: make sure we always read from the primary
             ]
         );
         if ($this->tripod == null) {

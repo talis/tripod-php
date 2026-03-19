@@ -40,14 +40,14 @@ class Updates extends DriverBase
     private ?TransactionLog $transactionLog = null;
 
     /**
-     * @var int|string the original read preference gets stored here when changing for a write
+     * @var string the original read preference gets stored here when changing for a write
      */
-    private $originalCollectionReadPreference = '';
+    private string $originalCollectionReadPreference = '';
 
     /**
-     * @var int|string the original read preference gets stored here when changing for a write
+     * @var string the original read preference gets stored here when changing for a write
      */
-    private $originalDbReadPreference = '';
+    private string $originalDbReadPreference = '';
 
     private int $retriesToGetLock;
 
@@ -74,7 +74,7 @@ class Updates extends DriverBase
             'defaultContext' => null,
             OP_ASYNC => [OP_VIEWS => false, OP_TABLES => true, OP_SEARCH => true],
             'stat' => null,
-            'readPreference' => ReadPreference::RP_PRIMARY_PREFERRED,
+            'readPreference' => ReadPreference::PRIMARY_PREFERRED,
             'retriesToGetLock' => 20,
         ], $opts);
         $this->readPreference = $opts['readPreference'];
@@ -396,23 +396,23 @@ class Updates extends DriverBase
         /** @var ReadPreference $dbReadPref */
         $dbReadPref = $this->getDatabase()->getReadPreference();
 
-        $dbPref = $dbReadPref->getMode();
+        $dbPref = $dbReadPref->getModeString();
         $dbTagsets = $dbReadPref->getTagsets();
 
-        $this->originalDbReadPreference = $this->db->getReadPreference()->getMode();
-        if ($dbPref !== ReadPreference::RP_PRIMARY) {
-            $this->db = $this->db->withOptions(['readPreference' => new ReadPreference(ReadPreference::RP_PRIMARY, $dbTagsets)]);
+        $this->originalDbReadPreference = $this->db->getReadPreference()->getModeString();
+        if ($dbPref !== ReadPreference::PRIMARY) {
+            $this->db = $this->db->withOptions(['readPreference' => new ReadPreference(ReadPreference::PRIMARY, $dbTagsets)]);
         }
 
         /** @var ReadPreference $collReadPref */
         $collReadPref = $this->getCollection()->getReadPreference();
-        $collPref = $collReadPref->getMode();
+        $collPref = $collReadPref->getModeString();
         $collTagsets = $collReadPref->getTagsets();
 
         // Set collection preference
         $this->originalCollectionReadPreference = $collPref;
-        if ($collPref !== ReadPreference::RP_PRIMARY) {
-            $this->collection = $this->collection->withOptions(['readPreference' => new ReadPreference(ReadPreference::RP_PRIMARY, $collTagsets)]);
+        if ($collPref !== ReadPreference::PRIMARY) {
+            $this->collection = $this->collection->withOptions(['readPreference' => new ReadPreference(ReadPreference::PRIMARY, $collTagsets)]);
         }
     }
 
@@ -422,7 +422,7 @@ class Updates extends DriverBase
     protected function resetOriginalReadPreference(): void
     {
         $dbReadPref = $this->db->getReadPreference();
-        if ($this->originalDbReadPreference !== $dbReadPref->getMode()) {
+        if ($this->originalDbReadPreference !== $dbReadPref->getModeString()) {
             $pref = $this->originalDbReadPreference ?: $this->readPreference;
             $dbTagsets = $dbReadPref->getTagsets();
 
@@ -433,7 +433,7 @@ class Updates extends DriverBase
 
         // Reset collection object
         $collReadPref = $this->getCollection()->getReadPreference();
-        if ($this->originalCollectionReadPreference !== $collReadPref->getMode()) {
+        if ($this->originalCollectionReadPreference !== $collReadPref->getModeString()) {
             $pref = $this->originalCollectionReadPreference ?: $this->readPreference;
             $collTagsets = $collReadPref->getTagsets();
             $this->collection = $this->collection->withOptions([

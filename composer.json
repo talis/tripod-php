@@ -22,6 +22,7 @@
     },
     "require": {
         "php" : ">=7.4",
+        "ext-mongodb": ">=1.7.0",
         "mongodb/mongodb": "*",
         "monolog/monolog" : "~1.13",
         "semsol/arc2": "2.2.6"
