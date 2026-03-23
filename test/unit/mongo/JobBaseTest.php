@@ -3,10 +3,20 @@
 declare(strict_types=1);
 
 use Tripod\Config;
+use Tripod\Mongo\DriverBase;
 use Tripod\Mongo\IConfigInstance;
 
 class JobBaseTest extends MongoTripodTestBase
 {
+    public function testLoggerInstance(): void
+    {
+        $this->assertSame(
+            DriverBase::getLogger(),
+            TestJobBase::getLogger(),
+            'JobBase should return the same logger instance as DriverBase'
+        );
+    }
+
     public function testGetTripodConfig(): void
     {
         $job = new TestJobBase();
