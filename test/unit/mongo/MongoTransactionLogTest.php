@@ -626,7 +626,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
         ksort($expectedCBD);
         $this->assertEquals($expectedCBD, $actualCBD, 'CBD in transaction should match our expected value exactly');
         // finally check that the actual error was logged in the transaction_log
-        $this->assertTrue(isset($transactionDocument['error'], $transactionDocument['error']['reason']) && isset($transactionDocument['error']['trace']), 'The error should be logged, both the message and a stack trace');
+        $this->assertTrue(isset($transactionDocument['error']['reason'], $transactionDocument['error']['trace']), 'The error should be logged, both the message and a stack trace');
         $this->assertEquals('exception thrown by mock test', $transactionDocument['error']['reason'], 'The transaction log should have logged the exception our test suite threw');
         $this->assertNotEmpty($transactionDocument['error']['trace'], 'The transaction log have a non empty error trace');
     }
