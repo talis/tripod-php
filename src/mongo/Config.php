@@ -592,7 +592,7 @@ class Config implements IConfigInstance
      */
     public function getCollectionForCBD(string $storeName, string $podName, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection
     {
-        if (isset($this->podConnections[$storeName], $this->podConnections[$storeName][$podName])) {
+        if (isset($this->podConnections[$storeName][$podName])) {
             return $this->getMongoCollection(
                 $this->getDatabase($storeName, $this->podConnections[$storeName][$podName], $readPreference),
                 $podName
