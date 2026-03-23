@@ -1,7 +1,6 @@
 <?php
 
-use Monolog\Handler\NullHandler;
-use Monolog\Logger;
+use Psr\Log\NullLogger;
 use Tripod\Mongo\DriverBase;
 use Tripod\Mongo\Jobs\JobBase;
 
@@ -19,6 +18,5 @@ Resque_Event::listen('beforePerform', [JobBase::class, 'beforePerform']);
 Resque_Event::listen('onFailure', [JobBase::class, 'onFailure']);
 
 // Make sure log statements don't go to stdout during tests...
-$log = new Logger('unittest');
-$log->pushHandler(new NullHandler());
-DriverBase::$logger = $log;
+$logger = new NullLogger();
+DriverBase::$logger = $logger;

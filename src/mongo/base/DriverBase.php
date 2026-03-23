@@ -9,8 +9,8 @@ use MongoDB\Database;
 use MongoDB\Driver\ReadPreference;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
-use Psr\Log\LogLevel;
 use Tripod\ITripodStat;
+use Tripod\LoggerTrait;
 use Tripod\Mongo\Composites\Views;
 use Tripod\StatsD;
 use Tripod\Timer;
@@ -18,6 +18,8 @@ use Tripod\TripodStatFactory;
 
 abstract class DriverBase
 {
+    use LoggerTrait;
+
     public static ?LoggerInterface $logger = null;
 
     protected string $storeName;
@@ -39,6 +41,19 @@ abstract class DriverBase
     protected Labeller $labeller;
 
     protected IConfigInstance $config;
+
+    /**
+     * @codeCoverageIgnore
+     */
+    public static function getLogger(): LoggerInterface
+    {
+        if (self::$logger == null) {
+            $log = new Logger('TRIPOD');
+            self::$logger = $log;
+        }
+
+        return self::$logger;
+    }
 
     public function getStat(): ITripodStat
     {
@@ -75,64 +90,6 @@ abstract class DriverBase
     public function getPodName(): string
     {
         return $this->podName;
-    }
-
-    /**
-     * @codeCoverageIgnore
-     */
-    public function timingLog(string $type, ?array $params = null): void
-    {
-        $type = '[PID ' . getmypid() . '] ' . $type;
-        $this->log(LogLevel::DEBUG, $type, $params);
-    }
-
-    /**
-     * @codeCoverageIgnore
-     */
-    public function infoLog(string $message, ?array $params = null): void
-    {
-        $message = '[PID ' . getmypid() . '] ' . $message;
-        $this->log(LogLevel::INFO, $message, $params);
-    }
-
-    /**
-     * @codeCoverageIgnore
-     */
-    public function debugLog(string $message, ?array $params = null): void
-    {
-        $message = '[PID ' . getmypid() . '] ' . $message;
-        $this->log(LogLevel::DEBUG, $message, $params);
-    }
-
-    /**
-     * @codeCoverageIgnore
-     */
-    public function errorLog(string $message, ?array $params = null): void
-    {
-        $message = '[PID ' . getmypid() . '] ' . $message;
-        $this->log(LogLevel::ERROR, $message, $params);
-    }
-
-    /**
-     * @codeCoverageIgnore
-     */
-    public function warningLog(string $message, ?array $params = null): void
-    {
-        $message = '[PID ' . getmypid() . '] ' . $message;
-        $this->log(LogLevel::WARNING, $message, $params);
-    }
-
-    /**
-     * @codeCoverageIgnore
-     */
-    public static function getLogger(): LoggerInterface
-    {
-        if (self::$logger == null) {
-            $log = new Logger('TRIPOD');
-            self::$logger = $log;
-        }
-
-        return self::$logger;
     }
 
     /**
@@ -316,13 +273,5 @@ abstract class DriverBase
         }
 
         return $this->collection;
-    }
-
-    /**
-     * @codeCoverageIgnore
-     */
-    private function log(string $level, string $message, ?array $params): void
-    {
-        self::getLogger()->log($level, $message, $params ?: []);
     }
 }
