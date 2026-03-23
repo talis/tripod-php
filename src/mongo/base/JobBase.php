@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Tripod\Mongo\Jobs;
 
 use MongoDB\Driver\ReadPreference;
+use Psr\Log\LoggerInterface;
+use Resque\Resque;
 use Tripod\Config;
 use Tripod\Exceptions\Exception;
 use Tripod\Exceptions\JobException;
 use Tripod\ITripodConfigSerializer;
 use Tripod\ITripodStat;
+use Tripod\LoggerTrait;
 use Tripod\Mongo\Driver;
 use Tripod\Mongo\DriverBase;
 use Tripod\Mongo\IConfigInstance;
@@ -17,6 +20,8 @@ use Tripod\Timer;
 
 abstract class JobBase extends DriverBase
 {
+    use LoggerTrait;
+
     public const TRIPOD_CONFIG_KEY = 'tripodConfig';
 
     public const TRIPOD_CONFIG_GENERATOR = 'tripodConfigGenerator';
@@ -120,6 +125,11 @@ abstract class JobBase extends DriverBase
 
         $failedJob->errorLog('Caught exception in ' . static::class . ': ' . $e->getMessage());
         $failedJob->getStat()->increment($failedJob->getStatFailureIncrementKey());
+    }
+
+    public static function getLogger(): LoggerInterface
+    {
+        return DriverBase::getLogger();
     }
 
     public function getStat(): ITripodStat
