@@ -669,7 +669,7 @@ class Views extends CompositeBase
                                 $obj[$p] = $source[$p];
                             }
 
-                            if (isset($source[$p], $source[$p][$i])) {
+                            if (isset($source[$p][$i])) {
                                 if (!isset($obj[$p])) {
                                     $obj[$p] = [];
                                 }
@@ -684,7 +684,7 @@ class Views extends CompositeBase
             }
         } else {
             foreach ($source as $p => $val) {
-                if (isset($viewSpec['joins'], $viewSpec['joins'][$p], $viewSpec['joins'][$p]['maxJoins'])) {
+                if (isset($viewSpec['joins'][$p]['maxJoins'])) {
                     // todo: refactor with above (extract method)
                     // only include up to maxJoins
                     for ($i = 0; $i < $viewSpec['joins'][$p]['maxJoins']; $i++) {
