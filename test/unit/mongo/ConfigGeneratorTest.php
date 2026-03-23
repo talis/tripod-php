@@ -7,6 +7,7 @@ use Tripod\ExtendedGraph;
 use Tripod\ITripodConfigSerializer;
 use Tripod\Mongo\Composites\Views;
 use Tripod\Mongo\Driver;
+use Tripod\Mongo\DriverBase;
 use Tripod\Mongo\ImpactedSubject;
 use Tripod\Mongo\Jobs\ApplyOperation;
 use Tripod\Mongo\Jobs\DiscoverImpactedSubjects;
@@ -44,6 +45,15 @@ class ConfigGeneratorTest extends MongoTripodTestBase
         /** @var TestConfigGenerator $instance */
         $instance = Config::getInstance();
         $this->assertEquals($this->config, $instance->serialize());
+    }
+
+    public function testLoggerInstance(): void
+    {
+        $this->assertSame(
+            DriverBase::getLogger(),
+            Config::getInstance()::getLogger(),
+            'Config instance should return the same logger instance as DriverBase'
+        );
     }
 
     public function testConfigGeneratorsSerializedInDiscoverJobs(): void
