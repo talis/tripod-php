@@ -693,7 +693,7 @@ class Views extends CompositeBase
                         }
 
                         if ($val && isset($val[$i])) {
-                            if (!$obj[$p]) {
+                            if (!isset($obj[$p])) {
                                 $obj[$p] = [];
                             }
 
