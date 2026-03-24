@@ -8,3 +8,4 @@
 docker-compose*.yml export-ignore
 logo.png export-ignore
 phpunit.xml export-ignore
+phpstan*.neon export-ignore
