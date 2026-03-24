@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Resque\JobHandler;
 use Tripod\Config;
 use Tripod\ExtendedGraph;
 use Tripod\ITripodConfigSerializer;
@@ -160,7 +161,7 @@ class ConfigGeneratorTest extends MongoTripodTestBase
             ->setMockClassName('ApplyOperation_TestConfigGenerator')
             ->getMock();
         $discoverJob->args = $jobArgs;
-        $discoverJob->job = new Resque_Job('discover_queue', ['id' => uniqid()]);
+        $discoverJob->job = new JobHandler('discover_queue', ['id' => uniqid()]);
         $discoverJob->expects($this->once())->method('getTripod')->willReturn($tripod);
         $discoverJob->expects($this->once())->method('getApplyOperation')->willReturn($applyJob);
         $configInstance = Config::getInstance();
