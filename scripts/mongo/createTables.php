@@ -22,12 +22,13 @@ $options = getopt(
 
 function showUsage(): void
 {
-    $help = <<<'END'
-        createTables.php
+    $scriptName = basename(__FILE__);
+    $help = <<<END
+        {$scriptName}
 
         Usage:
 
-        php createTables.php -c/--config path/to/tripod-config.json -s/--storename store-name [options]
+        php {$scriptName} -c/--config path/to/tripod-config.json -s/--storename store-name [options]
 
         Options:
             -h --help               This help

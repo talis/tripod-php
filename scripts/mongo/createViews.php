@@ -22,12 +22,13 @@ $options = getopt(
 
 function showUsage(): void
 {
-    $help = <<<'END'
-        createViews.php
+    $scriptName = basename(__FILE__);
+    $help = <<<END
+        {$scriptName}
 
         Usage:
 
-        php createViews.php -c/--config path/to/tripod-config.json -s/--storename store-name [options]
+        php {$scriptName} -c/--config path/to/tripod-config.json -s/--storename store-name [options]
 
         Options:
             -h --help               This help
@@ -35,7 +36,7 @@ function showUsage(): void
             -s --storename          Store to create views for (required)
             -v --spec               Only create for specified view specs
             -i --id                 Resource ID to regenerate views for
-            -a --async              Generate table rows via queue
+            -a --async              Generate views via queue
             -q --queue              Queue name to place jobs on (defaults to configured TRIPOD_APPLY_QUEUE value)
 
             --stat-loader           Path to script to initialize a Stat object.  Note, it *must* return an iTripodStat object!

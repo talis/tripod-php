@@ -20,9 +20,12 @@ $options = getopt(
     ]
 );
 
-function showUsage($scriptName): void
+function showUsage(): void
 {
+    $scriptName = basename(__FILE__);
     $help = <<<END
+        {$scriptName}
+
         Usage:
 
         php {$scriptName} -c/--config path/to/tripod-config.json -s/--storename store-name [options]
@@ -30,10 +33,10 @@ function showUsage($scriptName): void
         Options:
             -h --help               This help
             -c --config             path to MongoTripodConfig configuration (required)
-            -s --storename          Store to create views for (required)
+            -s --storename          Store to create search documents for (required)
             -d --spec               Only create for specified search document specs
             -i --id                 Resource ID to regenerate search documents for
-            -a --async              Generate table rows via queue
+            -a --async              Generate search documents via queue
             -q --queue              Queue name to place jobs on (defaults to configured TRIPOD_APPLY_QUEUE value)
 
             --stat-loader           Path to script to initialize a Stat object.  Note, it *must* return an iTripodStat object!
