@@ -85,19 +85,13 @@ $t->start();
 
 Config::setConfig(json_decode(file_get_contents($configLocation), true));
 
-$storeName = isset($options['s']) || isset($options['storename']) ? $options['s'] ?? $options['storename'] : null;
-
-$viewId = isset($options['v']) || isset($options['spec']) ? $options['v'] ?? $options['spec'] : null;
-
-$id = isset($options['i']) || isset($options['id']) ? $options['i'] ?? $options['id'] : null;
+$storeName = $options['s'] ?? $options['storename'] ?? null;
+$viewId = $options['v'] ?? $options['spec'] ?? null;
+$id = $options['i'] ?? $options['id'] ?? null;
 
 $queue = null;
 if (isset($options['a']) || isset($options['async'])) {
-    if (isset($options['q']) || isset($options['queue'])) {
-        $queue = $options['queue'];
-    } else {
-        $queue = Config::getInstance()->getApplyQueueName();
-    }
+    $queue = $options['q'] ?? $options['queue'] ?? Config::getInstance()->getApplyQueueName();
 }
 
 $stat = null;
