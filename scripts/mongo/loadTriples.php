@@ -52,7 +52,7 @@ while (($line = fgets(STDIN)) !== false) {
     $parts = preg_split('/\s/', $line);
     $subject = trim($parts[0], '><');
 
-    if ($currentSubject === '' || $currentSubject === '0') { // set for first iteration
+    if ($currentSubject === '') { // set for first iteration
         $currentSubject = $subject;
     } elseif ($currentSubject !== $subject) { // once subject changes, we have all triples for that subject, flush to Mongo
         load($loader, $currentSubject, $triples, $errors, $podName, $storeName);

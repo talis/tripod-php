@@ -29,7 +29,7 @@ while (($line = fgets(STDIN)) !== false) {
     $parts = preg_split('/\s/', $line);
     $subject = trim($parts[0], '><');
 
-    if ($currentSubject === '' || $currentSubject === '0') { // set for first iteration
+    if ($currentSubject === '') { // set for first iteration
         $currentSubject = $subject;
     }
 
