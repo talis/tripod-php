@@ -6,6 +6,9 @@ namespace Tripod\Mongo\Jobs;
 
 use MongoDB\Driver\ReadPreference;
 use Psr\Log\LoggerInterface;
+use Resque\Job\Job;
+use Resque\Job\Status;
+use Resque\JobHandler;
 use Resque\Resque;
 use Tripod\Config;
 use Tripod\Exceptions\Exception;
@@ -17,8 +20,9 @@ use Tripod\Mongo\Driver;
 use Tripod\Mongo\DriverBase;
 use Tripod\Mongo\IConfigInstance;
 use Tripod\Timer;
+use Tripod\TripodStatFactory;
 
-abstract class JobBase extends DriverBase
+abstract class JobBase extends Job
 {
     use LoggerTrait;
 
@@ -29,27 +33,6 @@ abstract class JobBase extends DriverBase
     public const QUEUE_KEY = 'queue';
 
     /**
-     * Resque Job arguments, set by Resque_Job_Factory.
-     *
-     * @var array
-     */
-    public $args;
-
-    /**
-     * Resque Job queue, set by Resque_Job_Factory.
-     *
-     * @var string
-     */
-    public $queue;
-
-    /**
-     * Resque Job.
-     *
-     * @var \Resque_Job
-     */
-    public $job;
-
-    /**
      * @var string[]
      */
     protected $mandatoryArgs = [];
@@ -58,6 +41,10 @@ abstract class JobBase extends DriverBase
      * @var bool
      */
     protected $configRequired = false;
+
+    protected ?ITripodStat $stat = null;
+
+    protected array $statsConfig = [];
 
     protected ?IConfigInstance $tripodConfig = null;
 
@@ -100,7 +87,7 @@ abstract class JobBase extends DriverBase
     /**
      * Called in every job prior to perform().
      */
-    public static function beforePerform(\Resque_Job $job): void
+    public static function beforePerform(JobHandler $job): void
     {
         $instance = $job->getInstance();
         if (!$instance instanceof self) {
@@ -114,9 +101,9 @@ abstract class JobBase extends DriverBase
      * Resque event when a job failures.
      *
      * @param \Exception|\Throwable $e   Exception or Error
-     * @param \Resque_Job           $job The failed job
+     * @param JobHandler            $job The failed job
      */
-    public static function onFailure($e, \Resque_Job $job): void
+    public static function onFailure($e, JobHandler $job): void
     {
         $failedJob = $job->getInstance();
         if (!$failedJob instanceof self) {
@@ -138,7 +125,16 @@ abstract class JobBase extends DriverBase
             $this->getStatsConfig();
         }
 
-        return parent::getStat();
+        if ($this->stat == null) {
+            $this->setStat($this->getStatFromStatFactory());
+        }
+
+        return $this->stat;
+    }
+
+    public function setStat(ITripodStat $stat): void
+    {
+        $this->stat = $stat;
     }
 
     /**
@@ -151,6 +147,14 @@ abstract class JobBase extends DriverBase
         }
 
         return $this->statsConfig;
+    }
+
+    /**
+     * For mocking out the creation of stat objects.
+     */
+    protected function getStatFromStatFactory(): ITripodStat
+    {
+        return TripodStatFactory::create($this->statsConfig);
     }
 
     /**
@@ -277,7 +281,7 @@ abstract class JobBase extends DriverBase
      */
     protected function enqueue(string $queueName, string $class, array $data)
     {
-        return \Resque::enqueue($queueName, $class, $data, true);
+        return Resque::enqueue($queueName, $class, $data, true);
     }
 
     /**
@@ -285,7 +289,7 @@ abstract class JobBase extends DriverBase
      */
     protected function hasJobStatus(string $token): bool
     {
-        $status = new \Resque_Job_Status($token);
+        $status = new Status($token);
 
         return !empty($status->get());
     }
@@ -319,6 +323,14 @@ abstract class JobBase extends DriverBase
     {
         Config::setConfig($config);
 
+        return Config::getInstance();
+    }
+
+    /**
+     * For mocking.
+     */
+    protected function getConfigInstance(): IConfigInstance
+    {
         return Config::getInstance();
     }
 
