@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\MockObject\MockObject;
+use Resque\JobHandler;
 use Tripod\Config;
 use Tripod\Exceptions\JobException;
 use Tripod\Mongo\IndexUtils;
@@ -40,7 +41,7 @@ class EnsureIndexesTest extends ResqueJobTestBase
 
         $job = new EnsureIndexes();
         $job->args = $this->args;
-        $job->job = new Resque_Job('queue', ['id' => uniqid()]);
+        $job->job = new JobHandler('queue', ['id' => uniqid()]);
         unset($job->args[$argument]);
 
         $this->expectException(Exception::class);
@@ -217,7 +218,7 @@ class EnsureIndexesTest extends ResqueJobTestBase
             ->onlyMethods($methods)
             ->setMockClassName('MockEnsureIndexes')
             ->getMock();
-        $mockEnsureIndexesJob->job = new Resque_Job('queue', ['id' => uniqid()]);
+        $mockEnsureIndexesJob->job = new JobHandler('queue', ['id' => uniqid()]);
 
         return $mockEnsureIndexesJob;
     }
