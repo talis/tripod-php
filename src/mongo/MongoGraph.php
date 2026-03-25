@@ -213,11 +213,7 @@ class MongoGraph extends ExtendedGraph
         ];
     }
 
-    /**
-     * @param ExtendedGraph|null $graph
-     * @param string             $contextAlias
-     */
-    private function index_to_tarray($graph = null, $contextAlias = null): ?array
+    private function index_to_tarray(?ExtendedGraph $graph = null, ?string $contextAlias = null): ?array
     {
         if ($graph == null) {
             $graph = $this;

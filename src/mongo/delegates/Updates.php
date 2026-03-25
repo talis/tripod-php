@@ -483,14 +483,13 @@ class Updates extends DriverBase
     }
 
     /**
-     * @param ChangeSet $cs           Change-set to apply
-     * @param string    $contextAlias
+     * @param ChangeSet $cs Change-set to apply
      *
      * @return array An array of subjects and predicates that have been changed
      *
      * @throws Exception
      */
-    protected function storeChanges(ChangeSet $cs, $contextAlias): array
+    protected function storeChanges(ChangeSet $cs, string $contextAlias): array
     {
         $t = new Timer();
         $t->start();

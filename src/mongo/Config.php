@@ -905,7 +905,7 @@ class Config implements IConfigInstance
      *
      * @param string $operation Async operation, e.g. OP_TABLES, OP_VIEWS
      */
-    public function getBatchSize($operation): int
+    public function getBatchSize(string $operation): int
     {
         return $this->batchSize[$operation] ?? 1;
     }
