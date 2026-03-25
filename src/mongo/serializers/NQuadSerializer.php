@@ -22,10 +22,8 @@ class NQuadSerializer
 
     /**
      * @param array|string $v
-     *
-     * @return string
      */
-    public function getTerm($v)
+    public function getTerm($v): string
     {
         if (!is_array($v)) {
             if (preg_match('/^\_\:/', $v)) {
@@ -70,10 +68,7 @@ class NQuadSerializer
         return $quot . $escaped . $quot . $suffix;
     }
 
-    /**
-     * @param array $index
-     */
-    public function getSerializedIndex($index, ?string $context): string
+    public function getSerializedIndex(array $index, ?string $context): string
     {
         $r = '';
         $nl = "\n";
@@ -108,12 +103,7 @@ class NQuadSerializer
         return $r . $nl;
     }
 
-    /**
-     * @param string $v
-     *
-     * @return string
-     */
-    public function escape($v)
+    public function escape(string $v): string
     {
         $r = '';
         $v = (strpos(mb_convert_encoding(str_replace('?', '', $v), 'ISO-8859-1', 'UTF-8'), '?') === false)
@@ -135,10 +125,7 @@ class NQuadSerializer
         return $r;
     }
 
-    /**
-     * @param string $c
-     */
-    public function getCharNo($c): int
+    public function getCharNo(string $c): int
     {
         $c_utf = mb_convert_encoding($c, 'UTF-8', 'ISO-8859-1');
         $bl = strlen($c_utf); // binary length
@@ -169,13 +156,7 @@ class NQuadSerializer
         return $r;
     }
 
-    /**
-     * @param string $c
-     * @param int    $no
-     *
-     * @return string
-     */
-    public function getEscapedChar($c, $no)
+    public function getEscapedChar(string $c, int $no): string
     { // see http://www.w3.org/TR/rdf-testcases/#ntrip_strings
         if ($no < 9) {
             return '\u' . sprintf('%04X', $no);
