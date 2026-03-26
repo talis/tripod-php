@@ -4,7 +4,9 @@ use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
 use MongoDB\Database;
 use MongoDB\DeleteResult;
+use MongoDB\Driver\Exception\BulkWriteException;
 use MongoDB\Driver\Manager;
+use MongoDB\UpdateResult;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tripod\Config;
 use Tripod\ExtendedGraph;
@@ -2231,6 +2233,58 @@ class MongoTripodViewsTest extends MongoTripodTestBase
             ->will($this->returnValue($deleteResult));
 
         $this->assertEquals(30, $views->deleteViewsByViewId('v_resource_full', $timestamp));
+    }
+
+    public function testViewUpsertIsRetriedOnDuplicateKeyError()
+    {
+        $collection = $this->getMockBuilder(Collection::class)
+            ->onlyMethods(['replaceOne'])
+            ->setConstructorArgs([new Manager(), 'db', 'coll'])
+            ->getMock();
+
+        $invokedCount = $this->atLeast(2);
+        $collection->expects($invokedCount)->method('replaceOne')
+            ->willReturnCallback(function ($filter, $doc, $options) use ($invokedCount) {
+                static $prevFilter;
+                static $prevDoc;
+
+                // Fail the first time with a duplicate key error
+                if ($invokedCount->getInvocationCount() === 1) {
+                    $prevFilter = $filter;
+                    $prevDoc = $doc;
+                    $this->assertSame(['upsert' => true], $options);
+
+                    throw new BulkWriteException('E11000 duplicate key error', 11000);
+                }
+
+                // On the second attempt, we should be trying to update the same document, but with upsert false
+                if ($invokedCount->getInvocationCount() === 2) {
+                    $this->assertSame($prevFilter, $filter);
+                    $this->assertSame($prevDoc, $doc);
+                    $this->assertSame(['upsert' => false], $options);
+                }
+
+                return $this->createMock(UpdateResult::class);
+            });
+
+        $configInstance = $this->getMockBuilder(TripodTestConfig::class)
+            ->onlyMethods(['getCollectionForView'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $configInstance->loadConfig(Config::getConfig());
+        $configInstance->method('getCollectionForView')->willReturn($collection);
+
+        $views = $this->getMockBuilder(Views::class)
+            ->onlyMethods(['getConfigInstance'])
+            ->setConstructorArgs([
+                $this->tripod->getStoreName(),
+                $this->getTripodCollection($this->tripod),
+                'http://talisaspire.com/',
+            ])
+            ->getMock();
+        $views->method('getConfigInstance')->willReturn($configInstance);
+
+        $views->generateView('v_resource_full_ttl', 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA');
     }
 
     public function testBatchViewGeneration()

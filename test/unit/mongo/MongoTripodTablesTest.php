@@ -4,8 +4,10 @@ use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
 use MongoDB\DeleteResult;
 use MongoDB\Driver\Cursor;
+use MongoDB\Driver\Exception\BulkWriteException;
 use MongoDB\Driver\Manager;
 use MongoDB\Model\BSONDocument;
+use MongoDB\UpdateResult;
 use Tripod\Config;
 use Tripod\Exceptions\ConfigException;
 use Tripod\ExtendedGraph;
@@ -274,6 +276,58 @@ class MongoTripodTablesTest extends MongoTripodTestBase
         $this->assertTrue(isset($result['type']), 'Result does not contain type');
         $this->assertTrue(isset($result['isbn']), 'Result does not contain isbn');
         $this->assertTrue(isset($result['isbn13']), 'Result does not contain isbn13');
+    }
+
+    public function testTableRowUpsertIsRetriedOnDuplicateKeyError()
+    {
+        $collection = $this->getMockBuilder(Collection::class)
+            ->onlyMethods(['updateOne'])
+            ->setConstructorArgs([new Manager(), 'db', 'coll'])
+            ->getMock();
+
+        $invokedCount = $this->atLeast(2);
+        $collection->expects($invokedCount)->method('updateOne')
+            ->willReturnCallback(function ($filter, $doc, $options) use ($invokedCount) {
+                static $prevFilter;
+                static $prevDoc;
+
+                // Fail the first time with a duplicate key error
+                if ($invokedCount->getInvocationCount() === 1) {
+                    $prevFilter = $filter;
+                    $prevDoc = $doc;
+                    $this->assertSame(['upsert' => true], $options);
+
+                    throw new BulkWriteException('E11000 duplicate key error', 11000);
+                }
+
+                // On the second attempt, we should be trying to update the same document, but with upsert false
+                if ($invokedCount->getInvocationCount() === 2) {
+                    $this->assertSame($prevFilter, $filter);
+                    $this->assertSame($prevDoc, $doc);
+                    $this->assertSame(['upsert' => false], $options);
+                }
+
+                return $this->createMock(UpdateResult::class);
+            });
+
+        $configInstance = $this->getMockBuilder(TripodTestConfig::class)
+            ->onlyMethods(['getCollectionForTable'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $configInstance->loadConfig(Config::getConfig());
+        $configInstance->method('getCollectionForTable')->willReturn($collection);
+
+        $tables = $this->getMockBuilder(Tripod\Mongo\Composites\Tables::class)
+            ->onlyMethods(['getConfigInstance'])
+            ->setConstructorArgs([
+                $this->tripod->getStoreName(),
+                $this->getTripodCollection($this->tripod),
+                'http://talisaspire.com/',
+            ])
+            ->getMock();
+        $tables->method('getConfigInstance')->willReturn($configInstance);
+
+        $tables->generateTableRows('t_resource');
     }
 
     public function testBatchTableRowGeneration()

@@ -4,7 +4,9 @@ namespace Tripod\Mongo\Composites;
 
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
+use MongoDB\Driver\Exception\BulkWriteException;
 use MongoDB\Driver\ReadPreference;
+use Tripod\Config;
 use Tripod\Exceptions\ViewException;
 use Tripod\ITripodStat;
 use Tripod\Mongo\DateUtil;
@@ -31,7 +33,7 @@ class Views extends CompositeBase
         $this->collection = $collection;
         $this->podName = $collection->getCollectionName();
         $this->defaultContext = $defaultContext;
-        $this->config = $this->getConfigInstance();
+        $this->config = Config::getInstance();
         $this->stat = $stat;
         $this->readPreference = $readPreference;
     }
@@ -499,7 +501,7 @@ class Views extends CompositeBase
 
                 $generatedView['value'] = $value;
 
-                $collection->replaceOne(['_id' => $generatedView['_id']], $generatedView, ['upsert' => true]);
+                $this->upsertGeneratedView($collection, $generatedView);
             }
         }
 
@@ -820,5 +822,23 @@ class Views extends CompositeBase
         }
 
         return $from;
+    }
+
+    private function upsertGeneratedView(Collection $collection, array $generatedView): void
+    {
+        try {
+            $collection->replaceOne(['_id' => $generatedView['_id']], $generatedView, ['upsert' => true]);
+        } catch (BulkWriteException $e) {
+            if ($this->isDuplicateKeyError($e)) {
+                $collection->replaceOne(['_id' => $generatedView['_id']], $generatedView, ['upsert' => false]);
+            } else {
+                throw $e;
+            }
+        }
+    }
+
+    private function isDuplicateKeyError(BulkWriteException $error): bool
+    {
+        return $error->getCode() === 11000 || strpos($error->getMessage(), 'E11000') !== false;
     }
 }

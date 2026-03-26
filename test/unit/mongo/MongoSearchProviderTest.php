@@ -3,7 +3,9 @@
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
 use MongoDB\DeleteResult;
+use MongoDB\Driver\Exception\BulkWriteException;
 use MongoDB\Driver\Manager;
+use MongoDB\UpdateResult;
 use Tripod\Config;
 use Tripod\Exceptions\ConfigException;
 use Tripod\Exceptions\SearchException;
@@ -319,6 +321,64 @@ class MongoSearchProviderTest extends MongoTripodTestBase
             'r' => 'http://talisaspire.com/resources/doc1',
             'c' => 'http://talisaspire.com/',
             'type' => 'i_search_resource',
+        ]);
+    }
+
+    public function testSearchIndexingIsRetriedOnDuplicateKeyError()
+    {
+        $collection = $this->getMockBuilder(Collection::class)
+            ->onlyMethods(['updateOne'])
+            ->setConstructorArgs([new Manager(), 'db', 'coll'])
+            ->getMock();
+
+        $invokedCount = $this->atLeast(2);
+        $collection->expects($invokedCount)->method('updateOne')
+            ->willReturnCallback(function ($filter, $doc, $options) use ($invokedCount) {
+                static $prevFilter;
+                static $prevDoc;
+
+                // Fail the first time with a duplicate key error
+                if ($invokedCount->getInvocationCount() === 1) {
+                    $prevFilter = $filter;
+                    $prevDoc = $doc;
+                    $this->assertSame(['upsert' => true], $options);
+
+                    throw new BulkWriteException('E11000 duplicate key error', 11000);
+                }
+
+                // On the second attempt, we should be trying to update the same document, but with upsert false
+                if ($invokedCount->getInvocationCount() === 2) {
+                    $this->assertSame($prevFilter, $filter);
+                    $this->assertSame($prevDoc, $doc);
+                    $this->assertSame(['upsert' => false], $options);
+                }
+
+                $mockUpdate = $this->createMock(UpdateResult::class);
+                $mockUpdate->method('isAcknowledged')->willReturn(true);
+
+                return $mockUpdate;
+            });
+
+        $configInstance = $this->getMockBuilder(TripodTestConfig::class)
+            ->onlyMethods(['getCollectionForSearchDocument'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $configInstance->loadConfig(Config::getConfig());
+        $configInstance->method('getCollectionForSearchDocument')->willReturn($collection);
+
+        $searchProviderReflection = new ReflectionClass(MongoSearchProvider::class);
+        $searchProviderConfigProperty = $searchProviderReflection->getProperty('config');
+        $searchProviderConfigProperty->setAccessible(true);
+        $searchProviderConfigProperty->setValue($this->searchProvider, $configInstance);
+
+        $this->searchProvider->indexDocument([
+            '_id' => ['r' => 'http://talisaspire.com/resources/doc1', 'c' => 'http://talisaspire.com/', 'type' => 'i_search_resource'],
+            'result' => ['title' => 'Physics for Engineers and Scientists', 'link' => 'http://talisaspire.com/resources/doc1', 'author' => 'Sayid Jarrah'],
+            'search_terms' => ['physics for engineers and scientists', 'physics', 'science', 'sayid jarrah'],
+            '_impactIndex' => [
+                ['r' => 'http://talisaspire.com/resources/doc1', 'c' => 'http://talisaspire.com/'],
+                ['r' => 'http://talisaspire.com/authors/1', 'c' => 'http://talisaspire.com/'],
+            ],
         ]);
     }
 

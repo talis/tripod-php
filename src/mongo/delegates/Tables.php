@@ -6,7 +6,9 @@ require_once TRIPOD_DIR . 'mongo/MongoTripodConstants.php';
 
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
+use MongoDB\Driver\Exception\BulkWriteException;
 use MongoDB\Driver\ReadPreference;
+use Tripod\Config;
 use Tripod\Exceptions\LabellerException;
 use Tripod\ITripodStat;
 use Tripod\Mongo\DateUtil;
@@ -92,7 +94,7 @@ class Tables extends CompositeBase
         $this->storeName = $storeName;
         $this->collection = $collection;
         $this->podName = $collection->getCollectionName();
-        $this->config = $this->getConfigInstance();
+        $this->config = Config::getInstance();
         $this->defaultContext = $this->labeller->uri_to_alias($defaultContext); // make sure default context is qnamed if applicable
         $this->stat = $stat;
         $this->readPreference = $readPreference;
@@ -653,12 +655,12 @@ class Tables extends CompositeBase
     protected function truncatingSave(Collection $collection, array $generatedRow)
     {
         try {
-            $collection->updateOne(['_id' => $generatedRow['_id']], ['$set' => $generatedRow], ['upsert' => true]);
+            $this->upsertGeneratedRow($collection, $generatedRow);
         } catch (\Exception $e) {
             // We only truncate and retry the save if the \Exception contains this text.
             if (strpos($e->getMessage(), 'Btree::insert: key too large to index') !== false) {
                 $this->truncateFields($collection, $generatedRow);
-                $collection->updateOne(['_id' => $generatedRow['_id']], ['$set' => $generatedRow], ['upsert' => true]);
+                $this->upsertGeneratedRow($collection, $generatedRow);
             } else {
                 throw $e;
             }
@@ -1434,5 +1436,23 @@ class Tables extends CompositeBase
         }
 
         throw new \Tripod\Exceptions\Exception('Was expecting either VALUE_URI or VALUE_LITERAL when applying regex to value - possible data corruption with: ' . var_export($value, true));
+    }
+
+    private function upsertGeneratedRow(Collection $collection, array $generatedRow): void
+    {
+        try {
+            $collection->updateOne(['_id' => $generatedRow['_id']], ['$set' => $generatedRow], ['upsert' => true]);
+        } catch (BulkWriteException $e) {
+            if ($this->isDuplicateKeyError($e)) {
+                $collection->updateOne(['_id' => $generatedRow['_id']], ['$set' => $generatedRow], ['upsert' => false]);
+            } else {
+                throw $e;
+            }
+        }
+    }
+
+    private function isDuplicateKeyError(BulkWriteException $error): bool
+    {
+        return $error->getCode() === 11000 || strpos($error->getMessage(), 'E11000') !== false;
     }
 }
