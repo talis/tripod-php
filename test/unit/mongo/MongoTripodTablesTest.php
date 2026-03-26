@@ -14,6 +14,7 @@ use Tripod\ExtendedGraph;
 use Tripod\Mongo\Documents\Tables;
 use Tripod\Mongo\Driver;
 use Tripod\Mongo\ImpactedSubject;
+use Tripod\Mongo\IndexUtils;
 use Tripod\Mongo\Labeller;
 use Tripod\Mongo\MongoGraph;
 use Tripod\Mongo\TransactionLog;
@@ -713,6 +714,9 @@ class MongoTripodTablesTest extends MongoTripodTestBase
      */
     public function testGenerateTableRowsTruncatesFieldsTooLargeToIndex()
     {
+        $indexUtils = new IndexUtils();
+        $indexUtils->ensureIndexes(false, $this->tripod->getStoreName(), false);
+
         $fullTitle = 'Mahommah Gardo Baquaqua. Biography of Mahommah G. Baquaqua, a Native of Zoogoo, in the Interior of Africa. (A Convert to Christianity,) With a Description of That Part of the World; Including the Manners and Customs of the Inhabitants, Their Religious Notions, Form of Government, Laws, Appearance of the Country, Buildings, Agriculture, Manufactures, Shepherds and Herdsmen, Domestic Animals, Marriage Ceremonials, Funeral Services, Styles of Dress, Trade and Commerce, Modes of Warfare, System of Slavery, &amp;c., &amp;c. Mahommah&#039;s Early Life, His Education, His Capture and Slavery in Western Africa and Brazil, His Escape to the United States, from Thence to Hayti, (the City of Port Au Prince,) His Reception by the Baptist Missionary There, The Rev. W. L. Judd; His Conversion to Christianity, Baptism, and Return to This Country, His Views, Objects and Aim. Written and Revised from His Own Words, by Samuel Moore, Esq., Late Publisher of the &quot;North of England Shipping Gazette,&quot; Author of Several Popular Works, and Editor of Sundry Reform Papers.';
         $truncatedTitle = substr($fullTitle, 0, 1007); // 1007 = 1024 - index name "value_title_1" + Randomness
         $fullTitleLength = strlen($fullTitle);

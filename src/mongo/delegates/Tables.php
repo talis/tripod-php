@@ -658,7 +658,7 @@ class Tables extends CompositeBase
             $this->upsertGeneratedRow($collection, $generatedRow);
         } catch (\Exception $e) {
             // We only truncate and retry the save if the \Exception contains this text.
-            if (strpos($e->getMessage(), 'Btree::insert: key too large to index') !== false) {
+            if (strpos($e->getMessage(), '::insert: key too large to index') !== false) {
                 $this->truncateFields($collection, $generatedRow);
                 $this->upsertGeneratedRow($collection, $generatedRow);
             } else {
