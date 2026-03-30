@@ -9,7 +9,6 @@ use MongoDB\Collection;
 use MongoDB\Database;
 use MongoDB\Driver\Exception\ConnectionTimeoutException;
 use MongoDB\Driver\ReadPreference;
-use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 use Tripod\Exceptions\ConfigException;
 use Tripod\ISearchProvider;
@@ -83,8 +82,6 @@ class Config implements IConfigInstance
         OP_SEARCH => 100,
         OP_VIEWS => 25,
     ];
-
-    protected static ?LoggerInterface $logger = null;
 
     private ?array $config = null;
 
@@ -869,12 +866,7 @@ class Config implements IConfigInstance
 
     public static function getLogger(): LoggerInterface
     {
-        if (self::$logger == null) {
-            $log = new Logger('TRIPOD');
-            self::$logger = $log;
-        }
-
-        return self::$logger;
+        return DriverBase::getLogger();
     }
 
     /**
