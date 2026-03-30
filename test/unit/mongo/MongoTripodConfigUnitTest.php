@@ -123,6 +123,50 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $this->assertEquals(MongoSearchProvider::class, $config->getSearchProviderClassName('tripod_php_testing'));
 
         $this->assertEquals(3, count($config->getSearchDocumentSpecifications('tripod_php_testing')));
+        $this->assertCount(2, $config->getCollectionsForSearch('tripod_php_testing'));
+    }
+
+    /**
+     * @testWith ["Tripod\\Mongo\\MongoSearchProvider"]
+     *           ["\\Tripod\\Mongo\\MongoSearchProvider"]
+     */
+    public function testSearchConfigTrimsSearchProviderLeadingBackslash(string $providerClassName)
+    {
+        Config::setConfig([
+            'defaultContext' => 'http://talisaspire.com/',
+            'data_sources' => [
+                'mongo1' => [
+                    'type' => 'mongo',
+                    'connection' => 'mongodb://mongodb',
+                ],
+            ],
+            'stores' => [
+                'tripod_php_testing' => [
+                    'data_source' => 'mongo1',
+                    'pods' => [
+                        'CBD_testing' => [],
+                    ],
+                    'search_config' => [
+                        'search_provider' => $providerClassName,
+                        'search_specifications' => [
+                            [
+                                '_id' => 'i_search_list',
+                                'from' => 'CBD_testing',
+                                'filter' => [],
+                                'fields' => [],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'transaction_log' => [
+                'database' => 'transactions',
+                'collection' => 'transaction_log',
+                'data_source' => 'mongo1',
+            ],
+        ]);
+        $mtc = Config::getInstance();
+        $this->assertEquals(MongoSearchProvider::class, $mtc->getSearchProviderClassName('tripod_php_testing'));
     }
 
     public function testCardinalityRuleWithNoNamespace()
