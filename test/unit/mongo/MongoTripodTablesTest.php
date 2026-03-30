@@ -4,14 +4,17 @@ use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
 use MongoDB\DeleteResult;
 use MongoDB\Driver\Cursor;
+use MongoDB\Driver\Exception\BulkWriteException;
 use MongoDB\Driver\Manager;
 use MongoDB\Model\BSONDocument;
+use MongoDB\UpdateResult;
 use Tripod\Config;
 use Tripod\Exceptions\ConfigException;
 use Tripod\ExtendedGraph;
 use Tripod\Mongo\Documents\Tables;
 use Tripod\Mongo\Driver;
 use Tripod\Mongo\ImpactedSubject;
+use Tripod\Mongo\IndexUtils;
 use Tripod\Mongo\Labeller;
 use Tripod\Mongo\MongoGraph;
 use Tripod\Mongo\TransactionLog;
@@ -274,6 +277,64 @@ class MongoTripodTablesTest extends MongoTripodTestBase
         $this->assertTrue(isset($result['type']), 'Result does not contain type');
         $this->assertTrue(isset($result['isbn']), 'Result does not contain isbn');
         $this->assertTrue(isset($result['isbn13']), 'Result does not contain isbn13');
+    }
+
+    public function testTableRowUpsertIsRetriedOnDuplicateKeyError()
+    {
+        $collection = $this->getMockBuilder(Collection::class)
+            ->onlyMethods(['updateOne', 'findOne'])
+            ->setConstructorArgs([new Manager(), 'db', 'coll'])
+            ->getMock();
+
+        $invokedCount = $this->atLeast(2);
+        $collection->expects($invokedCount)->method('updateOne')
+            ->willReturnCallback(function ($filter, $doc, $options) use ($invokedCount) {
+                static $prevFilter;
+                static $prevDoc;
+
+                // Fail the first time with a duplicate key error
+                if ($invokedCount->getInvocationCount() === 1) {
+                    $prevFilter = $filter;
+                    $prevDoc = $doc;
+                    $this->assertSame(['upsert' => true], $options);
+
+                    throw new BulkWriteException('E11000 duplicate key error', 11000);
+                }
+
+                // On the second attempt, we should be trying to update the same document, but with upsert false
+                if ($invokedCount->getInvocationCount() === 2) {
+                    $this->assertSame($prevFilter, $filter);
+                    $this->assertSame($prevDoc, $doc);
+                    $this->assertSame(['upsert' => false], $options);
+                }
+
+                return $this->createMock(UpdateResult::class);
+            });
+        $collection->method('findOne')->willReturn(['_id' => [
+            'r' => 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA',
+            'c' => 'http://talisaspire.com/',
+            'type' => 't_resource',
+            'value' => ['test' => 'data'],
+        ]]);
+
+        $configInstance = $this->getMockBuilder(TripodTestConfig::class)
+            ->onlyMethods(['getCollectionForTable'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $configInstance->loadConfig(Config::getConfig());
+        $configInstance->method('getCollectionForTable')->willReturn($collection);
+
+        $tables = $this->getMockBuilder(Tripod\Mongo\Composites\Tables::class)
+            ->onlyMethods(['getConfigInstance'])
+            ->setConstructorArgs([
+                $this->tripod->getStoreName(),
+                $this->getTripodCollection($this->tripod),
+                'http://talisaspire.com/',
+            ])
+            ->getMock();
+        $tables->method('getConfigInstance')->willReturn($configInstance);
+
+        $tables->generateTableRows('t_resource');
     }
 
     public function testBatchTableRowGeneration()
@@ -659,6 +720,9 @@ class MongoTripodTablesTest extends MongoTripodTestBase
      */
     public function testGenerateTableRowsTruncatesFieldsTooLargeToIndex()
     {
+        $indexUtils = new IndexUtils();
+        $indexUtils->ensureIndexes(false, $this->tripod->getStoreName(), false);
+
         $fullTitle = 'Mahommah Gardo Baquaqua. Biography of Mahommah G. Baquaqua, a Native of Zoogoo, in the Interior of Africa. (A Convert to Christianity,) With a Description of That Part of the World; Including the Manners and Customs of the Inhabitants, Their Religious Notions, Form of Government, Laws, Appearance of the Country, Buildings, Agriculture, Manufactures, Shepherds and Herdsmen, Domestic Animals, Marriage Ceremonials, Funeral Services, Styles of Dress, Trade and Commerce, Modes of Warfare, System of Slavery, &amp;c., &amp;c. Mahommah&#039;s Early Life, His Education, His Capture and Slavery in Western Africa and Brazil, His Escape to the United States, from Thence to Hayti, (the City of Port Au Prince,) His Reception by the Baptist Missionary There, The Rev. W. L. Judd; His Conversion to Christianity, Baptism, and Return to This Country, His Views, Objects and Aim. Written and Revised from His Own Words, by Samuel Moore, Esq., Late Publisher of the &quot;North of England Shipping Gazette,&quot; Author of Several Popular Works, and Editor of Sundry Reform Papers.';
         $truncatedTitle = substr($fullTitle, 0, 1007); // 1007 = 1024 - index name "value_title_1" + Randomness
         $fullTitleLength = strlen($fullTitle);

@@ -7,6 +7,8 @@ require_once TRIPOD_DIR . 'mongo/MongoTripodConstants.php';
 use MongoDB\BSON\Regex;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
+use MongoDB\Driver\Exception\BulkWriteException;
+use MongoDB\UpdateResult;
 use Tripod\Exceptions\SearchException;
 use Tripod\ISearchProvider;
 use Tripod\Timer;
@@ -61,7 +63,7 @@ class MongoSearchProvider implements ISearchProvider
         }
 
         try {
-            $result = $collection->updateOne(['_id' => $document['_id']], ['$set' => $document], ['upsert' => true]);
+            $result = $this->upsertDocument($collection, $document);
             if (!$result->isAcknowledged()) {
                 throw new SearchException('Inserting search document not acknowledged');
             }
@@ -388,5 +390,38 @@ class MongoSearchProvider implements ISearchProvider
     protected function getCollectionForSearchSpec($searchSpecId)
     {
         return $this->config->getCollectionForSearchDocument($this->storeName, $searchSpecId);
+    }
+
+    private function upsertDocument(Collection $collection, array $document): UpdateResult
+    {
+        try {
+            return $collection->updateOne(
+                ['_id' => $document['_id']],
+                ['$set' => $document],
+                ['upsert' => true],
+            );
+        } catch (BulkWriteException $e) {
+            if ($this->isDuplicateKeyError($e)) {
+                $existingDocument = $collection->findOne(['_id' => $document['_id']]);
+                $this->tripod->getLogger()->warning('Duplicate key error when upserting generated table row, retrying.', [
+                    'error' => $e,
+                    'document' => $document,
+                    'existingDocument' => $existingDocument,
+                ]);
+
+                return $collection->updateOne(
+                    ['_id' => $document['_id']],
+                    ['$set' => $document],
+                    ['upsert' => false],
+                );
+            }
+
+            throw $e;
+        }
+    }
+
+    private function isDuplicateKeyError(BulkWriteException $error): bool
+    {
+        return $error->getCode() === 11000 || strpos($error->getMessage(), 'E11000') !== false;
     }
 }
