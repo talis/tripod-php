@@ -670,6 +670,13 @@ class Tables extends CompositeBase
     /**
      * Truncate any indexed fields in the generated rows which are too large to index.
      *
+     * [NOTE]:  Starting in version 4.2, MongoDB removes the Index Key Limit for
+     *          featureCompatibilityVersion (fCV) set to "4.2" or greater.
+     *
+     * For MongoDB 2.6 through MongoDB versions with fCV set to "4.0" or earlier,
+     * the total size of an index entry, which can include structural overhead
+     * depending on the BSON type, must be less than 1024 bytes.
+     *
      * @param array $generatedRow - Pass by reference so that the contents is truncated
      */
     protected function truncateFields(Collection $collection, array &$generatedRow)
