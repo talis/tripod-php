@@ -402,6 +402,13 @@ class MongoSearchProvider implements ISearchProvider
             );
         } catch (BulkWriteException $e) {
             if ($this->isDuplicateKeyError($e)) {
+                $existingDocument = $collection->findOne(['_id' => $document['_id']]);
+                $this->tripod->getLogger()->warning('Duplicate key error when upserting generated table row, retrying.', [
+                    'error' => $e,
+                    'document' => $document,
+                    'existingDocument' => $existingDocument,
+                ]);
+
                 return $collection->updateOne(
                     ['_id' => $document['_id']],
                     ['$set' => $document],

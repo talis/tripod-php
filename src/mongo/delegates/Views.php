@@ -830,6 +830,12 @@ class Views extends CompositeBase
             $collection->replaceOne(['_id' => $generatedView['_id']], $generatedView, ['upsert' => true]);
         } catch (BulkWriteException $e) {
             if ($this->isDuplicateKeyError($e)) {
+                $existingView = $collection->findOne(['_id' => $generatedView['_id']]);
+                $this->getLogger()->warning('Duplicate key error when upserting generated view, retrying.', [
+                    'error' => $e,
+                    'generatedView' => $generatedView,
+                    'existingView' => $existingView,
+                ]);
                 $collection->replaceOne(['_id' => $generatedView['_id']], $generatedView, ['upsert' => false]);
             } else {
                 throw $e;

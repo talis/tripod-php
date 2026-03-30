@@ -327,7 +327,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
     public function testSearchIndexingIsRetriedOnDuplicateKeyError()
     {
         $collection = $this->getMockBuilder(Collection::class)
-            ->onlyMethods(['updateOne'])
+            ->onlyMethods(['updateOne', 'findOne'])
             ->setConstructorArgs([new Manager(), 'db', 'coll'])
             ->getMock();
 
@@ -358,6 +358,11 @@ class MongoSearchProviderTest extends MongoTripodTestBase
 
                 return $mockUpdate;
             });
+        $collection->method('findOne')->willReturn(['_id' => [
+            'r' => 'http://talisaspire.com/resources/doc1',
+            'c' => 'http://talisaspire.com/',
+            'type' => 'i_search_resource',
+        ]]);
 
         $configInstance = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getCollectionForSearchDocument'])

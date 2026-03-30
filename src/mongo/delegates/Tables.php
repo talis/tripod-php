@@ -1444,6 +1444,12 @@ class Tables extends CompositeBase
             $collection->updateOne(['_id' => $generatedRow['_id']], ['$set' => $generatedRow], ['upsert' => true]);
         } catch (BulkWriteException $e) {
             if ($this->isDuplicateKeyError($e)) {
+                $existingRow = $collection->findOne(['_id' => $generatedRow['_id']]);
+                $this->getLogger()->warning('Duplicate key error when upserting generated table row, retrying.', [
+                    'error' => $e,
+                    'generatedRow' => $generatedRow,
+                    'existingRow' => $existingRow,
+                ]);
                 $collection->updateOne(['_id' => $generatedRow['_id']], ['$set' => $generatedRow], ['upsert' => false]);
             } else {
                 throw $e;

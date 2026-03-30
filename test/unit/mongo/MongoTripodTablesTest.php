@@ -282,7 +282,7 @@ class MongoTripodTablesTest extends MongoTripodTestBase
     public function testTableRowUpsertIsRetriedOnDuplicateKeyError()
     {
         $collection = $this->getMockBuilder(Collection::class)
-            ->onlyMethods(['updateOne'])
+            ->onlyMethods(['updateOne', 'findOne'])
             ->setConstructorArgs([new Manager(), 'db', 'coll'])
             ->getMock();
 
@@ -310,6 +310,12 @@ class MongoTripodTablesTest extends MongoTripodTestBase
 
                 return $this->createMock(UpdateResult::class);
             });
+        $collection->method('findOne')->willReturn(['_id' => [
+            'r' => 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA',
+            'c' => 'http://talisaspire.com/',
+            'type' => 't_resource',
+            'value' => ['test' => 'data'],
+        ]]);
 
         $configInstance = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getCollectionForTable'])

@@ -2238,7 +2238,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
     public function testViewUpsertIsRetriedOnDuplicateKeyError()
     {
         $collection = $this->getMockBuilder(Collection::class)
-            ->onlyMethods(['replaceOne'])
+            ->onlyMethods(['replaceOne', 'findOne'])
             ->setConstructorArgs([new Manager(), 'db', 'coll'])
             ->getMock();
 
@@ -2266,6 +2266,12 @@ class MongoTripodViewsTest extends MongoTripodTestBase
 
                 return $this->createMock(UpdateResult::class);
             });
+        $collection->method('findOne')->willReturn(['_id' => [
+            'r' => 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA',
+            'c' => 'http://talisaspire.com/',
+            'type' => 'v_resource_full_ttl',
+            'value' => ['test' => 'data'],
+        ]]);
 
         $configInstance = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getCollectionForView'])
