@@ -7,8 +7,8 @@ namespace Tripod\Mongo;
 use MongoDB\Collection;
 use MongoDB\Database;
 use MongoDB\Driver\ReadPreference;
-use Monolog\Logger;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Tripod\ITripodStat;
 use Tripod\LoggerTrait;
 use Tripod\Mongo\Composites\Views;
@@ -48,8 +48,7 @@ abstract class DriverBase
     public static function getLogger(): LoggerInterface
     {
         if (self::$logger == null) {
-            $log = new Logger('TRIPOD');
-            self::$logger = $log;
+            self::$logger = new NullLogger();
         }
 
         return self::$logger;
