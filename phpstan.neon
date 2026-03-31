@@ -1,5 +1,5 @@
 parameters:
-  level: 5
+  level: 6
   phpVersion:
     min: 70400 # PHP 7.4
     max: 80419 # PHP 8.4.19
@@ -9,8 +9,6 @@ parameters:
     - '#Access to undefined constant MongoDB\\Driver\\ReadPreference\:\:RP_.*#'
     - '#Call to an undefined method MongoDB\\Driver\\ReadPreference\:\:getMode\(\)#'
     - identifier: missingType.iterableValue
-      reportUnmatched: false
-    - identifier: unset.possiblyHookedProperty
       reportUnmatched: false
   paths:
     - src
