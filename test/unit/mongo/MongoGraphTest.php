@@ -200,8 +200,9 @@ class MongoGraphTest extends MongoTripodTestBase
 
     public function addTripodArrayContainingInvalidPredicates_Provider(): iterable
     {
+        yield [''];
+        yield ['0'];
         yield [1];
-        yield [1.2];
         yield [true];
     }
 
