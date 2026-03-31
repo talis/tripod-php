@@ -1,8 +1,5 @@
 parameters:
   level: 6
-  phpVersion:
-    min: 70400 # PHP 7.4
-    max: 80599 # PHP 8.5
   bootstrapFiles:
     - src/resque/compat.inc.php
   tips:
