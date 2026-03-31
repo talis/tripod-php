@@ -21,10 +21,10 @@
         "resque/php-resque": "Redis backed library for background jobs"
     },
     "require": {
-        "php" : ">=7.4",
+        "php": ">=7.4",
         "ext-mongodb": ">=1.7.0",
         "mongodb/mongodb": "*",
-        "monolog/monolog" : "~1.13",
+        "psr/log": "*",
         "semsol/arc2": "2.2.6"
     },
     "require-dev": {
@@ -32,7 +32,8 @@
         "resque/php-resque": "v1.3.6 || dev-develop",
         "friendsofphp/php-cs-fixer": "^3.4",
         "perftools/php-profiler": "^1.2",
-        "phpstan/phpstan": "^2.1"
+        "phpstan/phpstan": "^2.1",
+        "monolog/monolog": "^2.11 || ^3.10"
     },
     "autoload": {
         "classmap": ["src/"],
