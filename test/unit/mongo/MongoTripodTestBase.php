@@ -42,8 +42,6 @@ abstract class MongoTripodTestBase extends TestCase
         }
 
         Config::setConfig($config);
-
-        printf(" %s->%s\n", get_class($this), $this->getName());
     }
 
     protected function tearDown(): void

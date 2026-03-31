@@ -11,11 +11,6 @@ class ExtendedGraphTest extends TestCase
 
     private const ONT_resource = 'http://purl.org/vocab/resourcelist/schema#';
 
-    protected function setUp(): void
-    {
-        printf(" %s->%s\n", get_class($this), $this->getName());
-    }
-
     /**
      * @dataProvider addValidValueToLiteralResultsInTriple_Provider
      *

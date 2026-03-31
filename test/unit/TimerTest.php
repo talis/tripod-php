@@ -7,11 +7,6 @@ use Tripod\Timer;
 
 class TimerTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        printf(" %s->%s\n", get_class($this), $this->getName());
-    }
-
     /**  START: result() tests */
     public function testResultWhenStartTimeNotSet(): void
     {
