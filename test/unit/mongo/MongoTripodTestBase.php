@@ -32,8 +32,6 @@ abstract class MongoTripodTestBase extends TestCase
 
     protected function setUp(): void
     {
-        date_default_timezone_set('UTC');
-
         $config = json_decode(file_get_contents($this->getConfigLocation()), true);
         if (getenv('TRIPOD_DATASOURCE_RS1_CONFIG')) {
             $config['data_sources']['rs1'] = json_decode(getenv('TRIPOD_DATASOURCE_RS1_CONFIG'), true);
