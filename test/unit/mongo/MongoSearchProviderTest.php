@@ -372,7 +372,9 @@ class MongoSearchProviderTest extends MongoTripodTestBase
 
         $searchProviderReflection = new ReflectionClass(MongoSearchProvider::class);
         $searchProviderConfigProperty = $searchProviderReflection->getProperty('config');
-        $searchProviderConfigProperty->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $searchProviderConfigProperty->setAccessible(true);
+        }
         $searchProviderConfigProperty->setValue($this->mongoSearchProvider, $configInstance);
 
         $this->mongoSearchProvider->indexDocument([
