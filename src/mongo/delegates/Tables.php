@@ -670,6 +670,13 @@ class Tables extends CompositeBase
     /**
      * Truncate any indexed fields in the generated rows which are too large to index.
      *
+     * [NOTE]:  Starting in version 4.2, MongoDB removes the Index Key Limit for
+     *          featureCompatibilityVersion (fCV) set to "4.2" or greater.
+     *
+     * For MongoDB 2.6 through MongoDB versions with fCV set to "4.0" or earlier,
+     * the total size of an index entry, which can include structural overhead
+     * depending on the BSON type, must be less than 1024 bytes.
+     *
      * @param array $generatedRow - Pass by reference so that the contents is truncated
      */
     protected function truncateFields(Collection $collection, array &$generatedRow)
@@ -692,30 +699,25 @@ class Tables extends CompositeBase
             }
         }
 
-        if (count($indexedFields) > 0 && isset($generatedRow['value']) && is_array($generatedRow['value'])) {
-            // Iterate over generated rows BY REFERENCE (&) - we are going to modify the contents of $field
-            foreach ($generatedRow as &$field) {
-                foreach ($indexedFields as $indexedFieldname) {
-                    // The key will have the index name in the following format added to it.
-                    // Adjust the max key size allowed to take it into account.
-                    $maxKeySize = 1020 - strlen('value_' . $indexedFieldname . '_1');
+        if ($indexedFields !== [] && isset($generatedRow['value']) && is_array($generatedRow['value'])) {
+            $value = &$generatedRow['value'];
+            foreach ($indexedFields as $indexedFieldname) {
+                // The key will have the index name in the following format added to it.
+                // Adjust the max key size allowed to take it into account.
+                $maxKeySize = 1020 - strlen('value_' . $indexedFieldname . '_1');
 
-                    if (array_key_exists($indexedFieldname, $field)) {
-                        // It's important that we count the number of bytes
-                        // in the field - not just the number of characters.
-                        // UTF-8 characters can be between 1 and 4 bytes.
-                        //
-                        // From the strlen documentation:
-                        //     Attention with utf8:
-                        //     $foo = "bär";
-                        //     strlen($foo) will return 4 and not 3 as expected..
-                        //
-                        // So strlen does count the bytes - not the characters.
-
-                        if (is_string($field[$indexedFieldname]) && strlen($field[$indexedFieldname]) > $maxKeySize) {
-                            $field[$indexedFieldname] = substr($field[$indexedFieldname], 0, $maxKeySize);
-                        }
-                    }
+                // It's important that we count the number of bytes
+                // in the field - not just the number of characters.
+                // UTF-8 characters can be between 1 and 4 bytes.
+                //
+                // From the strlen documentation:
+                //     Attention with utf8:
+                //     $foo = "bär";
+                //     strlen($foo) will return 4 and not 3 as expected..
+                //
+                // So strlen does count the bytes - not the characters.
+                if (array_key_exists($indexedFieldname, $value) && (is_string($value[$indexedFieldname]) && strlen($value[$indexedFieldname]) > $maxKeySize)) {
+                    $value[$indexedFieldname] = substr($value[$indexedFieldname], 0, $maxKeySize);
                 }
             }
         }

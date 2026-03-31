@@ -1232,7 +1232,7 @@ class Config implements IConfigInstance
             $searchConfig = array_key_exists('search_config', $storeConfig) ? $storeConfig['search_config'] : [];
             $this->searchDocSpecs[$storeName] = [];
             if (!empty($searchConfig)) {
-                $this->searchProviderClassName[$storeName] = $this->getMandatoryKey('search_provider', $searchConfig, 'search');
+                $this->searchProviderClassName[$storeName] = ltrim($this->getMandatoryKey('search_provider', $searchConfig, 'search'), '\\');
                 // Load search doc specs if search_config is set
                 $searchDocSpecs = $this->getMandatoryKey('search_specifications', $searchConfig, 'search');
                 foreach ($searchDocSpecs as $spec) {
