@@ -17,6 +17,7 @@ class CursorPhp80 extends \ArrayIterator implements CursorInterface
         $this->array = $array;
     }
 
+    #[\ReturnTypeWillChange] // in ext-mongodb <1.20.0 returns MongoDB\Driver\CursorId
     public function getId(): Int64
     {
         return new Int64(0);
