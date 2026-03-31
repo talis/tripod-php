@@ -321,7 +321,7 @@ class Driver extends DriverBase implements IDriver
                 $cursor = $this->collection->aggregate($ops);
                 foreach ($cursor as $doc) {
                     if (!is_array($doc[_ID_KEY])) {
-                        $results[$doc[_ID_KEY]] = $doc['total'];
+                        $results[$doc[_ID_KEY] ?? ''] = $doc['total'];
                     } else {
                         $results[implode(';', $doc[_ID_KEY])] = $doc['total'];
                     }
