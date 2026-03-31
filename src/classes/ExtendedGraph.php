@@ -116,11 +116,6 @@ class ExtendedGraph
         }
     }
 
-    public function __destruct()
-    {
-        unset($this->_index);
-    }
-
     /**
      * Map a portion of a URI to a short prefix for use when serialising the graph.
      *
