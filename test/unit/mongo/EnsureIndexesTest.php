@@ -240,7 +240,7 @@ class EnsureIndexesTest extends ResqueJobTestBase
     /**
      * @param EnsureIndexes&MockObject $job EnsureIndexes Job
      */
-    private function jobSuccessfullyEnsuresIndexes(EnsureIndexes $job)
+    private function jobSuccessfullyEnsuresIndexes(EnsureIndexes $job): void
     {
         $mockIndexUtils = $this->getMockBuilder(IndexUtils::class)
             ->onlyMethods(['ensureIndexes'])
@@ -258,7 +258,7 @@ class EnsureIndexesTest extends ResqueJobTestBase
     /**
      * @param EnsureIndexes&MockObject $job EnsureIndexes Job
      */
-    private function jobThrowsExceptionWhenEnsuringIndexes(EnsureIndexes $job)
+    private function jobThrowsExceptionWhenEnsuringIndexes(EnsureIndexes $job): void
     {
         $mockIndexUtils = $this->getMockBuilder(IndexUtils::class)
             ->onlyMethods(['ensureIndexes'])

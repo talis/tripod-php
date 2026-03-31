@@ -821,7 +821,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $this->performJob($discoverImpactedSubjects);
     }
 
-    private function setArgs()
+    private function setArgs(): void
     {
         $this->args = [
             'tripodConfig' => Config::getConfig(),

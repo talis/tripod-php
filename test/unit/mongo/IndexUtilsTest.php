@@ -347,7 +347,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      * @param MockObject&TripodTestConfig $mockConfig     mock Config object
      * @param Collection&MockObject       $mockCollection mock Collection object
      */
-    private function getCollectionForCBDShouldBeCalled_n_Times(int $callCount, $mockConfig, $mockCollection)
+    private function getCollectionForCBDShouldBeCalled_n_Times(int $callCount, TripodTestConfig $mockConfig, Collection $mockCollection): void
     {
         $mockConfig->expects($this->exactly($callCount))
             ->method('getCollectionForCBD')
@@ -360,7 +360,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      * @param MockObject&TripodTestConfig $mockConfig     mock Config object
      * @param Collection&MockObject       $mockCollection mock Collection object
      */
-    private function getCollectionForViewShouldBeCalled_n_Times(int $callCount, $mockConfig, $mockCollection)
+    private function getCollectionForViewShouldBeCalled_n_Times(int $callCount, TripodTestConfig $mockConfig, Collection $mockCollection): void
     {
         $mockConfig->expects($this->exactly($callCount))
             ->method('getCollectionForView')
@@ -373,7 +373,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      * @param MockObject&TripodTestConfig $mockConfig     mock Config object
      * @param Collection&MockObject       $mockCollection mock Collection object
      */
-    private function getCollectionForTableShouldBeCalled_n_Times(int $callCount, $mockConfig, $mockCollection)
+    private function getCollectionForTableShouldBeCalled_n_Times(int $callCount, TripodTestConfig $mockConfig, Collection $mockCollection): void
     {
         $mockConfig->expects($this->exactly($callCount))
             ->method('getCollectionForTable')
@@ -386,7 +386,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      * @param MockObject&TripodTestConfig $mockConfig     mock Config object
      * @param Collection&MockObject       $mockCollection mock Collection object
      */
-    private function getCollectionForSearchDocShouldBeCalled_n_Times(int $callCount, $mockConfig, $mockCollection)
+    private function getCollectionForSearchDocShouldBeCalled_n_Times(int $callCount, TripodTestConfig $mockConfig, Collection $mockCollection): void
     {
         $mockConfig->expects($this->exactly($callCount))
             ->method('getCollectionForSearchDocument')
@@ -397,7 +397,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     /**
      * @param Collection&MockObject $mockCollection mock Collection object
      */
-    private function dropIndexesShouldNeverBeCalled($mockCollection)
+    private function dropIndexesShouldNeverBeCalled(Collection $mockCollection): void
     {
         $mockCollection->expects($this->never())
             ->method('dropIndexes');
@@ -406,7 +406,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     /**
      * @param Collection&MockObject $mockCollection mock Collection object
      */
-    private function dropIndexesShouldBeCalled($mockCollection)
+    private function dropIndexesShouldBeCalled(Collection $mockCollection): void
     {
         $mockCollection->expects($this->once())
             ->method('dropIndexes');
@@ -415,7 +415,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     /**
      * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
-    private function getCollectionForViewShouldNeverBeCalled($mockConfig)
+    private function getCollectionForViewShouldNeverBeCalled(TripodTestConfig $mockConfig): void
     {
         $mockConfig->expects($this->never())
             ->method('getCollectionForView');
@@ -424,7 +424,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     /**
      * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
-    private function getCollectionForTableShouldNeverBeCalled($mockConfig)
+    private function getCollectionForTableShouldNeverBeCalled(TripodTestConfig $mockConfig): void
     {
         $mockConfig->expects($this->never())
             ->method('getCollectionForTable');
@@ -433,7 +433,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     /**
      * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
-    private function getCollectionForSearchDocumentShouldNeverBeCalled($mockConfig)
+    private function getCollectionForSearchDocumentShouldNeverBeCalled(TripodTestConfig $mockConfig): void
     {
         $mockConfig->expects($this->never())
             ->method('getCollectionForSearchDocument');
@@ -442,7 +442,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     /**
      * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
-    private function getCollectionForCBDShouldNeverBeCalled($mockConfig)
+    private function getCollectionForCBDShouldNeverBeCalled(TripodTestConfig $mockConfig): void
     {
         $mockConfig->expects($this->never())
             ->method('getCollectionForCBD');
@@ -460,7 +460,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      * @param bool                  $background     create indexes in the background
      * @param array<string, bool>   $indexOptions
      */
-    private function oneCustomAndThreeInternalTripodCBDIndexesShouldBeCreated($mockCollection, $background = true, array $indexOptions = [])
+    private function oneCustomAndThreeInternalTripodCBDIndexesShouldBeCreated(Collection $mockCollection, bool $background = true, array $indexOptions = []): void
     {
         // create index is called 4 times, each time with a different set of
         // params that we know.
@@ -480,7 +480,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      * @param Collection&MockObject $mockCollection mock Collection object
      * @param bool                  $background     create indexes in the background
      */
-    private function oneCustomAndThreeInternalTripodViewIndexesShouldBeCreated($mockCollection, $background = true)
+    private function oneCustomAndThreeInternalTripodViewIndexesShouldBeCreated(Collection $mockCollection, bool $background = true): void
     {
         // create index is called 4 times, each time with a different set of
         // params that we know.
@@ -501,7 +501,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      * @param Collection&MockObject $mockCollection mock Collection object
      * @param bool                  $background     create indexes in the background
      */
-    private function oneCustomAndThreeInternalTripodTableIndexesShouldBeCreated($mockCollection, $background = true)
+    private function oneCustomAndThreeInternalTripodTableIndexesShouldBeCreated(Collection $mockCollection, bool $background = true): void
     {
         // create index is called 4 times, each time with a different set of
         // params that we know.
@@ -522,7 +522,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      * @param Collection&MockObject $mockCollection mock Collection object
      * @param bool                  $background     create indexes in the background
      */
-    private function threeInternalTripodSearchDocIndexesShouldBeCreated($mockCollection, $background = true)
+    private function threeInternalTripodSearchDocIndexesShouldBeCreated(Collection $mockCollection, bool $background = true): void
     {
         // create index is called 3 times, each time with a different set of
         // params that we know.
@@ -545,7 +545,7 @@ class IndexUtilsTest extends MongoTripodTestBase
      * @param MockObject&TripodTestConfig $mockConfig   mock Config object
      * @param array<string, bool>         $indexOptions
      */
-    private function setConfigForCBDIndexes($mockConfig, array $indexOptions = [])
+    private function setConfigForCBDIndexes(TripodTestConfig $mockConfig, array $indexOptions = []): void
     {
         // minimal config to verify that
         $config = [];
@@ -598,7 +598,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     /**
      * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
-    private function setConfigForViewIndexes($mockConfig)
+    private function setConfigForViewIndexes(TripodTestConfig $mockConfig): void
     {
         // minimal config to verify that
         $config = [];
@@ -644,7 +644,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     /**
      * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
-    private function setConfigForTableIndexes($mockConfig)
+    private function setConfigForTableIndexes(TripodTestConfig $mockConfig): void
     {
         // minimal config to verify that
         $config = [];
@@ -693,7 +693,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     /**
      * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
-    private function setConfigForSearchDocIndexes($mockConfig)
+    private function setConfigForSearchDocIndexes(TripodTestConfig $mockConfig): void
     {
         // minimal config to verify that
         $config = [];
@@ -751,7 +751,7 @@ class IndexUtilsTest extends MongoTripodTestBase
     /**
      * @param MockObject&TripodTestConfig $mockConfig mock Config object
      */
-    private function setConfigForCBDViewTableAndSearchDocIndexes($mockConfig)
+    private function setConfigForCBDViewTableAndSearchDocIndexes(TripodTestConfig $mockConfig): void
     {
         $mockConfig->loadConfig([
             'defaultContext' => 'http://talisaspire.com/',

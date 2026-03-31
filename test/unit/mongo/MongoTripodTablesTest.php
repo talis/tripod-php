@@ -327,7 +327,7 @@ class MongoTripodTablesTest extends MongoTripodTestBase
         $tables->generateTableRows('t_resource');
     }
 
-    public function testBatchTableRowGeneration()
+    public function testBatchTableRowGeneration(): void
     {
         $count = 234;
         $docs = [];

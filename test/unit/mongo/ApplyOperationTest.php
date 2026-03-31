@@ -1052,10 +1052,9 @@ class ApplyOperationTest extends ResqueJobTestBase
     /**
      * Sets job arguments.
      *
-     * @param mixed    $operation
      * @param string[] $specTypes
      */
-    private function setArgs($operation = OP_VIEWS, array $specTypes = [])
+    private function setArgs(string $operation = OP_VIEWS, array $specTypes = []): void
     {
         $subject = new ImpactedSubject(
             [

@@ -131,7 +131,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
      * @testWith ["Tripod\\Mongo\\MongoSearchProvider"]
      *           ["\\Tripod\\Mongo\\MongoSearchProvider"]
      */
-    public function testSearchConfigTrimsSearchProviderLeadingBackslash(string $providerClassName)
+    public function testSearchConfigTrimsSearchProviderLeadingBackslash(string $providerClassName): void
     {
         Config::setConfig([
             'defaultContext' => 'http://talisaspire.com/',

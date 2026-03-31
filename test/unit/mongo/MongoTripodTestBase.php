@@ -84,7 +84,7 @@ abstract class MongoTripodTestBase extends TestCase
 
     // HELPERS BELOW HERE
 
-    protected function addDocument($doc, $toTransactionLog = false): InsertOneResult
+    protected function addDocument(array $doc, bool $toTransactionLog = false): InsertOneResult
     {
         $config = Config::getInstance();
         if ($toTransactionLog == true) {

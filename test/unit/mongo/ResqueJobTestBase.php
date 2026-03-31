@@ -6,7 +6,7 @@ use Tripod\Mongo\Jobs\JobBase;
 
 class ResqueJobTestBase extends MongoTripodTestBase
 {
-    protected function performJob(JobBase $job)
+    protected function performJob(JobBase $job): void
     {
         $mockJob = $this->getMockBuilder(Resque_Job::class)
             ->onlyMethods(['getInstance', 'getArguments'])

@@ -386,7 +386,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         ]);
     }
 
-    public function testSearchThrowsExceptionIfNoQuery()
+    public function testSearchThrowsExceptionIfNoQuery(): void
     {
         $this->expectException(SearchException::class);
         $this->expectExceptionMessage('You must specify a query');

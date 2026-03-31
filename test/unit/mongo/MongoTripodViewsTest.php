@@ -1910,7 +1910,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
         $this->assertTrue($view->has_triples_about('http://schemas.talis.com/2005/user/schema#xyz'));
     }
 
-    public function fetchGraphInGetViewForResourcesCallback(...$args): MongoGraph
+    public function fetchGraphInGetViewForResourcesCallback(array $query): MongoGraph
     {
         $uri1 = 'http://uri1';
         $uri2 = 'http://uri2';
@@ -1926,11 +1926,11 @@ class MongoTripodViewsTest extends MongoTripodTestBase
 
         $returnedGraph2 = new MongoGraph();
         $returnedGraph2->add_literal_triple($uri2, 'http://somepred', 'someval');
-        if ($args[0] == $query1) {
+        if ($query === $query1) {
             return $returnedGraph1;
         }
 
-        if ($args[0] == $query2) {
+        if ($query === $query2) {
             return $returnedGraph2;
         }
 
@@ -2309,7 +2309,7 @@ class MongoTripodViewsTest extends MongoTripodTestBase
         $views->generateView('v_resource_full_ttl', 'http://talisaspire.com/resources/3SplCtWGPqEyXcDiyhHQpA');
     }
 
-    public function testBatchViewGeneration()
+    public function testBatchViewGeneration(): void
     {
         $count = 234;
         $docs = [];
