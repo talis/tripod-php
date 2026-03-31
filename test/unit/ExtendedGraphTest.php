@@ -29,6 +29,8 @@ class ExtendedGraphTest extends TestCase
     public function addValidValueToLiteralResultsInTriple_Provider(): iterable
     {
         yield ['String'];
+        yield [''];
+        yield ['0'];
         yield [1];
         yield [1.2];
         yield [true];
@@ -72,6 +74,7 @@ class ExtendedGraphTest extends TestCase
     public function addInvalidSubjectToLiteralResultsInNoTriple_Provider(): iterable
     {
         yield [''];
+        yield ['0'];
         yield [1];
         yield [1.2];
         yield [true];
@@ -97,6 +100,7 @@ class ExtendedGraphTest extends TestCase
     public function addInvalidPredicateToLiteralResultsInNoTriple_Provider(): iterable
     {
         yield [''];
+        yield ['0'];
         yield [1];
         yield [1.2];
         yield [true];
@@ -167,6 +171,7 @@ class ExtendedGraphTest extends TestCase
     public function addInvalidSubjectToResourceResultsInNoTriple_Provider(): iterable
     {
         yield [''];
+        yield ['0'];
         yield [1];
         yield [1.2];
         yield [true];
@@ -192,6 +197,7 @@ class ExtendedGraphTest extends TestCase
     public function addInvalidPredicateToResourceResultsInNoTriple_Provider(): iterable
     {
         yield [''];
+        yield ['0'];
         yield [1];
         yield [1.2];
         yield [true];
