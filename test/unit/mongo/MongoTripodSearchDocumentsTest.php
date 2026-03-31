@@ -13,11 +13,11 @@ use Tripod\Mongo\Updates;
 
 class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
 {
-    protected $defaultContext = 'http://talisaspire.com/';
+    private string $defaultContext = 'http://talisaspire.com/';
 
-    protected $defaultStoreName = 'tripod_php_testing';
+    private string $defaultStoreName = 'tripod_php_testing';
 
-    protected $defaultPodName = 'CBD_testing';
+    private string $defaultPodName = 'CBD_testing';
 
     protected function setUp(): void
     {
@@ -670,7 +670,7 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
         $this->assertEquals(0, $collection->count($impactQuery));
     }
 
-    protected function getSearchDocuments(Driver $tripod): SearchDocuments
+    private function getSearchDocuments(Driver $tripod): SearchDocuments
     {
         return new SearchDocuments(
             $tripod->getStoreName(),

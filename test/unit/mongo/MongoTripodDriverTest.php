@@ -10,7 +10,6 @@ use MongoDB\Collection;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\InsertOneResult;
 use MongoDB\UpdateResult;
-use PHPUnit\Framework\MockObject\MockObject;
 use Tripod\ChangeSet;
 use Tripod\Config;
 use Tripod\Exceptions\CardinalityException;
@@ -31,16 +30,6 @@ use Tripod\StatsD;
 
 class MongoTripodDriverTest extends MongoTripodTestBase
 {
-    /**
-     * @var Driver&MockObject
-     */
-    protected $tripod;
-
-    /**
-     * @var TransactionLog
-     */
-    protected $tripodTransactionLog;
-
     protected function setUp(): void
     {
         parent::setup();
@@ -48,14 +37,9 @@ class MongoTripodDriverTest extends MongoTripodTestBase
         $this->tripodTransactionLog = new TransactionLog();
         $this->tripodTransactionLog->purgeAllTransactions();
 
-        $this->tripod = $this->getMockBuilder(Driver::class)
-            ->onlyMethods([])
-            ->setConstructorArgs([
-                'CBD_testing',
-                'tripod_php_testing',
-                ['defaultContext' => 'http://talisaspire.com/'],
-            ])
-            ->getMock();
+        $this->tripod = new Driver('CBD_testing', 'tripod_php_testing', [
+            'defaultContext' => 'http://talisaspire.com/',
+        ]);
 
         $this->getTripodCollection($this->tripod)->drop();
 

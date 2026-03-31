@@ -7,7 +7,7 @@ use Tripod\Mongo\Driver;
 
 class MongoTripodComputedFieldsTest extends MongoTripodTestBase
 {
-    protected $originalConfig = [];
+    private array $originalConfig = [];
 
     protected function setUp(): void
     {
@@ -492,10 +492,5 @@ class MongoTripodComputedFieldsTest extends MongoTripodTestBase
         Config::setConfig($oldConfig);
         Config::getInstance();
         $collection->drop();
-    }
-
-    protected function generateUniqueTableId($prefix): string
-    {
-        return uniqid($prefix);
     }
 }

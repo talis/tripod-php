@@ -9,7 +9,6 @@ use MongoDB\DeleteResult;
 use MongoDB\Driver\Exception\BulkWriteException;
 use MongoDB\Driver\Manager;
 use MongoDB\UpdateResult;
-use PHPUnit\Framework\MockObject\MockObject;
 use Tripod\Config;
 use Tripod\ExtendedGraph;
 use Tripod\Mongo\Composites\Views;
@@ -23,17 +22,9 @@ use Tripod\Mongo\Updates;
 
 class MongoTripodViewsTest extends MongoTripodTestBase
 {
-    /**
-     * @var Driver&MockObject
-     */
-    protected $tripod;
+    private Views $tripodViews;
 
-    /**
-     * @var Views
-     */
-    protected $tripodViews;
-
-    private $viewsConstParams;
+    private array $viewsConstParams;
 
     protected function setUp(): void
     {
@@ -42,17 +33,10 @@ class MongoTripodViewsTest extends MongoTripodTestBase
         $this->tripodTransactionLog = new TransactionLog();
         $this->tripodTransactionLog->purgeAllTransactions();
 
-        $this->tripod = $this->getMockBuilder(Driver::class)
-            ->onlyMethods([])
-            ->setConstructorArgs([
-                'CBD_testing',
-                'tripod_php_testing',
-                [
-                    'defaultContext' => 'http://talisaspire.com/',
-                    'async' => [OP_VIEWS => true], // don't generate views syncronously when saving automatically - let unit tests deal with this)
-                ],
-            ])
-            ->getMock();
+        $this->tripod = new Driver('CBD_testing', 'tripod_php_testing', [
+            'defaultContext' => 'http://talisaspire.com/',
+            'async' => [OP_VIEWS => true], // don't generate views syncronously when saving automatically - let unit tests deal with this)
+        ]);
 
         $this->getTripodCollection($this->tripod)->drop();
         $this->tripod->setTransactionLog($this->tripodTransactionLog);

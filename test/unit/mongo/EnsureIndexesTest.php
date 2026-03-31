@@ -10,10 +10,7 @@ use Tripod\Mongo\Jobs\EnsureIndexes;
 
 class EnsureIndexesTest extends ResqueJobTestBase
 {
-    /**
-     * @var array
-     */
-    protected $args = [];
+    private array $args = [];
 
     protected function setUp(): void
     {
@@ -214,7 +211,7 @@ class EnsureIndexesTest extends ResqueJobTestBase
      *
      * @return EnsureIndexes&MockObject
      */
-    protected function createMockJob(array $methods = ['getIndexUtils', 'submitJob', 'warningLog', 'enqueue', 'hasJobStatus']): MockObject
+    private function createMockJob(array $methods = ['getIndexUtils', 'submitJob', 'warningLog', 'enqueue', 'hasJobStatus']): EnsureIndexes
     {
         $mockEnsureIndexesJob = $this->getMockBuilder(EnsureIndexes::class)
             ->onlyMethods($methods)
@@ -230,7 +227,7 @@ class EnsureIndexesTest extends ResqueJobTestBase
      *
      * @return array<string, bool|mixed[]|string>
      */
-    protected function createDefaultArguments(): array
+    private function createDefaultArguments(): array
     {
         return [
             'tripodConfig' => Config::getConfig(),
@@ -243,7 +240,7 @@ class EnsureIndexesTest extends ResqueJobTestBase
     /**
      * @param EnsureIndexes&MockObject $job EnsureIndexes Job
      */
-    protected function jobSuccessfullyEnsuresIndexes($job)
+    private function jobSuccessfullyEnsuresIndexes(EnsureIndexes $job)
     {
         $mockIndexUtils = $this->getMockBuilder(IndexUtils::class)
             ->onlyMethods(['ensureIndexes'])
@@ -261,7 +258,7 @@ class EnsureIndexesTest extends ResqueJobTestBase
     /**
      * @param EnsureIndexes&MockObject $job EnsureIndexes Job
      */
-    protected function jobThrowsExceptionWhenEnsuringIndexes($job)
+    private function jobThrowsExceptionWhenEnsuringIndexes(EnsureIndexes $job)
     {
         $mockIndexUtils = $this->getMockBuilder(IndexUtils::class)
             ->onlyMethods(['ensureIndexes'])

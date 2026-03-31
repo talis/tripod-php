@@ -824,7 +824,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
      *
      * @return int
      */
-    protected function getCountForSearchSpecs(Driver $tripod, $specs = [])
+    private function getCountForSearchSpecs(Driver $tripod, $specs = [])
     {
         $count = 0;
         if (empty($specs)) {

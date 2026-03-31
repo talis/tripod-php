@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use MongoDB\InsertOneResult;
-use PHPUnit\Framework\MockObject\MockObject;
 use Tripod\Config;
 use Tripod\ExtendedGraph;
 use Tripod\Mongo\DateUtil;
@@ -14,25 +13,13 @@ use Tripod\Mongo\Updates;
 
 class MongoTransactionLogTest extends MongoTripodTestBase
 {
-    /**
-     * @var Driver&MockObject
-     */
-    protected $tripod;
-
-    /**
-     * @var TransactionLog
-     */
-    protected $tripodTransactionLog;
-
     protected function setUp(): void
     {
         parent::setup();
 
-        $this->tripod = $this->getMockBuilder(Driver::class)
-            ->onlyMethods([])
-            ->setConstructorArgs(['CBD_testing', 'tripod_php_testing'])
-            ->getMock();
-
+        $this->tripod = new Driver('CBD_testing', 'tripod_php_testing', [
+            'defaultContext' => 'http://talisaspire.com/',
+        ]);
         $this->getTripodCollection($this->tripod)->drop();
 
         // Lock collection no longer available from Driver, so drop it manually
@@ -733,7 +720,7 @@ class MongoTransactionLogTest extends MongoTripodTestBase
      *
      * @return array<string, mixed>
      */
-    protected function buildTransactionDocument($id, $subjectOfChange, $startTime, $endTime, $_version): array
+    private function buildTransactionDocument($id, $subjectOfChange, $startTime, $endTime, $_version): array
     {
         return [
             '_id' => 'transaction_' . $id,

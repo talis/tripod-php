@@ -8,11 +8,6 @@ use Tripod\Mongo\NQuadSerializer;
 
 class MongoTripodNQuadSerializerTest extends MongoTripodTestBase
 {
-    protected function setUp(): void
-    {
-        parent::setup();
-    }
-
     public function testSerializerSimple(): void
     {
         $g = new MongoGraph();

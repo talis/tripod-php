@@ -17,20 +17,7 @@ use Tripod\Mongo\Updates;
  */
 class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
 {
-    /**
-     * @var Driver
-     */
-    protected $tripod;
-
-    /**
-     * @var TransactionLog
-     */
-    protected $tripodTransactionLog;
-
-    /**
-     * @var Labeller
-     */
-    protected $labeller;
+    private Labeller $labeller;
 
     protected function setUp(): void
     {

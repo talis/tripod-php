@@ -2,35 +2,22 @@
 
 declare(strict_types=1);
 
-use PHPUnit\Framework\MockObject\MockObject;
 use Tripod\Mongo\Driver;
 use Tripod\Mongo\MongoGraph;
 use Tripod\Mongo\TransactionLog;
 
 class MongoTripodDocumentStructureTest extends MongoTripodTestBase
 {
-    /**
-     * @var Driver&MockObject
-     */
-    protected $tripod;
-
-    /**
-     * @var TransactionLog
-     */
-    protected $tripodTransactionLog;
-
     protected function setUp(): void
     {
         parent::setup();
-        // Mongo::setPoolSize(200);
 
         $this->tripodTransactionLog = new TransactionLog();
         $this->tripodTransactionLog->purgeAllTransactions();
 
-        $this->tripod = $this->getMockBuilder(Driver::class)
-            ->onlyMethods([])
-            ->setConstructorArgs(['CBD_testing', 'tripod_php_testing', ['defaultContext' => 'http://talisaspire.com/']])
-            ->getMock();
+        $this->tripod = new Driver('CBD_testing', 'tripod_php_testing', [
+            'defaultContext' => 'http://talisaspire.com/',
+        ]);
 
         $this->getTripodCollection($this->tripod)->drop();
         $this->tripod->setTransactionLog($this->tripodTransactionLog);

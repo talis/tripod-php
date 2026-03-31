@@ -17,11 +17,6 @@ use Tripod\Mongo\Updates;
  */
 class MongoTripodQueueOperationsTest extends MongoTripodTestBase
 {
-    /**
-     * @var Driver
-     */
-    protected $tripod;
-
     protected function setUp(): void
     {
         parent::setup();

@@ -5,13 +5,10 @@ use Tripod\Mongo\IConfigInstance;
 
 class TestConfigGenerator extends Config
 {
-    protected $fileName;
+    private string $fileName;
 
     private function __construct() {}
 
-    /**
-     * @return array<string, mixed>
-     */
     public function serialize(): array
     {
         return ['class' => get_class($this), 'filename' => $this->fileName];

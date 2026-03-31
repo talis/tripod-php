@@ -14,7 +14,7 @@ use Tripod\Mongo\Labeller;
 
 class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
 {
-    protected $args = [];
+    private array $args = [];
 
     public function testMandatoryArgTripodConfig(): void
     {
@@ -821,7 +821,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $this->performJob($discoverImpactedSubjects);
     }
 
-    protected function setArgs()
+    private function setArgs()
     {
         $this->args = [
             'tripodConfig' => Config::getConfig(),

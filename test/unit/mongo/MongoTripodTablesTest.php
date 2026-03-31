@@ -24,26 +24,13 @@ use Tripod\Mongo\Updates;
 
 class MongoTripodTablesTest extends MongoTripodTestBase
 {
-    /**
-     * @var Driver
-     */
-    protected $tripod;
+    private Tripod\Mongo\Composites\Tables $tripodTables;
 
-    /**
-     * @var TransactionLog
-     */
-    protected $tripodTransationLog;
+    private string $defaultContext = 'http://talisaspire.com/';
 
-    /**
-     * @var Tripod\Mongo\Composites\Tables
-     */
-    protected $tripodTables;
+    private string $defaultStoreName = 'tripod_php_testing';
 
-    protected $defaultContext = 'http://talisaspire.com/';
-
-    protected $defaultStoreName = 'tripod_php_testing';
-
-    protected $defaultPodName = 'CBD_testing';
+    private string $defaultPodName = 'CBD_testing';
 
     private array $tablesConstParams;
 

@@ -17,7 +17,7 @@ use Tripod\Mongo\MongoSearchProvider;
 
 class ApplyOperationTest extends ResqueJobTestBase
 {
-    protected $args = [];
+    private array $args = [];
 
     public function testMandatoryArgTripodConfig(): void
     {
@@ -1055,7 +1055,7 @@ class ApplyOperationTest extends ResqueJobTestBase
      * @param mixed    $operation
      * @param string[] $specTypes
      */
-    protected function setArgs($operation = OP_VIEWS, array $specTypes = [])
+    private function setArgs($operation = OP_VIEWS, array $specTypes = [])
     {
         $subject = new ImpactedSubject(
             [

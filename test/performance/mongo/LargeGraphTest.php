@@ -75,16 +75,11 @@ class LargeGraphTest extends MongoTripodPerformanceTestBase
         );
     }
 
-    protected function loadLargeGraphData()
+    private function loadLargeGraphData()
     {
         $docs = json_decode(file_get_contents(__DIR__ . '/data/largeGraph.json'), true);
         foreach ($docs as $d) {
             $this->addDocument($d);
         }
-    }
-
-    protected function getConfigLocation(): string
-    {
-        return __DIR__ . '/../../unit/mongo/data/config.json';
     }
 }

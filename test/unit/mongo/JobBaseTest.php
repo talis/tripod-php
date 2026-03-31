@@ -19,7 +19,7 @@ class JobBaseTest extends MongoTripodTestBase
     /**
      * @return array<string, mixed[]|string>
      */
-    protected function getArgs(): array
+    private function getArgs(): array
     {
         return [
             'tripodConfig' => Config::getConfig(),

@@ -20,15 +20,9 @@ use Tripod\StatsD;
 
 abstract class MongoTripodTestBase extends TestCase
 {
-    /**
-     * @var Driver|null
-     */
-    protected $tripod;
+    protected ?Driver $tripod;
 
-    /**
-     * @var TransactionLog|null
-     */
-    protected $tripodTransactionLog;
+    protected ?TransactionLog $tripodTransactionLog;
 
     protected function setUp(): void
     {
@@ -88,11 +82,6 @@ abstract class MongoTripodTestBase extends TestCase
         $this->loadDataViaTripod($relatedContentTripod, '/data/relatedContent.json');
     }
 
-    protected function getConfigLocation(): string
-    {
-        return __DIR__ . '/data/config.json';
-    }
-
     // HELPERS BELOW HERE
 
     protected function addDocument($doc, $toTransactionLog = false): InsertOneResult
@@ -106,14 +95,6 @@ abstract class MongoTripodTestBase extends TestCase
             $this->tripod->getStoreName(),
             $this->tripod->getPodName()
         )->insertOne($doc, ['w' => 1]);
-    }
-
-    protected function getTlogCollection(): Collection
-    {
-        $config = Config::getInstance();
-        $tLogConfig = $config->getTransactionLogConfig();
-
-        return $config->getTransactionLogDatabase()->selectCollection($tLogConfig['collection']);
     }
 
     protected function getTripodCollection(Driver $tripod): Collection
@@ -378,6 +359,19 @@ abstract class MongoTripodTestBase extends TestCase
                 'prefix' => 'somePrefix',
             ],
         ];
+    }
+
+    private function getConfigLocation(): string
+    {
+        return __DIR__ . '/data/config.json';
+    }
+
+    private function getTlogCollection(): Collection
+    {
+        $config = Config::getInstance();
+        $tLogConfig = $config->getTransactionLogConfig();
+
+        return $config->getTransactionLogDatabase()->selectCollection($tLogConfig['collection']);
     }
 
     private function loadDataViaTripod(Driver $tripod, string $filename): void
