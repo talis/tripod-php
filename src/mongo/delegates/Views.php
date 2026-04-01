@@ -103,7 +103,7 @@ class Views extends CompositeBase
         foreach ($this->config->getCollectionsForViews($this->storeName) as $collection) {
             $t = new Timer();
             $t->start();
-            $views = $collection->find($query, ['projection' => ['_id' => true]]);
+            $views = $collection->find($query, ['projection' => [_ID_KEY => true]]);
             $t->stop();
             $this->timingLog(
                 MONGO_FIND_IMPACTED,
@@ -167,7 +167,7 @@ class Views extends CompositeBase
         $resourceAlias = $this->labeller->uri_to_alias($resource);
         $contextAlias = $this->getContextAlias($context);
 
-        $query = ['_id' => ['r' => $resourceAlias, 'c' => $contextAlias, 'type' => $viewType]];
+        $query = [_ID_KEY => [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias, _ID_TYPE => $viewType]];
         $viewCollection = $this->config->getCollectionForView($this->storeName, $viewType, $this->readPreference);
         $graph = $this->fetchGraph($query, MONGO_VIEW, $viewCollection);
         if ($graph->is_empty()) {
@@ -180,7 +180,7 @@ class Views extends CompositeBase
             $fromCollection = $this->getFromCollectionForViewSpec($viewSpec);
 
             $doc = $this->config->getCollectionForCBD($this->storeName, $fromCollection)
-                ->findOne(['_id' => ['r' => $resourceAlias, 'c' => $contextAlias]]);
+                ->findOne([_ID_KEY => [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias]]);
 
             if ($doc == null) {
                 // if you are trying to generate a view for a document that doesnt exist in the collection
@@ -209,7 +209,7 @@ class Views extends CompositeBase
             $cursorSize = count($resources);
         }
 
-        $query = ['_id' => ['$in' => $this->createTripodViewIdsFromResourceUris($resources, $context, $viewType)]];
+        $query = [_ID_KEY => ['$in' => $this->createTripodViewIdsFromResourceUris($resources, $context, $viewType)]];
         $g = $this->fetchGraph($query, MONGO_VIEW, $this->getCollectionForViewSpec($viewType), null, $cursorSize);
 
         // account for missing subjects
@@ -223,7 +223,7 @@ class Views extends CompositeBase
 
                 $missingSubjectAlias = $this->labeller->uri_to_alias($missingSubject);
                 $doc = $this->getConfigInstance()->getCollectionForCBD($this->storeName, $fromCollection)
-                    ->findOne(['_id' => ['r' => $missingSubjectAlias, 'c' => $contextAlias]]);
+                    ->findOne([_ID_KEY => [_ID_RESOURCE => $missingSubjectAlias, _ID_CONTEXT => $contextAlias]]);
 
                 if ($doc == null) {
                     // nothing in source CBD for this subject, there can never be a view for it
@@ -242,7 +242,7 @@ class Views extends CompositeBase
                     $cursorSize = count($regrabResources);
                 }
 
-                $query = ['_id' => ['$in' => $this->createTripodViewIdsFromResourceUris($regrabResources, $context, $viewType)]];
+                $query = [_ID_KEY => ['$in' => $this->createTripodViewIdsFromResourceUris($regrabResources, $context, $viewType)]];
                 $g->add_graph($this->fetchGraph($query, MONGO_VIEW, $this->getCollectionForViewSpec($viewType)));
             }
         }
@@ -261,25 +261,25 @@ class Views extends CompositeBase
         $filter = [];
         foreach ($resources as $resource) {
             $resourceAlias = $this->labeller->uri_to_alias($resource);
-            $this->debugLog('Generating views', ['store' => $this->storeName, '_id' => $resourceAlias]);
+            $this->debugLog('Generating views', ['store' => $this->storeName, _ID_KEY => $resourceAlias]);
             // delete any views this resource is involved in. It's type may have changed so it's not enough just to regen it with it's new type below.
             foreach ($this->getConfigInstance()->getViewSpecifications($this->storeName) as $type => $spec) {
                 if ($spec['from'] == $this->podName) {
                     $this->config->getCollectionForView($this->storeName, $type, $this->readPreference)
-                        ->deleteOne(['_id' => ['r' => $resourceAlias, 'c' => $contextAlias, 'type' => $type]]);
+                        ->deleteOne([_ID_KEY => [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias, _ID_TYPE => $type]]);
                 }
             }
 
             // build $filter for queries to impact index
-            $filter[] = ['r' => $resourceAlias, 'c' => $contextAlias];
+            $filter[] = [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias];
         }
 
         // now generate view for $resources themselves... Maybe an optimisation down the line to cut out the query here
-        $query = ['_id' => ['$in' => $filter]];
-        $resourceAndType = $this->collection->find($query, ['projection' => ['_id' => 1, 'rdf:type' => 1]]);
+        $query = [_ID_KEY => ['$in' => $filter]];
+        $resourceAndType = $this->collection->find($query, ['projection' => [_ID_KEY => 1, 'rdf:type' => 1]]);
 
         foreach ($resourceAndType as $rt) {
-            $id = $rt['_id'];
+            $id = $rt[_ID_KEY];
             if (isset($rt['rdf:type'])) {
                 if (isset($rt['rdf:type'][VALUE_URI])) {
                     // single type, not an array of values
@@ -310,11 +310,11 @@ class Views extends CompositeBase
         foreach ($viewSpecs as $key => $viewSpec) {
             // check for rdfType and rdfTypeAlias
             if (
-                ($viewSpec['type'] == $rdfType || (is_array($viewSpec['type']) && in_array($rdfType, $viewSpec['type'])))
-                || ($viewSpec['type'] == $rdfTypeAlias || (is_array($viewSpec['type']) && in_array($rdfTypeAlias, $viewSpec['type'])))
+                ($viewSpec[_ID_TYPE] == $rdfType || (is_array($viewSpec[_ID_TYPE]) && in_array($rdfType, $viewSpec[_ID_TYPE])))
+                || ($viewSpec[_ID_TYPE] == $rdfTypeAlias || (is_array($viewSpec[_ID_TYPE]) && in_array($rdfTypeAlias, $viewSpec[_ID_TYPE])))
             ) {
                 $foundSpec = true;
-                $this->debugLog('Processing ' . $viewSpec['_id']);
+                $this->debugLog('Processing ' . $viewSpec[_ID_KEY]);
                 $this->generateView($key, $resource, $context);
             }
         }
@@ -389,20 +389,20 @@ class Views extends CompositeBase
         }
 
         $types = []; // this is used to filter the CBD table to speed up the view creation
-        if (is_array($viewSpec['type'])) {
-            foreach ($viewSpec['type'] as $type) {
+        if (is_array($viewSpec[_ID_TYPE])) {
+            foreach ($viewSpec[_ID_TYPE] as $type) {
                 $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($type)];
                 $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($type)];
             }
         } else {
-            $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($viewSpec['type'])];
-            $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($viewSpec['type'])];
+            $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($viewSpec[_ID_TYPE])];
+            $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($viewSpec[_ID_TYPE])];
         }
 
         $filter = ['$or' => $types];
         if (isset($resource)) {
             $resourceAlias = $this->labeller->uri_to_alias($resource);
-            $filter['_id'] = [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias];
+            $filter[_ID_KEY] = [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias];
         }
 
         // @todo Change this to a command when we upgrade MongoDB to 1.1+
@@ -423,7 +423,7 @@ class Views extends CompositeBase
         foreach ($docs as $doc) {
             if ($queueName && !$resource) {
                 $subject = new ImpactedSubject(
-                    $doc['_id'],
+                    $doc[_ID_KEY],
                     OP_VIEWS,
                     $this->storeName,
                     $from,
@@ -437,10 +437,10 @@ class Views extends CompositeBase
             } else {
                 // Set up view meta information
                 $generatedView = [
-                    '_id' => [
-                        _ID_RESOURCE => $doc['_id'][_ID_RESOURCE],
-                        _ID_CONTEXT => $doc['_id'][_ID_CONTEXT],
-                        _ID_TYPE => $viewSpec['_id'],
+                    _ID_KEY => [
+                        _ID_RESOURCE => $doc[_ID_KEY][_ID_RESOURCE],
+                        _ID_CONTEXT => $doc[_ID_KEY][_ID_CONTEXT],
+                        _ID_TYPE => $viewSpec[_ID_KEY],
                     ],
                     \_CREATED_TS => DateUtil::getMongoDate(),
                 ];
@@ -457,7 +457,7 @@ class Views extends CompositeBase
                         );
                     }
                 } else {
-                    $value[_IMPACT_INDEX] = [$doc['_id']];
+                    $value[_IMPACT_INDEX] = [$doc[_ID_KEY]];
                 }
 
                 $this->doJoins($doc, $viewSpec['joins'], $value, $from, $contextAlias, $buildImpactIndex);
@@ -477,7 +477,7 @@ class Views extends CompositeBase
 
         $t->stop();
         $this->timingLog(MONGO_CREATE_VIEW, [
-            'view' => $viewSpec['type'],
+            'view' => $viewSpec[_ID_TYPE],
             'duration' => $t->result(),
             'filter' => $filter,
             'from' => $from,
@@ -533,7 +533,7 @@ class Views extends CompositeBase
                 if (isset($source[$predicate][VALUE_URI])) {
                     // single value for join
                     $joinUris[] = [_ID_RESOURCE => $source[$predicate][VALUE_URI], _ID_CONTEXT => $contextAlias];
-                } elseif ($predicate == '_id') {
+                } elseif ($predicate == _ID_KEY) {
                     $joinUris[] = [_ID_RESOURCE => $source[$predicate][_ID_RESOURCE], _ID_CONTEXT => $contextAlias];
                 } else {
                     // multiple values for join
@@ -555,7 +555,7 @@ class Views extends CompositeBase
                     : $this->config->getCollectionForCBD($this->storeName, $from)
                 );
 
-                $cursor = $collection->find(['_id' => ['$in' => $joinUris]], [
+                $cursor = $collection->find([_ID_KEY => ['$in' => $joinUris]], [
                     'maxTimeMS' => $this->getConfigInstance()->getMongoCursorTimeout(),
                 ]);
 
@@ -563,7 +563,7 @@ class Views extends CompositeBase
                 foreach ($cursor as $linkMatch) {
                     // if there is a condition, check it...
                     if (isset($ruleset['condition'])) {
-                        $ruleset['condition']['._id'] = $linkMatch['_id'];
+                        $ruleset['condition']['._id'] = $linkMatch[_ID_KEY];
                     }
 
                     if (!(isset($ruleset['condition']) && $collection->count($ruleset['condition']) == 0)) {
@@ -631,7 +631,7 @@ class Views extends CompositeBase
     {
         $obj = [];
         if (isset($viewSpec['include'])) {
-            $obj['_id'] = $source['_id'];
+            $obj[_ID_KEY] = $source[_ID_KEY];
             foreach ($viewSpec['include'] as $p) {
                 if (isset($source[$p])) {
                     $obj[$p] = $source[$p];
@@ -644,7 +644,7 @@ class Views extends CompositeBase
                         }
 
                         foreach ($t as $typeOfType => $type) {
-                            if ($typeOfType === 'u' && $type === 'rdf:Seq') {
+                            if ($typeOfType === VALUE_URI && $type === 'rdf:Seq') {
                                 $seqNumber = 1;
                                 $found = true;
                                 while ($found) {
@@ -718,7 +718,7 @@ class Views extends CompositeBase
                         : $this->config->getCollectionForCBD($this->storeName, $from)
                     );
                     $query = $c['filter'];
-                    $query[$c['property'] . '.' . VALUE_URI] = $source['_id'][_ID_RESOURCE]; // todo: how does graph restriction work here?
+                    $query[$c['property'] . '.' . VALUE_URI] = $source[_ID_KEY][_ID_RESOURCE]; // todo: how does graph restriction work here?
                     $obj[$predicate] = [VALUE_LITERAL => $collection->count($query) . '']; // make sure it's a string
                 } else { // just look for property in current source...
                     $count = 0;
@@ -749,7 +749,7 @@ class Views extends CompositeBase
         $contextAlias = $this->getContextAlias($context);
         $ret = [];
         foreach ($resourceUriOrArray as $resource) {
-            $ret[] = ['r' => $this->labeller->uri_to_alias($resource), 'c' => $contextAlias, 'type' => $viewType];
+            $ret[] = [_ID_RESOURCE => $this->labeller->uri_to_alias($resource), _ID_CONTEXT => $contextAlias, _ID_TYPE => $viewType];
         }
 
         return $ret;
@@ -768,16 +768,16 @@ class Views extends CompositeBase
     private function upsertGeneratedView(Collection $collection, array $generatedView): void
     {
         try {
-            $collection->replaceOne(['_id' => $generatedView['_id']], $generatedView, ['upsert' => true]);
+            $collection->replaceOne([_ID_KEY => $generatedView[_ID_KEY]], $generatedView, ['upsert' => true]);
         } catch (BulkWriteException $e) {
             if ($this->isDuplicateKeyError($e)) {
-                $existingView = $collection->findOne(['_id' => $generatedView['_id']]);
+                $existingView = $collection->findOne([_ID_KEY => $generatedView[_ID_KEY]]);
                 $this->getLogger()->warning('Duplicate key error when upserting generated view, retrying.', [
                     'error' => $e,
                     'generatedView' => $generatedView,
                     'existingView' => $existingView,
                 ]);
-                $collection->replaceOne(['_id' => $generatedView['_id']], $generatedView, ['upsert' => false]);
+                $collection->replaceOne([_ID_KEY => $generatedView[_ID_KEY]], $generatedView, ['upsert' => false]);
             } else {
                 throw $e;
             }

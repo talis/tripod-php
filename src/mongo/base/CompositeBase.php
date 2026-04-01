@@ -81,7 +81,7 @@ abstract class CompositeBase extends DriverBase implements IComposite
 
         // add to this any composites
         foreach ($this->findImpactedComposites($subjectsAndPredicatesOfChange, $contextAlias) as $doc) {
-            $spec = $this->getSpecification($this->storeName, $doc[_ID_KEY]['type']);
+            $spec = $this->getSpecification($this->storeName, $doc[_ID_KEY][_ID_TYPE]);
             if (is_array($spec) && array_key_exists('from', $spec)) {
                 if (!array_key_exists($spec['from'], $candidates)) {
                     $candidates[$spec['from']] = [];

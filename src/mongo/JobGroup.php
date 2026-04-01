@@ -43,7 +43,7 @@ class JobGroup
     public function setJobCount(int $count): void
     {
         $this->getMongoCollection()->updateOne(
-            ['_id' => $this->getId()],
+            [_ID_KEY => $this->getId()],
             ['$set' => ['count' => $count]],
             ['upsert' => true]
         );
@@ -59,7 +59,7 @@ class JobGroup
     public function incrementJobCount(int $inc = 1): int
     {
         $updateResult = $this->getMongoCollection()->findOneAndUpdate(
-            ['_id' => $this->getId()],
+            [_ID_KEY => $this->getId()],
             ['$inc' => ['count' => $inc]],
             ['upsert' => true, 'returnDocument' => FindOneAndUpdate::RETURN_DOCUMENT_AFTER]
         );

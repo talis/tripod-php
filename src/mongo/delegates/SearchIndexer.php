@@ -92,15 +92,15 @@ class SearchIndexer extends CompositeBase
         // 2. regenerate search documents for this resource
         $documentsToIndex = [];
         // first work out what its type is
-        $query = ['_id' => [
-            'r' => $this->labeller->uri_to_alias($resourceUri),
-            'c' => $this->getContextAlias($context),
+        $query = [_ID_KEY => [
+            _ID_RESOURCE => $this->labeller->uri_to_alias($resourceUri),
+            _ID_CONTEXT => $this->getContextAlias($context),
         ]];
 
         $resourceAndType = $mongoCollection->find(
             $query,
             [
-                'projection' => ['_id' => 1, 'rdf:type' => 1],
+                'projection' => [_ID_KEY => 1, 'rdf:type' => 1],
                 'maxTimeMS' => $this->config->getMongoCursorTimeout(),
             ]
         );
@@ -158,15 +158,15 @@ class SearchIndexer extends CompositeBase
         $from = $spec['from'] ?? $this->podName;
 
         $types = [];
-        if (isset($spec['type'])) {
-            if (is_array($spec['type'])) {
-                foreach ($spec['type'] as $type) {
+        if (isset($spec[_ID_TYPE])) {
+            if (is_array($spec[_ID_TYPE])) {
+                foreach ($spec[_ID_TYPE] as $type) {
                     $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($type)];
                     $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($type)];
                 }
             } else {
-                $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($spec['type'])];
-                $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($spec['type'])];
+                $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($spec[_ID_TYPE])];
+                $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($spec[_ID_TYPE])];
             }
         }
 
@@ -192,7 +192,7 @@ class SearchIndexer extends CompositeBase
         foreach ($docs as $doc) {
             if ($queueName) {
                 $subject = new ImpactedSubject(
-                    $doc['_id'],
+                    $doc[_ID_KEY],
                     OP_SEARCH,
                     $this->storeName,
                     $from,
@@ -221,7 +221,7 @@ class SearchIndexer extends CompositeBase
 
         $t->stop();
         $this->timingLog(MONGO_CREATE_TABLE, [
-            'type' => $spec['type'] ?? null,
+            'type' => $spec[_ID_TYPE] ?? null,
             'duration' => $t->result(),
             'filter' => $filter,
             'from' => $from,

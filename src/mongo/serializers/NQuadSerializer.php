@@ -34,10 +34,10 @@ class NQuadSerializer
                 return '<' . htmlspecialchars($this->escape($v)) . '>';
             }
 
-            return $this->getTerm(['type' => 'literal', 'value' => $v]);
+            return $this->getTerm([_ID_TYPE => 'literal', 'value' => $v]);
         }
 
-        if ($v['type'] != 'literal') {
+        if ($v[_ID_TYPE] != 'literal') {
             return $this->getTerm($v['value']);
         }
 
@@ -84,7 +84,7 @@ class NQuadSerializer
             foreach ($ps as $p => $os) {
                 $p = $this->getTerm($p);
                 if (!is_array($os)) { // single literal o
-                    $os = [['value' => $os, 'type' => 'literal']];
+                    $os = [['value' => $os, _ID_TYPE => 'literal']];
                 }
 
                 foreach ($os as $o) {

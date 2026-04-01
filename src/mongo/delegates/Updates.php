@@ -259,7 +259,7 @@ class Updates extends DriverBase
             $result = $auditCollection->insertOne(
                 [
                     _ID_KEY => $auditDocumentId,
-                    'type' => AUDIT_TYPE_REMOVE_INERT_LOCKS,
+                    _ID_TYPE => AUDIT_TYPE_REMOVE_INERT_LOCKS,
                     'status' => AUDIT_STATUS_IN_PROGRESS,
                     'reason' => $reason,
                     'transaction_id' => $transaction_id,
@@ -1106,7 +1106,7 @@ class Updates extends DriverBase
         $subjectsOfChange = [];
         foreach ($changes as $c) {
             if ($c['rdf:type'][VALUE_URI] == 'cs:ChangeSet') {
-                $subjectsOfChange[] = $c['cs:subjectOfChange']['u'];
+                $subjectsOfChange[] = $c['cs:subjectOfChange'][VALUE_URI];
             }
         }
 

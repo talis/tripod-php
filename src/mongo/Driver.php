@@ -114,7 +114,7 @@ class Driver extends DriverBase implements IDriver
     {
         $resource = $this->labeller->uri_to_alias($resource);
         $query = [
-            '_id' => [
+            _ID_KEY => [
                 _ID_RESOURCE => $resource,
                 _ID_CONTEXT => $this->getContextAlias($context),
             ],
@@ -139,7 +139,7 @@ class Driver extends DriverBase implements IDriver
             ];
         }
 
-        $query = ['_id' => ['$in' => $ids]];
+        $query = [_ID_KEY => ['$in' => $ids]];
 
         return $this->fetchGraph($query, MONGO_MULTIDESCRIBE);
     }
@@ -368,26 +368,26 @@ class Driver extends DriverBase implements IDriver
         $contextAlias = $this->getContextAlias($context);
 
         // make sure context is represented - but not at the expense of $ operands queries failing
-        if (array_key_exists('_id', $query) && is_array($query['_id'])) {
-            if (!array_key_exists(_ID_CONTEXT, $query['_id']) && array_key_exists(_ID_RESOURCE, $query['_id'])) {
+        if (array_key_exists(_ID_KEY, $query) && is_array($query[_ID_KEY])) {
+            if (!array_key_exists(_ID_CONTEXT, $query[_ID_KEY]) && array_key_exists(_ID_RESOURCE, $query[_ID_KEY])) {
                 // add context
-                $query['_id'][_ID_CONTEXT] = $contextAlias;
+                $query[_ID_KEY][_ID_CONTEXT] = $contextAlias;
             } else {
                 // check query does not have a $ operand
-                foreach ($query['_id'] as $key => $queryProps) {
+                foreach ($query[_ID_KEY] as $key => $queryProps) {
                     if (substr($key, 0, 1) == '$' && is_array($queryProps)) {
                         foreach ($queryProps as $index => $queryProp) {
                             if (is_array($queryProp) && array_key_exists(_ID_RESOURCE, $queryProp)) {
                                 $queryProp[_ID_CONTEXT] = $contextAlias;
-                                $query['_id'][$key][$index] = $queryProp;
+                                $query[_ID_KEY][$key][$index] = $queryProp;
                             }
                         }
                     }
                 }
             }
-        } elseif (!array_key_exists('_id', $query)) {
+        } elseif (!array_key_exists(_ID_KEY, $query)) {
             // this query did not have _id referenced at all - just add an _id.c clause
-            $query['_id.' . _ID_CONTEXT] = $contextAlias;
+            $query[_ID_KEY . '.' . _ID_CONTEXT] = $contextAlias;
         }
 
         $findOptions = [
@@ -484,7 +484,7 @@ class Driver extends DriverBase implements IDriver
         $this->getStat()->increment(MONGO_GET_ETAG);
         $resource = $this->labeller->uri_to_alias($resource);
         $query = [
-            '_id' => [
+            _ID_KEY => [
                 _ID_RESOURCE => $resource,
                 _ID_CONTEXT => $this->getContextAlias($context),
             ],

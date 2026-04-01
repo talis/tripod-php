@@ -58,9 +58,9 @@ class SearchDocuments extends DriverBase
             if (!empty($indexRules['condition'])) {
                 $irFrom = (empty($indexRules['from'])) ? $this->podName : $indexRules['from'];
                 // add id of current record to rules..
-                $indexRules['condition']['_id'] = [
-                    'r' => $this->labeller->uri_to_alias($resource),
-                    'c' => $this->labeller->uri_to_alias($context),
+                $indexRules['condition'][_ID_KEY] = [
+                    _ID_RESOURCE => $this->labeller->uri_to_alias($resource),
+                    _ID_CONTEXT => $this->labeller->uri_to_alias($context),
                 ];
 
                 if ($this->getConfigInstance()->getCollectionForCBD($this->storeName, $irFrom)->findOne($indexRules['condition'])) {
@@ -80,11 +80,11 @@ class SearchDocuments extends DriverBase
         }
 
         $_id = [
-            'r' => $this->labeller->uri_to_alias($resource),
-            'c' => $this->labeller->uri_to_alias($context),
+            _ID_RESOURCE => $this->labeller->uri_to_alias($resource),
+            _ID_CONTEXT => $this->labeller->uri_to_alias($context),
         ];
 
-        $sourceDocument = $this->getConfigInstance()->getCollectionForCBD($this->storeName, $from)->findOne(['_id' => $_id]);
+        $sourceDocument = $this->getConfigInstance()->getCollectionForCBD($this->storeName, $from)->findOne([_ID_KEY => $_id]);
 
         if (empty($sourceDocument)) {
             $this->debugLog(sprintf('Source document not found for %s, cannot proceed generating %s search document', $resource, $specId));
@@ -98,8 +98,8 @@ class SearchDocuments extends DriverBase
         $generatedDocument = [\_CREATED_TS => DateUtil::getMongoDate()];
         $this->addIdToImpactIndex($_id, $generatedDocument);
 
-        $_id['type'] = $specId;
-        $generatedDocument['_id'] = $_id;
+        $_id[_ID_TYPE] = $specId;
+        $generatedDocument[_ID_KEY] = $_id;
 
         if (isset($searchSpec['fields'])) {
             $this->addFields($sourceDocument, $searchSpec['fields'], $generatedDocument);
@@ -132,7 +132,7 @@ class SearchDocuments extends DriverBase
             } // no point doing anything else if there is no spec for the type
 
             foreach ($specs as $searchSpec) {
-                $generatedSearchDocuments[] = $this->generateSearchDocumentBasedOnSpecId($searchSpec['_id'], $resource, $context);
+                $generatedSearchDocuments[] = $this->generateSearchDocumentBasedOnSpecId($searchSpec[_ID_KEY], $resource, $context);
             }
         }
 
@@ -156,13 +156,13 @@ class SearchDocuments extends DriverBase
             if (isset($source[$predicate])) {
                 $joinUris = [];
 
-                if (isset($source[$predicate]['u'])) {
+                if (isset($source[$predicate][VALUE_URI])) {
                     // single value for join
-                    $joinUris[] = ['r' => $source[$predicate]['u'], 'c' => $this->defaultContext]; // todo: check that default context is the right thing to set here and below
+                    $joinUris[] = [_ID_RESOURCE => $source[$predicate][VALUE_URI], _ID_CONTEXT => $this->defaultContext]; // todo: check that default context is the right thing to set here and below
                 } else {
                     // multiple values for join
                     foreach ($source[$predicate] as $v) {
-                        $joinUris[] = ['r' => $v['u'], 'c' => $this->defaultContext];
+                        $joinUris[] = [_ID_RESOURCE => $v[VALUE_URI], _ID_CONTEXT => $this->defaultContext];
                     }
                 }
 
@@ -174,7 +174,7 @@ class SearchDocuments extends DriverBase
                     : $config->getCollectionForCBD($this->storeName, $from)
                 );
 
-                $cursor = $collection->find(['_id' => ['$in' => $joinUris]], [
+                $cursor = $collection->find([_ID_KEY => ['$in' => $joinUris]], [
                     'maxTimeMS' => $this->getConfigInstance()->getMongoCursorTimeout(),
                 ]);
 
@@ -238,7 +238,7 @@ class SearchDocuments extends DriverBase
                         $this->warningLog("Search spec value '_link_' is deprecated", $f);
                     }
 
-                    $values[] = $this->labeller->qname_to_alias($source['_id']['r']);
+                    $values[] = $this->labeller->qname_to_alias($source[_ID_KEY][_ID_RESOURCE]);
                 }
 
                 $this->addValuesToTarget($values, $f, $target);

@@ -43,7 +43,7 @@ class TransactionLog
     public function createNewTransaction(string $transaction_id, array $changes, ?array $originalCBDs, string $storeName, string $podName): void
     {
         $transaction = [
-            '_id' => $transaction_id,
+            _ID_KEY => $transaction_id,
             'dbName' => $storeName,
             'collectionName' => $podName,
             'changes' => $changes,
@@ -78,7 +78,7 @@ class TransactionLog
         }
 
         $this->updateTransaction(
-            ['_id' => $transaction_id],
+            [_ID_KEY => $transaction_id],
             ['$set' => $params],
             ['w' => 1, 'upsert' => true]
         );
@@ -99,7 +99,7 @@ class TransactionLog
         }
 
         $this->updateTransaction(
-            ['_id' => $transaction_id],
+            [_ID_KEY => $transaction_id],
             ['$set' => $params],
             ['w' => 1, 'upsert' => true]
         );
@@ -114,7 +114,7 @@ class TransactionLog
     public function completeTransaction(string $transaction_id, array $newCBDs): void
     {
         $this->updateTransaction(
-            ['_id' => $transaction_id],
+            [_ID_KEY => $transaction_id],
             ['$set' => ['status' => 'completed', 'endTime' => DateUtil::getMongoDate(), 'newCBDs' => $newCBDs]],
             ['w' => 1]
         );
@@ -129,7 +129,7 @@ class TransactionLog
      */
     public function getTransaction(string $transaction_id): ?array
     {
-        return $this->transaction_collection->findOne(['_id' => $transaction_id]);
+        return $this->transaction_collection->findOne([_ID_KEY => $transaction_id]);
     }
 
     /**

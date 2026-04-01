@@ -158,7 +158,7 @@ class Tables extends CompositeBase
             $query = [];
             foreach ($tableFilters as $tableType => $filters) {
                 // first re-gen table rows where resources appear in the impact index
-                $query[] = ['value.' . _IMPACT_INDEX => ['$in' => $filters], '_id.' . _ID_TYPE => $tableType];
+                $query[] = ['value.' . _IMPACT_INDEX => ['$in' => $filters], _ID_KEY . '.' . _ID_TYPE => $tableType];
             }
 
             if ($resourceFilters !== []) {
@@ -181,7 +181,7 @@ class Tables extends CompositeBase
         foreach ($this->config->getCollectionsForTables($this->storeName) as $collection) {
             $t = new Timer();
             $t->start();
-            $tableRows = $collection->find($query, ['projection' => ['_id' => true]]);
+            $tableRows = $collection->find($query, ['projection' => [_ID_KEY => true]]);
             $t->stop();
             $this->timingLog(MONGO_FIND_IMPACTED, ['duration' => $t->result(), 'query' => $query, 'storeName' => $this->storeName, 'collection' => $collection]);
             foreach ($tableRows as $t) {
@@ -233,7 +233,7 @@ class Tables extends CompositeBase
             $options
         );
 
-        $filter['_id.' . _ID_TYPE] = $tableSpecId;
+        $filter[_ID_KEY . '.' . _ID_TYPE] = $tableSpecId;
 
         $collection = $this->getConfigInstance()->getCollectionForTable(
             $this->storeName,
@@ -286,7 +286,7 @@ class Tables extends CompositeBase
         $t = new Timer();
         $t->start();
 
-        $filter['_id.' . _ID_TYPE] = $tableSpecId;
+        $filter[_ID_KEY . '.' . _ID_TYPE] = $tableSpecId;
 
         $collection = $this->config->getCollectionForTable($this->storeName, $tableSpecId, $this->readPreference);
         $results = $collection->distinct($fieldName, $filter);
@@ -367,8 +367,8 @@ class Tables extends CompositeBase
         }
 
         foreach ($tableSpecs as $key => $tableSpec) {
-            if (isset($tableSpec['type'])) {
-                $types = $tableSpec['type'];
+            if (isset($tableSpec[_ID_TYPE])) {
+                $types = $tableSpec[_ID_TYPE];
                 if (!is_array($types)) {
                     $types = [$types];
                 }
@@ -413,19 +413,19 @@ class Tables extends CompositeBase
         $from = $tableSpec['from'] ?? $this->podName;
 
         $types = [];
-        if (is_array($tableSpec['type'])) {
-            foreach ($tableSpec['type'] as $type) {
+        if (is_array($tableSpec[_ID_TYPE])) {
+            foreach ($tableSpec[_ID_TYPE] as $type) {
                 $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($type)];
                 $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($type)];
             }
         } else {
-            $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($tableSpec['type'])];
-            $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($tableSpec['type'])];
+            $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($tableSpec[_ID_TYPE])];
+            $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($tableSpec[_ID_TYPE])];
         }
 
         $filter = ['$or' => $types];
         if (isset($resource)) {
-            $filter['_id'] = [
+            $filter[_ID_KEY] = [
                 _ID_RESOURCE => $this->labeller->uri_to_alias($resource),
                 _ID_CONTEXT => $contextAlias,
             ];
@@ -449,7 +449,7 @@ class Tables extends CompositeBase
         foreach ($docs as $doc) {
             if ($queueName && !$resource) {
                 $subject = new ImpactedSubject(
-                    $doc['_id'],
+                    $doc[_ID_KEY],
                     OP_TABLES,
                     $this->storeName,
                     $from,
@@ -463,16 +463,16 @@ class Tables extends CompositeBase
             } else {
                 // set up ID
                 $generatedRow = [
-                    '_id' => [
-                        _ID_RESOURCE => $doc['_id'][_ID_RESOURCE],
-                        _ID_CONTEXT => $doc['_id'][_ID_CONTEXT],
-                        _ID_TYPE => $tableSpec['_id'],
+                    _ID_KEY => [
+                        _ID_RESOURCE => $doc[_ID_KEY][_ID_RESOURCE],
+                        _ID_CONTEXT => $doc[_ID_KEY][_ID_CONTEXT],
+                        _ID_TYPE => $tableSpec[_ID_KEY],
                     ],
                     \_CREATED_TS => DateUtil::getMongoDate(),
                 ];
                 // everything must go in the value object todo: this is a hang over from map reduce days, engineer out once we have stability on new PHP method for M/R
-                $value = ['_id' => $doc['_id']];
-                $this->addIdToImpactIndex($doc['_id'], $value); // need to add the doc to the impact index to be consistent with views/search etc. this is needed for discovering impacted operations
+                $value = [_ID_KEY => $doc[_ID_KEY]];
+                $this->addIdToImpactIndex($doc[_ID_KEY], $value); // need to add the doc to the impact index to be consistent with views/search etc. this is needed for discovering impacted operations
                 $this->addFields($doc, $tableSpec, $value);
                 if (isset($tableSpec['joins'])) {
                     $this->doJoins($doc, $tableSpec['joins'], $value, $from, $contextAlias);
@@ -499,7 +499,7 @@ class Tables extends CompositeBase
 
         $t->stop();
         $this->timingLog(MONGO_CREATE_TABLE, [
-            'type' => $tableSpec['type'],
+            'type' => $tableSpec[_ID_TYPE],
             'duration' => $t->result(),
             'filter' => $filter,
             'from' => $from,
@@ -577,15 +577,15 @@ class Tables extends CompositeBase
         $this->deleteTableRowsForResource($resource, $context, $specTypes);
 
         $filter = [];
-        $filter[] = ['r' => $resourceAlias, 'c' => $contextAlias];
+        $filter[] = [_ID_RESOURCE => $resourceAlias, _ID_CONTEXT => $contextAlias];
 
         // now go through the types
-        $query = ['_id' => ['$in' => $filter]];
+        $query = [_ID_KEY => ['$in' => $filter]];
         $resourceAndType = $this->config->getCollectionForCBD($this->storeName, $this->podName)
-            ->find($query, ['projection' => ['_id' => 1, 'rdf:type' => 1]]);
+            ->find($query, ['projection' => [_ID_KEY => 1, 'rdf:type' => 1]]);
 
         foreach ($resourceAndType as $rt) {
-            $id = $rt['_id'];
+            $id = $rt[_ID_KEY];
             if (isset($rt['rdf:type'])) {
                 if (isset($rt['rdf:type'][VALUE_URI])) {
                     // single type, not an array of values
@@ -1077,9 +1077,9 @@ class Tables extends CompositeBase
                             $dest[$fieldName] = [$dest[$fieldName]];
                         }
 
-                        $dest[$fieldName][] = $this->labeller->qname_to_alias($source['_id']['r']);
+                        $dest[$fieldName][] = $this->labeller->qname_to_alias($source[_ID_KEY][_ID_RESOURCE]);
                     } else {
-                        $dest[$fieldName] = $this->labeller->qname_to_alias($source['_id']['r']);
+                        $dest[$fieldName] = $this->labeller->qname_to_alias($source[_ID_KEY][_ID_RESOURCE]);
                     }
                 }
             }
@@ -1172,7 +1172,7 @@ class Tables extends CompositeBase
                 if (isset($source[$predicate][VALUE_URI])) {
                     // single value for join
                     $joinUris[] = [_ID_RESOURCE => $source[$predicate][VALUE_URI], _ID_CONTEXT => $contextAlias];
-                } elseif ($predicate == '_id') {
+                } elseif ($predicate == _ID_KEY) {
                     // single value for join
                     $joinUris[] = [_ID_RESOURCE => $source[$predicate][_ID_RESOURCE], _ID_CONTEXT => $contextAlias];
                 } else {
@@ -1189,7 +1189,7 @@ class Tables extends CompositeBase
                     : $this->config->getCollectionForCBD($this->storeName, $from)
                 );
 
-                $cursor = $collection->find(['_id' => ['$in' => $joinUris]], [
+                $cursor = $collection->find([_ID_KEY => ['$in' => $joinUris]], [
                     'maxTimeMS' => 1000000,
                 ]);
 
@@ -1384,16 +1384,16 @@ class Tables extends CompositeBase
     private function upsertGeneratedRow(Collection $collection, array $generatedRow): void
     {
         try {
-            $collection->updateOne(['_id' => $generatedRow['_id']], ['$set' => $generatedRow], ['upsert' => true]);
+            $collection->updateOne([_ID_KEY => $generatedRow[_ID_KEY]], ['$set' => $generatedRow], ['upsert' => true]);
         } catch (BulkWriteException $e) {
             if ($this->isDuplicateKeyError($e)) {
-                $existingRow = $collection->findOne(['_id' => $generatedRow['_id']]);
+                $existingRow = $collection->findOne([_ID_KEY => $generatedRow[_ID_KEY]]);
                 $this->getLogger()->warning('Duplicate key error when upserting generated table row, retrying.', [
                     'error' => $e,
                     'generatedRow' => $generatedRow,
                     'existingRow' => $existingRow,
                 ]);
-                $collection->updateOne(['_id' => $generatedRow['_id']], ['$set' => $generatedRow], ['upsert' => false]);
+                $collection->updateOne([_ID_KEY => $generatedRow[_ID_KEY]], ['$set' => $generatedRow], ['upsert' => false]);
             } else {
                 throw $e;
             }

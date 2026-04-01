@@ -220,8 +220,8 @@ class MongoSearchProvider implements ISearchProvider
      */
     public function indexDocument(array $document): void
     {
-        if (isset($document['_id']['type'])) {
-            $collection = $this->config->getCollectionForSearchDocument($this->storeName, $document['_id']['type']);
+        if (isset($document[_ID_KEY][_ID_TYPE])) {
+            $collection = $this->config->getCollectionForSearchDocument($this->storeName, $document[_ID_KEY][_ID_TYPE]);
         } else {
             throw new SearchException('No search document type specified in document');
         }
@@ -330,7 +330,7 @@ class MongoSearchProvider implements ISearchProvider
             $query = [];
             foreach ($searchDocFilters as $searchDocType => $filters) {
                 // first re-gen views where resources appear in the impact index
-                $query[] = [_IMPACT_INDEX => ['$in' => $filters], '_id.' . _ID_TYPE => $searchDocType];
+                $query[] = [_IMPACT_INDEX => ['$in' => $filters], _ID_KEY . '.' . _ID_TYPE => $searchDocType];
                 $searchTypes[] = $searchDocType;
             }
 
@@ -351,7 +351,7 @@ class MongoSearchProvider implements ISearchProvider
 
         $searchDocs = [];
         foreach ($this->config->getCollectionsForSearch($this->storeName, $searchTypes) as $collection) {
-            $cursor = $collection->find($query, ['projection' => ['_id' => true]]);
+            $cursor = $collection->find($query, ['projection' => [_ID_KEY => true]]);
             foreach ($cursor as $d) {
                 $searchDocs[] = $d;
             }
@@ -548,13 +548,13 @@ class MongoSearchProvider implements ISearchProvider
     {
         try {
             return $collection->updateOne(
-                ['_id' => $document['_id']],
+                [_ID_KEY => $document[_ID_KEY]],
                 ['$set' => $document],
                 ['upsert' => true],
             );
         } catch (BulkWriteException $e) {
             if ($this->isDuplicateKeyError($e)) {
-                $existingDocument = $collection->findOne(['_id' => $document['_id']]);
+                $existingDocument = $collection->findOne([_ID_KEY => $document[_ID_KEY]]);
                 $this->config->getLogger()->warning('Duplicate key error when upserting generated table row, retrying.', [
                     'error' => $e,
                     'document' => $document,
@@ -562,7 +562,7 @@ class MongoSearchProvider implements ISearchProvider
                 ]);
 
                 return $collection->updateOne(
-                    ['_id' => $document['_id']],
+                    [_ID_KEY => $document[_ID_KEY]],
                     ['$set' => $document],
                     ['upsert' => false],
                 );

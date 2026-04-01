@@ -196,7 +196,7 @@ abstract class DriverBase
                         $currentDate = DateUtil::getMongoDate();
                         if ($expires < $currentDate) {
                             // regenerate!
-                            $this->generateView($result['_id']['type'], $result['_id']['r']);
+                            $this->generateView($result[_ID_KEY][_ID_TYPE], $result[_ID_KEY][_ID_RESOURCE]);
                         }
                     }
 
@@ -223,8 +223,8 @@ abstract class DriverBase
         if ($type == MONGO_VIEW) {
             if (array_key_exists('_id.type', $query)) {
                 $this->getStat()->timer(sprintf('%s.%s', $type, $query['_id.type']), $t->result());
-            } elseif (array_key_exists('_id', $query) && array_key_exists('type', $query['_id'])) {
-                $this->getStat()->timer(sprintf('%s.%s', $type, $query['_id']['type']), $t->result());
+            } elseif (array_key_exists(_ID_KEY, $query) && array_key_exists(_ID_TYPE, $query[_ID_KEY])) {
+                $this->getStat()->timer(sprintf('%s.%s', $type, $query[_ID_KEY][_ID_TYPE]), $t->result());
             }
         } else {
             $this->getStat()->timer(sprintf('%s.%s', $type, $collectionName), $t->result());

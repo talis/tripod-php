@@ -96,7 +96,7 @@ class MongoGraph extends ExtendedGraph
 
         // view
         $doc = [];
-        $doc['_id'] = [_ID_RESOURCE => $docId, _ID_CONTEXT => $contextAlias];
+        $doc[_ID_KEY] = [_ID_RESOURCE => $docId, _ID_CONTEXT => $contextAlias];
         $doc['value'] = [];
         $doc['value'][_IMPACT_INDEX] = $subjects;
         $doc['value'][_GRAPHS] = [];
@@ -129,7 +129,7 @@ class MongoGraph extends ExtendedGraph
                 if ($graphValueObject !== []) {
                     $predObjects[$predicate] = $graphValueObject;
                 }
-            } elseif ($key == '_id') {
+            } elseif ($key == _ID_KEY) {
                 // If the subject is invalid then throw an exception
                 if (!isset($value[_ID_RESOURCE]) || !$this->isValidResource($value[_ID_RESOURCE])) {
                     throw new Exception('The subject must be a non-empty string, ' . var_export($value[_ID_RESOURCE], true) . ' given');
@@ -137,7 +137,7 @@ class MongoGraph extends ExtendedGraph
             }
         }
 
-        $_i[$this->_labeller->qname_to_alias($tarray['_id'][_ID_RESOURCE])] = $predObjects;
+        $_i[$this->_labeller->qname_to_alias($tarray[_ID_KEY][_ID_RESOURCE])] = $predObjects;
         $this->_index = $this->merge($this->_index, $_i);
     }
 
@@ -227,7 +227,7 @@ class MongoGraph extends ExtendedGraph
 
             $id[_ID_RESOURCE] = $this->_labeller->uri_to_alias($resource);
             $id[_ID_CONTEXT] = $contextAlias;
-            $doc['_id'] = $id;
+            $doc[_ID_KEY] = $id;
             foreach ($predObjects as $predicate => $objects) {
                 $pQName = $this->uri_to_qname($predicate);
                 if (count($objects) === 1) {

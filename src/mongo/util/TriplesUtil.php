@@ -182,7 +182,7 @@ class TriplesUtil
             if (preg_match('/E11000/', $e->getMessage())) {
                 echo 'M';
                 // key already exists, merge it
-                $criteria = ['_id' => ['r' => $cbdSubject, 'c' => $context]];
+                $criteria = [_ID_KEY => [_ID_RESOURCE => $cbdSubject, _ID_CONTEXT => $context]];
                 $existingGraph = new MongoGraph();
                 $existingGraph->add_tripod_array($collection->findOne($criteria));
                 $existingGraph->add_graph($cbdGraph);
