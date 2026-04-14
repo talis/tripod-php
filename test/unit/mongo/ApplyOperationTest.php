@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
 use Tripod\Config;
@@ -15,9 +17,9 @@ use Tripod\Mongo\MongoSearchProvider;
 
 class ApplyOperationTest extends ResqueJobTestBase
 {
-    protected $args = [];
+    private array $args = [];
 
-    public function testMandatoryArgTripodConfig()
+    public function testMandatoryArgTripodConfig(): void
     {
         $this->setArgs();
         unset($this->args['tripodConfig']);
@@ -29,7 +31,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $this->performJob($job);
     }
 
-    public function testMandatoryArgSubject()
+    public function testMandatoryArgSubject(): void
     {
         $this->setArgs();
         unset($this->args['subjects']);
@@ -41,7 +43,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $this->performJob($job);
     }
 
-    public function testApplyViewOperation()
+    public function testApplyViewOperation(): void
     {
         $this->setArgs();
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
@@ -87,11 +89,11 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $applyOperation->expects($this->once())
             ->method('createImpactedSubject')
-            ->will($this->returnValue($subject));
+            ->willReturn($subject);
 
         $applyOperation->expects($this->exactly(3))
             ->method('getStat')
-            ->will($this->returnValue($statMock));
+            ->willReturn($statMock);
 
         $statMock->expects($this->once())
             ->method('increment')
@@ -105,12 +107,12 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $subject->expects($this->once())
             ->method('getTripod')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $tripod->expects($this->once())
             ->method('getComposite')
             ->with(OP_VIEWS)
-            ->will($this->returnValue($views));
+            ->willReturn($views);
 
         $views->expects($this->once())
             ->method('update')
@@ -119,7 +121,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $this->performJob($applyOperation);
     }
 
-    public function testApplyViewOperationDecrementsJobGroupForBatchOperations()
+    public function testApplyViewOperationDecrementsJobGroupForBatchOperations(): void
     {
         $this->setArgs();
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
@@ -128,6 +130,7 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $applyOperation->args = $this->args;
         $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
+
         $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
 
@@ -139,7 +142,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $jobGroup->expects($this->once())
             ->method('incrementJobCount')
             ->with(-1)
-            ->will($this->returnValue(2));
+            ->willReturn(2);
 
         $statMock = $this->getMockStat(
             $this->args['statsConfig']['config']['host'],
@@ -179,16 +182,16 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $applyOperation->expects($this->once())
             ->method('createImpactedSubject')
-            ->will($this->returnValue($subject));
+            ->willReturn($subject);
 
         $applyOperation->expects($this->exactly(3))
             ->method('getStat')
-            ->will($this->returnValue($statMock));
+            ->willReturn($statMock);
 
         $applyOperation->expects($this->once())
             ->method('getJobGroup')
             ->with('tripod_php_testing', $jobTrackerId->__toString())
-            ->will($this->returnValue($jobGroup));
+            ->willReturn($jobGroup);
 
         $applyOperation->expects($this->never())
             ->method('getTripod');
@@ -205,12 +208,12 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $subject->expects($this->once())
             ->method('getTripod')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $tripod->expects($this->once())
             ->method('getComposite')
             ->with(OP_VIEWS)
-            ->will($this->returnValue($views));
+            ->willReturn($views);
 
         $views->expects($this->once())
             ->method('update')
@@ -220,7 +223,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $this->performJob($applyOperation);
     }
 
-    public function testApplyViewOperationCleanupIfAllGroupJobsComplete()
+    public function testApplyViewOperationCleanupIfAllGroupJobsComplete(): void
     {
         $this->setArgs(OP_VIEWS, ['v_foo_bar']);
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
@@ -229,9 +232,10 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $applyOperation->args = $this->args;
         $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
+
         $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
-        $timestamp = new UTCDateTime(hexdec(substr($jobTrackerId, 0, 8)) * 1000);
+        $timestamp = new UTCDateTime($jobTrackerId->getTimestamp() * 1000);
 
         $jobGroup = $this->getMockBuilder(JobGroup::class)
             ->onlyMethods(['incrementJobCount'])
@@ -241,7 +245,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $jobGroup->expects($this->once())
             ->method('incrementJobCount')
             ->with(-1)
-            ->will($this->returnValue(0));
+            ->willReturn(0);
 
         $statMock = $this->getMockStat(
             $this->args['statsConfig']['config']['host'],
@@ -281,21 +285,21 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $applyOperation->expects($this->once())
             ->method('createImpactedSubject')
-            ->will($this->returnValue($subject));
+            ->willReturn($subject);
 
         $applyOperation->expects($this->exactly(3))
             ->method('getStat')
-            ->will($this->returnValue($statMock));
+            ->willReturn($statMock);
 
         $applyOperation->expects($this->once())
             ->method('getJobGroup')
             ->with('tripod_php_testing', $jobTrackerId->__toString())
-            ->will($this->returnValue($jobGroup));
+            ->willReturn($jobGroup);
 
         $applyOperation->expects($this->once())
             ->method('getTripod')
             ->with('tripod_php_testing', 'CBD_testing')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $statMock->expects($this->once())
             ->method('increment')
@@ -309,11 +313,11 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $subject->expects($this->once())
             ->method('getTripod')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $tripod->expects($this->exactly(2))
             ->method('getTripodViews')
-            ->will($this->returnValue($views));
+            ->willReturn($views);
 
         $views->expects($this->once())
             ->method('update')
@@ -322,12 +326,12 @@ class ApplyOperationTest extends ResqueJobTestBase
         $views->expects($this->once())
             ->method('deleteViewsByViewId')
             ->with('v_foo_bar', $timestamp)
-            ->will($this->returnValue(3));
+            ->willReturn(3);
 
         $this->performJob($applyOperation);
     }
 
-    public function testApplyTableOperation()
+    public function testApplyTableOperation(): void
     {
         $this->setArgs();
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
@@ -385,11 +389,11 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $applyOperation->expects($this->once())
             ->method('createImpactedSubject')
-            ->will($this->returnValue($subject));
+            ->willReturn($subject);
 
         $applyOperation->expects($this->exactly(3))
             ->method('getStat')
-            ->will($this->returnValue($statMock));
+            ->willReturn($statMock);
 
         $statMock->expects($this->once())
             ->method('increment')
@@ -403,12 +407,12 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $subject->expects($this->once())
             ->method('getTripod')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $tripod->expects($this->once())
             ->method('getComposite')
             ->with(OP_TABLES)
-            ->will($this->returnValue($tables));
+            ->willReturn($tables);
 
         $tables->expects($this->once())
             ->method('update')
@@ -417,7 +421,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $this->performJob($applyOperation);
     }
 
-    public function testApplyTableOperationDecrementsJobGroupForBatchOperations()
+    public function testApplyTableOperationDecrementsJobGroupForBatchOperations(): void
     {
         $this->setArgs(OP_TABLES, ['t_resource']);
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
@@ -445,7 +449,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $jobGroup->expects($this->once())
             ->method('incrementJobCount')
             ->with(-1)
-            ->will($this->returnValue(2));
+            ->willReturn(2);
 
         $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
@@ -478,16 +482,16 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $applyOperation->expects($this->once())
             ->method('createImpactedSubject')
-            ->will($this->returnValue($subject));
+            ->willReturn($subject);
 
         $applyOperation->expects($this->exactly(3))
             ->method('getStat')
-            ->will($this->returnValue($statMock));
+            ->willReturn($statMock);
 
         $applyOperation->expects($this->once())
             ->method('getJobGroup')
             ->with('tripod_php_testing', $jobTrackerId->__toString())
-            ->will($this->returnValue($jobGroup));
+            ->willReturn($jobGroup);
 
         $applyOperation->expects($this->never())
             ->method('getTripod');
@@ -504,12 +508,12 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $subject->expects($this->once())
             ->method('getTripod')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $tripod->expects($this->once())
             ->method('getComposite')
             ->with(OP_TABLES)
-            ->will($this->returnValue($tables));
+            ->willReturn($tables);
 
         $tables->expects($this->once())
             ->method('update')
@@ -520,7 +524,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $this->performJob($applyOperation);
     }
 
-    public function testApplyTableOperationCleanupIfAllGroupJobsComplete()
+    public function testApplyTableOperationCleanupIfAllGroupJobsComplete(): void
     {
         $this->setArgs(OP_TABLES, ['t_resource']);
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
@@ -539,7 +543,7 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
-        $timestamp = new UTCDateTime(hexdec(substr($jobTrackerId, 0, 8)) * 1000);
+        $timestamp = new UTCDateTime($jobTrackerId->getTimestamp() * 1000);
 
         $jobGroup = $this->getMockBuilder(JobGroup::class)
             ->onlyMethods(['incrementJobCount'])
@@ -549,7 +553,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $jobGroup->expects($this->once())
             ->method('incrementJobCount')
             ->with(-1)
-            ->will($this->returnValue(0));
+            ->willReturn(0);
 
         $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
@@ -582,21 +586,21 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $applyOperation->expects($this->once())
             ->method('createImpactedSubject')
-            ->will($this->returnValue($subject));
+            ->willReturn($subject);
 
         $applyOperation->expects($this->exactly(3))
             ->method('getStat')
-            ->will($this->returnValue($statMock));
+            ->willReturn($statMock);
 
         $applyOperation->expects($this->once())
             ->method('getJobGroup')
             ->with('tripod_php_testing', $jobTrackerId->__toString())
-            ->will($this->returnValue($jobGroup));
+            ->willReturn($jobGroup);
 
         $applyOperation->expects($this->once())
             ->method('getTripod')
             ->with('tripod_php_testing', 'CBD_testing')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $statMock->expects($this->once())
             ->method('increment')
@@ -610,11 +614,11 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $subject->expects($this->once())
             ->method('getTripod')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $tripod->expects($this->exactly(2))
             ->method('getTripodTables')
-            ->will($this->returnValue($tables));
+            ->willReturn($tables);
 
         $tables->expects($this->once())
             ->method('update')
@@ -622,12 +626,12 @@ class ApplyOperationTest extends ResqueJobTestBase
         $tables->expects($this->once())
             ->method('deleteTableRowsByTableId')
             ->with('t_resource', $timestamp)
-            ->will($this->returnValue(4));
+            ->willReturn(4);
 
         $this->performJob($applyOperation);
     }
 
-    public function testApplySearchOperation()
+    public function testApplySearchOperation(): void
     {
         $this->setArgs(OP_SEARCH, ['i_search_resource']);
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
@@ -670,11 +674,11 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $applyOperation->expects($this->once())
             ->method('createImpactedSubject')
-            ->will($this->returnValue($subject));
+            ->willReturn($subject);
 
         $applyOperation->expects($this->exactly(3))
             ->method('getStat')
-            ->will($this->returnValue($statMock));
+            ->willReturn($statMock);
 
         $statMock->expects($this->once())
             ->method('increment')
@@ -688,12 +692,12 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $subject->expects($this->once())
             ->method('getTripod')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $tripod->expects($this->once())
             ->method('getComposite')
             ->with(OP_SEARCH)
-            ->will($this->returnValue($search));
+            ->willReturn($search);
 
         $search->expects($this->once())
             ->method('update')
@@ -702,7 +706,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $this->performJob($applyOperation);
     }
 
-    public function testApplySearchOperationDecrementsJobGroupForBatchOperations()
+    public function testApplySearchOperationDecrementsJobGroupForBatchOperations(): void
     {
         $this->setArgs(OP_SEARCH, ['i_search_resource']);
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
@@ -730,7 +734,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $jobGroup->expects($this->once())
             ->method('incrementJobCount')
             ->with(-1)
-            ->will($this->returnValue(2));
+            ->willReturn(2);
 
         $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
@@ -758,16 +762,16 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $applyOperation->expects($this->once())
             ->method('createImpactedSubject')
-            ->will($this->returnValue($subject));
+            ->willReturn($subject);
 
         $applyOperation->expects($this->exactly(3))
             ->method('getStat')
-            ->will($this->returnValue($statMock));
+            ->willReturn($statMock);
 
         $applyOperation->expects($this->once())
             ->method('getJobGroup')
             ->with('tripod_php_testing', $jobTrackerId->__toString())
-            ->will($this->returnValue($jobGroup));
+            ->willReturn($jobGroup);
 
         $applyOperation->expects($this->never())
             ->method('getTripod');
@@ -784,12 +788,12 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $subject->expects($this->once())
             ->method('getTripod')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $tripod->expects($this->once())
             ->method('getComposite')
             ->with(OP_SEARCH)
-            ->will($this->returnValue($search));
+            ->willReturn($search);
 
         $search->expects($this->once())
             ->method('update')
@@ -798,7 +802,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $this->performJob($applyOperation);
     }
 
-    public function testApplySearchOperationCleanupIfAllGroupJobsComplete()
+    public function testApplySearchOperationCleanupIfAllGroupJobsComplete(): void
     {
         $this->setArgs(OP_SEARCH, ['i_search_resource']);
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
@@ -817,7 +821,7 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
-        $timestamp = new UTCDateTime(hexdec(substr($jobTrackerId, 0, 8)) * 1000);
+        $timestamp = new UTCDateTime($jobTrackerId->getTimestamp() * 1000);
 
         $jobGroup = $this->getMockBuilder(JobGroup::class)
             ->onlyMethods(['incrementJobCount'])
@@ -827,7 +831,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $jobGroup->expects($this->once())
             ->method('incrementJobCount')
             ->with(-1)
-            ->will($this->returnValue(0));
+            ->willReturn(0);
 
         $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
@@ -860,26 +864,26 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $applyOperation->expects($this->once())
             ->method('createImpactedSubject')
-            ->will($this->returnValue($subject));
+            ->willReturn($subject);
 
         $applyOperation->expects($this->exactly(3))
             ->method('getStat')
-            ->will($this->returnValue($statMock));
+            ->willReturn($statMock);
 
         $applyOperation->expects($this->once())
             ->method('getJobGroup')
             ->with('tripod_php_testing', $jobTrackerId->__toString())
-            ->will($this->returnValue($jobGroup));
+            ->willReturn($jobGroup);
 
         $applyOperation->expects($this->once())
             ->method('getTripod')
             ->with('tripod_php_testing', 'CBD_testing')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $applyOperation->expects($this->once())
             ->method('getSearchProvider')
             ->with($tripod)
-            ->will($this->returnValue($searchProvider));
+            ->willReturn($searchProvider);
 
         $statMock->expects($this->once())
             ->method('increment')
@@ -894,12 +898,12 @@ class ApplyOperationTest extends ResqueJobTestBase
 
         $subject->expects($this->once())
             ->method('getTripod')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $tripod->expects($this->once())
             ->method('getComposite')
             ->with(OP_SEARCH)
-            ->will($this->returnValue($search));
+            ->willReturn($search);
 
         $search->expects($this->once())
             ->method('update')
@@ -908,12 +912,12 @@ class ApplyOperationTest extends ResqueJobTestBase
         $searchProvider->expects($this->once())
             ->method('deleteSearchDocumentsByTypeId')
             ->with('i_search_resource', $timestamp)
-            ->will($this->returnValue(8));
+            ->willReturn(8);
 
         $this->performJob($applyOperation);
     }
 
-    public function testCreateJobDefaultQueue()
+    public function testCreateJobDefaultQueue(): void
     {
         $impactedSubject = new ImpactedSubject(
             [_ID_RESOURCE => 'http://example.com/1', _ID_CONTEXT => 'http://talisaspire.com/'],
@@ -944,7 +948,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $applyOperation->createJob([$impactedSubject]);
     }
 
-    public function testCreateJobUnreachableRedis()
+    public function testCreateJobUnreachableRedis(): void
     {
         $impactedSubject = new ImpactedSubject(
             [_ID_RESOURCE => 'http://example.com/1', _ID_CONTEXT => 'http://talisaspire.com/'],
@@ -959,7 +963,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ->getMock();
 
         $e = new Exception('Connection to Redis failed after 1 failures.Last Error : (0) php_network_getaddresses: getaddrinfo failed: nodename nor servname provided, or not known');
-        $applyOperation->expects($this->any())->method('enqueue')->will($this->throwException($e));
+        $applyOperation->method('enqueue')->willThrowException($e);
 
         // expect 5 retries. Catch this with call to warning log
         $applyOperation->expects($this->exactly(5))->method('warningLog');
@@ -969,15 +973,16 @@ class ApplyOperationTest extends ResqueJobTestBase
         try {
             $applyOperation->createJob([$impactedSubject]);
         } catch (JobException $e) {
-            $this->assertEquals('Exception queuing job  - Connection to Redis failed after 1 failures.Last Error : (0) php_network_getaddresses: getaddrinfo failed: nodename nor servname provided, or not known', $e->getMessage());
+            $this->assertSame('Exception queuing job  - Connection to Redis failed after 1 failures.Last Error : (0) php_network_getaddresses: getaddrinfo failed: nodename nor servname provided, or not known', $e->getMessage());
             $exceptionThrown = true;
         }
+
         if (!$exceptionThrown) {
             $this->fail('Did not throw JobException');
         }
     }
 
-    public function testCreateJobStatusFalse()
+    public function testCreateJobStatusFalse(): void
     {
         $impactedSubject = new ImpactedSubject(
             [_ID_RESOURCE => 'http://example.com/1', _ID_CONTEXT => 'http://talisaspire.com/'],
@@ -988,11 +993,11 @@ class ApplyOperationTest extends ResqueJobTestBase
         );
 
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
-            ->onlyMethods(['enqueue', 'getJobStatus', 'warningLog'])
+            ->onlyMethods(['enqueue', 'hasJobStatus', 'warningLog'])
             ->getMock();
 
-        $applyOperation->expects($this->any())->method('enqueue')->will($this->returnValue('sometoken'));
-        $applyOperation->expects($this->any())->method('getJobStatus')->will($this->returnValue(false));
+        $applyOperation->method('enqueue')->willReturn('sometoken');
+        $applyOperation->method('hasJobStatus')->willReturn(false);
 
         // expect 5 retries. Catch this with call to warning log
         $applyOperation->expects($this->exactly(5))->method('warningLog');
@@ -1002,15 +1007,16 @@ class ApplyOperationTest extends ResqueJobTestBase
         try {
             $applyOperation->createJob([$impactedSubject]);
         } catch (JobException $e) {
-            $this->assertEquals('Exception queuing job  - Could not retrieve status for queued job - job sometoken failed to tripod::apply', $e->getMessage());
+            $this->assertSame('Exception queuing job  - Could not retrieve status for queued job - job sometoken failed to tripod::apply', $e->getMessage());
             $exceptionThrown = true;
         }
+
         if (!$exceptionThrown) {
             $this->fail('Did not throw JobException');
         }
     }
 
-    public function testCreateJobSpecifyQueue()
+    public function testCreateJobSpecifyQueue(): void
     {
         $impactedSubject = new ImpactedSubject(
             [_ID_RESOURCE => 'http://example.com/1', _ID_CONTEXT => 'http://talisaspire.com/'],
@@ -1046,9 +1052,9 @@ class ApplyOperationTest extends ResqueJobTestBase
     /**
      * Sets job arguments.
      *
-     * @param mixed $operation
+     * @param string[] $specTypes
      */
-    protected function setArgs($operation = OP_VIEWS, array $specTypes = [])
+    private function setArgs(string $operation = OP_VIEWS, array $specTypes = []): void
     {
         $subject = new ImpactedSubject(
             [

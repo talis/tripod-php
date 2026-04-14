@@ -57,6 +57,8 @@ commands:
           path: test-results/junit.xml
       - store_artifacts:
           path: test-results/junit.xml
+      - store_artifacts:
+          path: profiler
 
 jobs:
   lint:
@@ -66,6 +68,7 @@ jobs:
       - checkout
       - run: composer install
       - run: composer lint
+      - run: composer analyse
 
   test:
     parameters:
@@ -149,10 +152,6 @@ workflows:
   build_and_test:
     jobs:
       - lint
-      - test:
-          name: test-php73
-          php_version: php73
-          mongo_version: 3.6.23
       - test:
           name: test-php74
           php_version: php74

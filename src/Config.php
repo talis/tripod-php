@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod;
 
 use Tripod\Exceptions\ConfigException;
@@ -7,15 +9,9 @@ use Tripod\Mongo\IConfigInstance;
 
 class Config implements ITripodConfig
 {
-    /**
-     * @var IConfigInstance|null
-     */
-    private static $instance;
+    private static ?IConfigInstance $configInstance = null;
 
-    /**
-     * @var array
-     */
-    private static $config = [];
+    private static ?array $config = null;
 
     /**
      * Config should not be instantiated directly: use Config::getInstance().
@@ -36,11 +32,12 @@ class Config implements ITripodConfig
         if (!isset(self::$config)) {
             throw new ConfigException('Call Config::setConfig() first');
         }
-        if (!isset(self::$instance)) {
-            self::$instance = TripodConfigFactory::create(self::$config);
+
+        if (!isset(self::$configInstance)) {
+            self::$configInstance = TripodConfigFactory::create(self::$config);
         }
 
-        return self::$instance;
+        return self::$configInstance;
     }
 
     /**
@@ -49,7 +46,7 @@ class Config implements ITripodConfig
     public static function setConfig(array $config): void
     {
         self::$config = $config;
-        self::$instance = null; // this will force a reload next time getInstance() is called
+        self::$configInstance = null; // this will force a reload next time getInstance() is called
     }
 
     /**
@@ -57,7 +54,7 @@ class Config implements ITripodConfig
      */
     public static function getConfig(): array
     {
-        return self::$config;
+        return self::$config ?? [];
     }
 
     /**
@@ -67,7 +64,7 @@ class Config implements ITripodConfig
      */
     public static function destroy(): void
     {
-        self::$instance = null;
+        self::$configInstance = null;
         self::$config = null;
     }
 }

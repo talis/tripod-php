@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod;
 
 use Tripod\Exceptions\Exception;
@@ -12,135 +14,102 @@ interface IDriver
      *
      * @param array $filter            conditions to filter by
      * @param array $includeProperties only include these predicates, empty array means return all predicates
-     *
-     * @return mixed
      */
-    public function graph(array $filter, array $includeProperties = []);
+    public function graph(array $filter, array $includeProperties = []): ExtendedGraph;
 
     /**
      * Return (DESCRIBE) the concise bound description of a resource.
      *
      * @param string      $resource uri resource you'd like to describe
      * @param string|null $context  string uri of the context, or named graph, you'd like to describe from
-     *
-     * @return ExtendedGraph
      */
-    public function describeResource($resource, $context = null);
+    public function describeResource(string $resource, ?string $context = null): ExtendedGraph;
 
     /**
      * Return (DESCRIBE) the concise bound descriptions of a bunch of resources.
      *
      * @param array       $resources uris of resources you'd like to describe
      * @param string|null $context   string uri of the context, or named graph, you'd like to describe from
-     *
-     * @return ExtendedGraph
      */
-    public function describeResources(array $resources, $context = null);
+    public function describeResources(array $resources, ?string $context = null): ExtendedGraph;
 
     /**
      * Get a view of a given type for a given resource.
      *
-     * @param string $resource uri of the resource you'd like the view for
-     * @param string $viewType string type of view
-     *
-     * @return ExtendedGraph
+     * @param string|null $resource uri of the resource you'd like the view for
+     * @param string      $viewType string type of view
      */
-    public function getViewForResource($resource, $viewType);
+    public function getViewForResource(?string $resource, string $viewType): ExtendedGraph;
 
     /**
      * Get views for multiple resources in one graph.
      *
-     * @param array  $resources uris of resources you'd like to describe
-     * @param string $viewType  type of view
-     *
-     * @return ExtendedGraph
+     * @param string[] $resources uris of resources you'd like to describe
+     * @param string   $viewType  type of view
      */
-    public function getViewForResources(array $resources, $viewType);
+    public function getViewForResources(array $resources, string $viewType): ExtendedGraph;
 
     /**
      * Get views based on a pattern-match $filter.
      *
      * @param array  $filter   pattern to match to select views
      * @param string $viewType type of view
-     *
-     * @return ExtendedGraph
      */
-    public function getViews(array $filter, $viewType);
+    public function getViews(array $filter, string $viewType): ExtendedGraph;
 
     /**
      * Returns the etag of a resource, useful for caching.
-     *
-     * @param string      $resource
-     * @param string|null $context
-     *
-     * @return string
      */
-    public function getETag($resource, $context = null);
+    public function getETag(string $resource, ?string $context = null): string;
 
     /**
      * Select data in a tabular format.
      *
-     * @param array       $fields  array of fields, in the same format as prescribed by MongoPHP
-     * @param int|null    $limit
-     * @param int         $offset
-     * @param string|null $context
-     *
-     * @return array
+     * @param array<string, mixed> $fields array of fields, in the same format as prescribed by MongoPHP
      */
-    public function select(array $query, array $fields, ?array $sortBy = null, $limit = null, $offset = 0, $context = null);
+    public function select(
+        array $query,
+        array $fields,
+        ?array $sortBy = null,
+        ?int $limit = null,
+        ?int $offset = 0,
+        ?string $context = null
+    ): array;
 
     /**
      * Select data from a table.
-     *
-     * @param string $tableType
-     * @param int    $offset
-     * @param int    $limit
-     *
-     * @return array
      */
     public function getTableRows(
-        $tableType,
+        string $tableType,
         array $filter = [],
-        array $sortBy = [],
-        $offset = 0,
-        $limit = 10,
+        ?array $sortBy = [],
+        ?int $offset = 0,
+        ?int $limit = 10,
         array $options = []
-    );
+    ): array;
 
-    /**
-     * @param string $tableType
-     * @param string $fieldName
-     *
-     * @return array
-     */
-    public function getDistinctTableColumnValues($tableType, $fieldName, array $filter = []);
+    public function getDistinctTableColumnValues(string $tableType, string $fieldName, array $filter = []): array;
 
     /**
      * Get a count of resources matching the pattern in $query. Optionally group counts by specifying a $groupBy predicate.
      *
-     * @param string|null $groupBy
-     * @param int|null    $ttl     acceptable time to live if you're willing to accept a cached version of this request
+     * @param int|null $ttl acceptable time to live if you're willing to accept a cached version of this request
      *
      * @return array|int multidimensional array with int values if grouped by, otherwise int
      */
-    public function getCount(array $query, $groupBy = null, $ttl = null);
+    public function getCount(array $query, ?string $groupBy = null, ?int $ttl = null);
 
     /**
      * Save the changes between $oldGraph -> $newGraph.
      *
-     * @param string|null $context
-     * @param string|null $description
-     *
      * @return bool true or throws exception on error
      */
-    public function saveChanges(ExtendedGraph $oldGraph, ExtendedGraph $newGraph, $context = null, $description = null);
+    public function saveChanges(ExtendedGraph $oldGraph, ExtendedGraph $newGraph, ?string $context = null, ?string $description = null): bool;
 
     /**
      * Register an event hook, which will be executed when the event fires.
-     *
-     * @param string $eventType
      */
-    public function registerHook($eventType, IEventHook $hook);
+    public function registerHook(string $eventType, IEventHook $hook): void;
 
     // START Deprecated methods that will be removed in 1.x.x
 
@@ -150,21 +119,15 @@ interface IDriver
      * @deprecated Use graph() instead
      *
      * @param array $filter conditions to filter by
-     *
-     * @return ExtendedGraph
      */
-    public function describe($filter);
+    public function describe(array $filter): ExtendedGraph;
 
     /**
      * Generates table rows.
      *
      * @deprecated calling save will generate table rows - this method seems to be only used in tests and does not belong on the interface
-     *
-     * @param string      $tableType
-     * @param string|null $resource
-     * @param string|null $context
      */
-    public function generateTableRows($tableType, $resource = null, $context = null);
+    public function generateTableRows(string $tableType, ?string $resource = null, ?string $context = null): void;
 
     /**
      * Submits search params to configured search provider
@@ -186,7 +149,7 @@ interface IDriver
      * @throws Exception       - if search provider cannot be found
      * @throws SearchException - if something goes wrong
      */
-    public function search(array $params);
+    public function search(array $params): array;
 
     /**
      * Get any documents that were left in a locked state.
@@ -198,19 +161,16 @@ interface IDriver
      *
      * @return array of locked documents
      */
-    public function getLockedDocuments($fromDateTime = null, $tillDateTime = null);
+    public function getLockedDocuments(?string $fromDateTime = null, ?string $tillDateTime = null): array;
 
     /**
      * Remove any inert locks left by a given transaction.
      *
      * @deprecated this is a feature of the mongo implementation - this method will move from the interface to the mongo-specific Driver class soon
      *
-     * @param string $transaction_id
-     * @param string $reason
-     *
      * @return bool true or throws exception on error
      */
-    public function removeInertLocks($transaction_id, $reason);
+    public function removeInertLocks(string $transaction_id, string $reason): bool;
 
     // END Deprecated methods that will be removed in 1.x.x
 }

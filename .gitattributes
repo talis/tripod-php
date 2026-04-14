@@ -1,0 +1,11 @@
+/.circleci/ export-ignore
+/docker export-ignore
+/test export-ignore
+.editorconfig export-ignore
+.env export-ignore
+.php-cs-fixer* export-ignore
+*.log export-ignore
+docker-compose*.yml export-ignore
+logo.png export-ignore
+phpunit.xml export-ignore
+phpstan*.neon export-ignore

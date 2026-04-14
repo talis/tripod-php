@@ -1,19 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 use MongoDB\BSON\UTCDateTime;
 use Tripod\Config;
 use Tripod\Mongo\DateUtil;
 
 class DateUtilTest extends MongoTripodTestBase
 {
-    public function testGetMongoDateWithNoParam()
+    public function testGetMongoDateWithNoParam(): void
     {
         $config = Config::getInstance();
         $updatedAt = (new DateUtil())->getMongoDate();
 
         $_id = [
             'r' => 'http://talisaspire.com/resources/testEtag' . microtime(false),
-            'c' => 'http://talisaspire.com/'];
+            'c' => 'http://talisaspire.com/',
+        ];
         $doc = [
             '_id' => $_id,
             'dct:title' => ['l' => 'etag'],
@@ -29,17 +32,18 @@ class DateUtilTest extends MongoTripodTestBase
         $date = DateUtil::getMongoDate();
 
         $this->assertInstanceOf(UTCDateTime::class, $date);
-        $this->assertEquals(13, strlen($date->__toString()));
+        $this->assertSame(13, strlen($date->__toString()));
     }
 
-    public function testGetMongoDateWithParam()
+    public function testGetMongoDateWithParam(): void
     {
         $config = Config::getInstance();
         $updatedAt = (new DateUtil())->getMongoDate();
 
         $_id = [
             'r' => 'http://talisaspire.com/resources/testEtag' . microtime(false),
-            'c' => 'http://talisaspire.com/'];
+            'c' => 'http://talisaspire.com/',
+        ];
         $doc = [
             '_id' => $_id,
             'dct:title' => ['l' => 'etag'],
@@ -56,7 +60,7 @@ class DateUtilTest extends MongoTripodTestBase
         $date = DateUtil::getMongoDate($time);
 
         $this->assertInstanceOf(UTCDateTime::class, $date);
-        $this->assertEquals(13, strlen($date->__toString()));
+        $this->assertSame(13, strlen($date->__toString()));
         $this->assertEquals($time, $date->__toString());
     }
 }

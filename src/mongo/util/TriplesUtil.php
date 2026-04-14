@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use MongoDB\Collection;
@@ -8,12 +10,7 @@ use Tripod\Exceptions\LabellerException;
 
 class TriplesUtil
 {
-    private $collections = [];
-
-    /**
-     * @var Labeller
-     */
-    private $labeller;
+    private Labeller $labeller;
 
     /**
      * Constructor.
@@ -27,20 +24,12 @@ class TriplesUtil
      * Add $triples about a given $subject to Mongo. Only $triples with subject matching $subject will be added, others will be ignored.
      * Make them quads with a $context.
      *
-     * @param mixed         $subject
-     * @param string        $storeName
-     * @param string        $podName
-     * @param string|null   $context
      * @param string[]|null $allowableTypes
      */
-    public function loadTriplesAbout($subject, array $triples, $storeName, $podName, $context = null, $allowableTypes = null)
+    public function loadTriplesAbout(string $subject, array $triples, string $storeName, string $podName, ?string $context = null, ?array $allowableTypes = null): void
     {
-        $context = ($context == null) ? Config::getInstance()->getDefaultContextAlias() : $this->labeller->uri_to_alias($context);
-        if (array_key_exists($podName, $this->collections)) {
-            $collection = $this->collections[$podName];
-        } else {
-            $collection = Config::getInstance()->getCollectionForCBD($storeName, $podName);
-        }
+        $context = $context !== null ? $this->labeller->uri_to_alias($context) : Config::getInstance()->getDefaultContextAlias();
+        $collection = Config::getInstance()->getCollectionForCBD($storeName, $podName);
 
         $graph = new MongoGraph();
         foreach ($triples as $triple) {
@@ -57,11 +46,9 @@ class TriplesUtil
                 $graph->add_literal_triple($subject, $predicate, $object);
             }
         }
-        if ($allowableTypes != null && is_array($allowableTypes)) {
+
+        if ($allowableTypes != null) {
             $types = $graph->get_resource_triple_values($subject, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
-            if ($types == null || empty($types)) {
-                return;
-            }
 
             foreach ($types as $type) {
                 if (in_array($type, $allowableTypes)) {
@@ -73,19 +60,15 @@ class TriplesUtil
 
             return;
         }
+
         $this->saveCBD($subject, $graph, $collection, $context);
     }
 
     /**
      * Add $triples about a given $subject to Mongo. Only $triples with subject matching $subject will be added, others will be ignored.
      * Make them quads with a $context.
-     *
-     * @param string      $subject
-     * @param string|null $context
-     *
-     * @return array
      */
-    public function bsonizeTriplesAbout($subject, array $triples, $context = null)
+    public function bsonizeTriplesAbout(string $subject, array $triples, ?string $context = null): ?array
     {
         $context = ($context == null) ? Config::getInstance()->getDefaultContextAlias() : $this->labeller->uri_to_alias($context);
         $graph = new MongoGraph();
@@ -107,10 +90,7 @@ class TriplesUtil
         return $graph->to_tripod_array($subject, $context);
     }
 
-    /**
-     * @return array
-     */
-    public function extractMissingPredicateNs(array $triples)
+    public function extractMissingPredicateNs(array $triples): array
     {
         $missingNs = [];
         $graph = new MongoGraph();
@@ -130,10 +110,7 @@ class TriplesUtil
         return array_unique($missingNs);
     }
 
-    /**
-     * @return array
-     */
-    public function extractMissingObjectNs(array $triples)
+    public function extractMissingObjectNs(array $triples): array
     {
         $missingNs = [];
         $graph = new MongoGraph();
@@ -155,12 +132,7 @@ class TriplesUtil
         return array_unique($missingNs);
     }
 
-    /**
-     * @param string $ns
-     *
-     * @return string
-     */
-    public function suggestPrefix($ns)
+    public function suggestPrefix(string $ns): string
     {
         $parts = preg_split('/[\/#]/', $ns);
         for ($i = count($parts) - 1; $i >= 0; $i--) {
@@ -172,13 +144,7 @@ class TriplesUtil
         return 'unknown' . uniqid();
     }
 
-    /**
-     * @param string $subject
-     * @param string $context
-     *
-     * @return array
-     */
-    public function getTArrayAbout($subject, array $triples, $context)
+    public function getTArrayAbout(string $subject, array $triples, ?string $context): ?array
     {
         $graph = new MongoGraph();
         foreach ($triples as $triple) {
@@ -200,16 +166,13 @@ class TriplesUtil
     }
 
     /**
-     * @param string $cbdSubject
-     * @param string $context
-     *
      * @throws \Exception
      */
-    protected function saveCBD($cbdSubject, MongoGraph $cbdGraph, Collection $collection, $context)
+    protected function saveCBD(string $cbdSubject, MongoGraph $cbdGraph, Collection $collection, ?string $context): void
     {
         $cbdSubject = $this->labeller->uri_to_alias($cbdSubject);
         if ($cbdGraph == null || $cbdGraph->is_empty()) {
-            throw new \Exception("graph for {$cbdSubject} was null");
+            throw new \Exception(sprintf('graph for %s was null', $cbdSubject));
         }
 
         try {
@@ -219,43 +182,30 @@ class TriplesUtil
             if (preg_match('/E11000/', $e->getMessage())) {
                 echo 'M';
                 // key already exists, merge it
-                $criteria = ['_id' => ['r' => $cbdSubject, 'c' => $context]];
+                $criteria = [_ID_KEY => [_ID_RESOURCE => $cbdSubject, _ID_CONTEXT => $context]];
                 $existingGraph = new MongoGraph();
                 $existingGraph->add_tripod_array($collection->findOne($criteria));
                 $existingGraph->add_graph($cbdGraph);
 
-                try {
-                    $collection->updateOne($criteria, ['$set' => $existingGraph->to_tripod_array($cbdSubject, $context)], ['w' => 1]);
-                } catch (\Exception $e2) {
-                    throw new \Exception($e2->getMessage()); // todo: would be good to have typed exception
-                }
+                $collection->updateOne($criteria, ['$set' => $existingGraph->to_tripod_array($cbdSubject, $context)], ['w' => 1]);
             } else {
                 // retry
                 echo 'CursorException on update: ' . $e->getMessage() . ", retrying\n";
 
-                try {
-                    $collection->insertOne($cbdGraph->to_tripod_array($cbdSubject, $context), ['w' => 1]);
-                } catch (\Exception $e2) {
-                    throw new \Exception($e2->getMessage()); // todo: would be good to have typed exception
-                }
+                $collection->insertOne($cbdGraph->to_tripod_array($cbdSubject, $context), ['w' => 1]);
             }
         }
     }
 
-    /**
-     * @param string $object
-     *
-     * @return mixed
-     */
-    private function isUri($object)
+    private function isUri(string $object): bool
     {
-        return filter_var($object, FILTER_VALIDATE_URL);
+        return filter_var($object, FILTER_VALIDATE_URL) !== false;
     }
 
     /**
-     * @return string
+     * @param string[] $parts
      */
-    private function extract_object(array $parts)
+    private function extract_object(array $parts): string
     {
         if (!$this->is_object_literal($parts[2])) {
             return trim($parts[2], '><');
@@ -271,7 +221,7 @@ class TriplesUtil
         $json_string = '{"string":"' . str_replace('\u', '\u', $str) . '"}';
         $json = json_decode($json_string, true);
         if (!empty($json)) {
-            $str = $json['string'];
+            return $json['string'];
         }
 
         return $str;
@@ -279,15 +229,9 @@ class TriplesUtil
 
     /**
      * @param string $input
-     *
-     * @return bool
      */
-    private function is_object_literal($input)
+    private function is_object_literal($input): bool
     {
-        if ($input[0] == '"') {
-            return true;
-        }
-
-        return false;
+        return $input[0] == '"';
     }
 }

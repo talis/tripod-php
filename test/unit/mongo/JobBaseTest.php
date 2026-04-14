@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 use Tripod\Config;
 use Tripod\Mongo\IConfigInstance;
 
 class JobBaseTest extends MongoTripodTestBase
 {
-    public function testGetTripodConfig()
+    public function testGetTripodConfig(): void
     {
         $job = new TestJobBase();
         $job->args = $this->getArgs();
@@ -14,7 +16,10 @@ class JobBaseTest extends MongoTripodTestBase
         $this->assertInstanceOf(IConfigInstance::class, $job->getTripodConfig());
     }
 
-    protected function getArgs()
+    /**
+     * @return array<string, mixed[]|string>
+     */
+    private function getArgs(): array
     {
         return [
             'tripodConfig' => Config::getConfig(),

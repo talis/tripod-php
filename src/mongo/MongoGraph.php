@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use Tripod\Exceptions\Exception;
@@ -32,7 +34,7 @@ class MongoGraph extends ExtendedGraph
      *
      * @throws \InvalidArgumentException if you do not specify a context
      */
-    public function to_nquads($context)
+    public function to_nquads(?string $context): string
     {
         if (empty($context)) {
             throw new \InvalidArgumentException('You must specify the context when serializing to nquads');
@@ -46,16 +48,9 @@ class MongoGraph extends ExtendedGraph
     /**
      * Adds the tripod array(s) to this graph.
      * This method is used to add individual tripod documents, or a series of tripod array documents that are embedded in a view.
-     *
-     * @param mixed $tarray
-     *
-     * @throws Exception
      */
-    public function add_tripod_array($tarray)
+    public function add_tripod_array(array $tarray): void
     {
-        if (!is_array($tarray)) {
-            throw new Exception('Value passed to add_tripod_array is not of type array');
-        }
         // need to convert from tripod storage format to rdf/json as php array format
         if (isset($tarray['value'][_GRAPHS])) {
             // iterate add add each graph
@@ -69,13 +64,8 @@ class MongoGraph extends ExtendedGraph
 
     /**
      * Returns a mongo-ready doc for a single CBD.
-     *
-     * @param mixed $docId
-     * @param mixed $context
-     *
-     * @return array
      */
-    public function to_tripod_array($docId, $context)
+    public function to_tripod_array(string $docId, ?string $context): ?array
     {
         $docId = $this->_labeller->qname_to_alias($docId);
         $contextAlias = $this->_labeller->uri_to_alias($context);
@@ -97,19 +87,16 @@ class MongoGraph extends ExtendedGraph
     /**
      * Returns a mongo-ready doc for views, which can have multiple graphs in the same doc.
      *
-     * @param mixed $docId
-     * @param mixed $context
-     *
-     * @return array
+     * @return array<string, mixed>
      */
-    public function to_tripod_view_array($docId, $context)
+    public function to_tripod_view_array(string $docId, ?string $context): array
     {
         $subjects = $this->get_subjects();
         $contextAlias = $this->_labeller->uri_to_alias($context);
 
         // view
         $doc = [];
-        $doc['_id'] = [_ID_RESOURCE => $docId, _ID_CONTEXT => $contextAlias];
+        $doc[_ID_KEY] = [_ID_RESOURCE => $docId, _ID_CONTEXT => $contextAlias];
         $doc['value'] = [];
         $doc['value'][_IMPACT_INDEX] = $subjects;
         $doc['value'][_GRAPHS] = [];
@@ -122,44 +109,44 @@ class MongoGraph extends ExtendedGraph
     }
 
     /**
-     * @param array $tarray
+     * @param array<string, mixed> $tarray
      *
      * @throws Exception
      */
-    private function add_tarray_to_index($tarray)
+    private function add_tarray_to_index(array $tarray): void
     {
         $_i = [];
         $predObjects = [];
         foreach ($tarray as $key => $value) {
-            if (empty($key)) {
-                throw new Exception('The predicate cannot be an empty string');
+            if (!$this->isValidResource($key)) {
+                throw new Exception('The predicate must be a non-empty string, ' . var_export($key, true) . ' given');
             }
+
             if ($key[0] != '_') {
                 $predicate = $this->qname_to_uri($key);
                 $graphValueObject = $this->toGraphValueObject($value);
                 // Only add if valid values have been found
-                if (!empty($graphValueObject)) {
+                if ($graphValueObject !== []) {
                     $predObjects[$predicate] = $graphValueObject;
                 }
-            } elseif ($key == '_id') {
+            } elseif ($key == _ID_KEY) {
                 // If the subject is invalid then throw an exception
-                if (!isset($value['r']) || !$this->isValidResource($value['r'])) {
-                    throw new Exception('The subject cannot be an empty string');
+                if (!isset($value[_ID_RESOURCE]) || !$this->isValidResource($value[_ID_RESOURCE])) {
+                    throw new Exception('The subject must be a non-empty string, ' . var_export($value[_ID_RESOURCE], true) . ' given');
                 }
             }
         }
-        $_i[$this->_labeller->qname_to_alias($tarray['_id'][_ID_RESOURCE])] = $predObjects;
-        $this->add_json(json_encode($_i));
+
+        $_i[$this->_labeller->qname_to_alias($tarray[_ID_KEY][_ID_RESOURCE])] = $predObjects;
+        $this->_index = $this->merge($this->_index, $_i);
     }
 
     /**
      * Convert from Tripod value object format (comapct) to ExtendedGraph format (verbose).
      *
-     * @param array $mongoValueObject
-     *
-     * @return array
+     * @param array<string, mixed> $mongoValueObject
      */
-    private function toGraphValueObject($mongoValueObject)
+    private function toGraphValueObject(array $mongoValueObject): array
     {
         $simpleGraphValueObject = [];
 
@@ -169,7 +156,8 @@ class MongoGraph extends ExtendedGraph
                 // single value literal
                 $simpleGraphValueObject[] = [
                     'type' => 'literal',
-                    'value' => $mongoValueObject[VALUE_LITERAL]];
+                    'value' => $mongoValueObject[VALUE_LITERAL],
+                ];
             }
         } elseif (array_key_exists(VALUE_URI, $mongoValueObject)) {
             // only allow valid values
@@ -177,7 +165,8 @@ class MongoGraph extends ExtendedGraph
                 // single value uri
                 $simpleGraphValueObject[] = [
                     'type' => 'uri',
-                    'value' => $this->_labeller->qname_to_alias($mongoValueObject[VALUE_URI])];
+                    'value' => $this->_labeller->qname_to_alias($mongoValueObject[VALUE_URI]),
+                ];
             }
         } else {
             // If we have an array of values
@@ -188,16 +177,20 @@ class MongoGraph extends ExtendedGraph
                         if (!$this->isValidLiteral($value)) {
                             continue;
                         }
+
                         $valueTypeLabel = 'literal';
                     } else {
                         if (!$this->isValidResource($value)) {
                             continue;
                         }
+
                         $valueTypeLabel = 'uri';
                     }
+
                     $simpleGraphValueObject[] = [
                         'type' => $valueTypeLabel,
-                        'value' => ($type == VALUE_URI) ? $this->_labeller->qname_to_alias($value) : $value];
+                        'value' => ($type == VALUE_URI) ? $this->_labeller->qname_to_alias($value) : $value,
+                    ];
                 }
             }
         }
@@ -209,29 +202,23 @@ class MongoGraph extends ExtendedGraph
     /**
      * Convert from ExtendedGraph value object format (verbose) to Tripod format (compact).
      *
-     * @param array $simpleGraphValueObject
-     *
-     * @return array
+     * @param array<string, mixed> $simpleGraphValueObject
      */
-    private function toMongoTripodValueObject($simpleGraphValueObject)
+    private function toMongoTripodValueObject(array $simpleGraphValueObject): array
     {
         $valueTypeProp = ($simpleGraphValueObject['type'] == 'literal') ? VALUE_LITERAL : VALUE_URI;
 
         return [
-            $valueTypeProp => ($simpleGraphValueObject['type'] == 'literal') ? $simpleGraphValueObject['value'] : $this->_labeller->uri_to_alias($simpleGraphValueObject['value'])];
+            $valueTypeProp => ($simpleGraphValueObject['type'] == 'literal') ? $simpleGraphValueObject['value'] : $this->_labeller->uri_to_alias($simpleGraphValueObject['value']),
+        ];
     }
 
-    /**
-     * @param ExtendedGraph|null $graph
-     * @param string             $contextAlias
-     *
-     * @return array|null
-     */
-    private function index_to_tarray($graph = null, $contextAlias)
+    private function index_to_tarray(?ExtendedGraph $graph = null, ?string $contextAlias = null): ?array
     {
         if ($graph == null) {
             $graph = $this;
         }
+
         $_i = $graph->_index;
 
         foreach ($_i as $resource => $predObjects) {
@@ -240,16 +227,17 @@ class MongoGraph extends ExtendedGraph
 
             $id[_ID_RESOURCE] = $this->_labeller->uri_to_alias($resource);
             $id[_ID_CONTEXT] = $contextAlias;
-            $doc['_id'] = $id;
+            $doc[_ID_KEY] = $id;
             foreach ($predObjects as $predicate => $objects) {
                 $pQName = $this->uri_to_qname($predicate);
-                if (count($objects) == 1) {
+                if (count($objects) === 1) {
                     $doc[$pQName] = $this->toMongoTripodValueObject($objects[0]);
                 } else {
                     $values = [];
                     foreach ($objects as $obj) {
                         $values[] = $this->toMongoTripodValueObject($obj);
                     }
+
                     $doc[$pQName] = $values;
                 }
             }

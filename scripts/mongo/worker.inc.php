@@ -6,8 +6,8 @@ use Psr\Log\LogLevel;
 use Tripod\Mongo\DriverBase;
 
 require_once __DIR__ . '/common.inc.php';
+require_once __DIR__ . '/../../src/tripod.inc.php';
 
-require __DIR__ . '/../../src/tripod.inc.php';
 // the global is necessary for Resque worker to send statements to
 $logger = new Logger('TRIPOD-WORKER');
 $logger->pushHandler(new StreamHandler('php://stderr', LogLevel::WARNING)); // resque too chatty on NOTICE & INFO. YMMV

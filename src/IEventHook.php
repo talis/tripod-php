@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod;
 
 interface IEventHook
@@ -21,7 +23,7 @@ interface IEventHook
      *
      * @param $args array of arguments
      */
-    public function pre(array $args);
+    public function pre(array $args): void;
 
     /**
      * This method gets called after the event has successfully completed. The arguments passed depend on the event in
@@ -30,12 +32,10 @@ interface IEventHook
      *
      * @param $args array of arguments
      */
-    public function success(array $args);
+    public function success(array $args): void;
 
     /**
      * This method gets called if the event failed for any reason. The arguments passed should be the same as IEventHook::pre.
-     *
-     * @return mixed
      */
-    public function failure(array $args);
+    public function failure(array $args): void;
 }

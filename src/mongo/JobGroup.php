@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use MongoDB\BSON\ObjectId;
@@ -9,9 +11,11 @@ use Tripod\Config;
 
 class JobGroup
 {
-    private $id;
-    private $collection;
-    private $storeName;
+    private ObjectId $id;
+
+    private ?Collection $collection = null;
+
+    private string $storeName;
 
     /**
      * Constructor method.
@@ -19,7 +23,7 @@ class JobGroup
      * @param string          $storeName Tripod store (database) name
      * @param ObjectId|string $groupId   Optional tracking ID, will assign a new one if omitted
      */
-    public function __construct($storeName, $groupId = null)
+    public function __construct(string $storeName, $groupId = null)
     {
         $this->storeName = $storeName;
         if (!$groupId) {
@@ -27,6 +31,7 @@ class JobGroup
         } elseif (!$groupId instanceof ObjectId) {
             $groupId = new ObjectId($groupId);
         }
+
         $this->id = $groupId;
     }
 
@@ -35,10 +40,10 @@ class JobGroup
      *
      * @param int $count Number of jobs in group
      */
-    public function setJobCount($count)
+    public function setJobCount(int $count): void
     {
         $this->getMongoCollection()->updateOne(
-            ['_id' => $this->getId()],
+            [_ID_KEY => $this->getId()],
             ['$set' => ['count' => $count]],
             ['upsert' => true]
         );
@@ -51,37 +56,31 @@ class JobGroup
      *
      * @return int Updated job count
      */
-    public function incrementJobCount($inc = 1)
+    public function incrementJobCount(int $inc = 1): int
     {
         $updateResult = $this->getMongoCollection()->findOneAndUpdate(
-            ['_id' => $this->getId()],
+            [_ID_KEY => $this->getId()],
             ['$inc' => ['count' => $inc]],
             ['upsert' => true, 'returnDocument' => FindOneAndUpdate::RETURN_DOCUMENT_AFTER]
         );
         if (\is_array($updateResult)) {
             return $updateResult['count'];
         }
-        if (isset($updateResult->count)) {
-            return $updateResult->count;
-        }
+
+        return $updateResult->count;
     }
 
-    /**
-     * @return ObjectId
-     */
-    public function getId()
+    public function getId(): ObjectId
     {
         return $this->id;
     }
 
     /**
      * For mocking.
-     *
-     * @return Collection
      */
-    protected function getMongoCollection()
+    protected function getMongoCollection(): Collection
     {
-        if (!isset($this->collection)) {
+        if ($this->collection === null) {
             $config = Config::getInstance();
 
             $this->collection = $config->getCollectionForJobGroups($this->storeName);

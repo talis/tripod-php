@@ -20,14 +20,15 @@ $options = getopt(
     ]
 );
 
-function showUsage()
+function showUsage(): void
 {
-    $help = <<<'END'
-        createViews.php
+    $scriptName = basename(__FILE__);
+    $help = <<<END
+        {$scriptName}
 
         Usage:
 
-        php createViews.php -c/--config path/to/tripod-config.json -s/--storename store-name [options]
+        php {$scriptName} -c/--config path/to/tripod-config.json -s/--storename store-name [options]
 
         Options:
             -h --help               This help
@@ -35,7 +36,7 @@ function showUsage()
             -s --storename          Store to create views for (required)
             -v --spec               Only create for specified view specs
             -i --id                 Resource ID to regenerate views for
-            -a --async              Generate table rows via queue
+            -a --async              Generate views via queue
             -q --queue              Queue name to place jobs on (defaults to configured TRIPOD_APPLY_QUEUE value)
 
             --stat-loader           Path to script to initialize a Stat object.  Note, it *must* return an iTripodStat object!
@@ -44,7 +45,8 @@ function showUsage()
     echo $help;
 }
 
-if (empty($options) || isset($options['h']) || isset($options['help'])
+if (
+    $options === [] || $options === false || isset($options['h']) || isset($options['help'])
     || (!isset($options['c']) && !isset($options['config']))
     || (!isset($options['s']) && !isset($options['storename']))
 ) {
@@ -52,24 +54,21 @@ if (empty($options) || isset($options['h']) || isset($options['help'])
 
     exit;
 }
+
 $configLocation = $options['c'] ?? $options['config'];
 
 require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 /**
- * @param string|null      $id
- * @param string|null      $viewId
- * @param string           $storeName
- * @param ITripodStat|null $stat
- * @param string           $queue
+ * @param string|null $viewId
  */
-function generateViews($id, $viewId, $storeName, $stat, $queue)
+function generateViews(?string $id, string $viewId, string $storeName, ?ITripodStat $stat = null, ?string $queue = null): void
 {
     $viewSpec = Config::getInstance()->getViewSpecification($storeName, $viewId);
     if (array_key_exists('from', $viewSpec)) {
         Config::getInstance()->setMongoCursorTimeout(-1);
 
-        echo "Generating {$viewId}";
+        echo 'Generating ' . $viewId;
         $tripod = new Driver($viewSpec['from'], $storeName, ['stat' => $stat]);
         $views = $tripod->getTripodViews();
         if ($id) {
@@ -87,31 +86,13 @@ $t->start();
 
 Config::setConfig(json_decode(file_get_contents($configLocation), true));
 
-if (isset($options['s']) || isset($options['storename'])) {
-    $storeName = $options['s'] ?? $options['storename'];
-} else {
-    $storeName = null;
-}
-
-if (isset($options['v']) || isset($options['spec'])) {
-    $viewId = $options['v'] ?? $options['spec'];
-} else {
-    $viewId = null;
-}
-
-if (isset($options['i']) || isset($options['id'])) {
-    $id = $options['i'] ?? $options['id'];
-} else {
-    $id = null;
-}
+$storeName = $options['s'] ?? $options['storename'] ?? null;
+$viewId = $options['v'] ?? $options['spec'] ?? null;
+$id = $options['i'] ?? $options['id'] ?? null;
 
 $queue = null;
 if (isset($options['a']) || isset($options['async'])) {
-    if (isset($options['q']) || isset($options['queue'])) {
-        $queue = $options['queue'];
-    } else {
-        $queue = Config::getInstance()->getApplyQueueName();
-    }
+    $queue = $options['q'] ?? $options['queue'] ?? Config::getInstance()->getApplyQueueName();
 }
 
 $stat = null;

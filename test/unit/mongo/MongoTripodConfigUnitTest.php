@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use MongoDB\Client;
 use MongoDB\Driver\Exception\ConnectionTimeoutException;
 use MongoDB\Driver\ReadPreference;
@@ -7,16 +9,14 @@ use Tripod\Config;
 use Tripod\Exceptions\ConfigException;
 use Tripod\ExtendedGraph;
 use Tripod\Mongo\Driver;
+use Tripod\Mongo\IConfigInstance;
 use Tripod\Mongo\Labeller;
 use Tripod\Mongo\MongoGraph;
 use Tripod\Mongo\MongoSearchProvider;
 
 class MongoTripodConfigUnitTest extends MongoTripodTestBase
 {
-    /**
-     * @var Tripod\Mongo\Config
-     */
-    private $tripodConfig;
+    private IConfigInstance $tripodConfig;
 
     protected function setUp(): void
     {
@@ -24,7 +24,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $this->tripodConfig = Config::getInstance();
     }
 
-    public function testGetInstanceThrowsExceptionIfSetInstanceNotCalledFirst()
+    public function testGetInstanceThrowsExceptionIfSetInstanceNotCalledFirst(): void
     {
         // to test that the instance throws an exception if it is called before calling setConfig
         // i first have to destroy the instance that is created in the setUp() method of our test suite.
@@ -37,10 +37,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testNamespaces()
+    public function testNamespaces(): void
     {
         $ns = $this->tripodConfig->getNamespaces();
-        $this->assertEquals(16, count($ns), 'Incorrect number of namespaces');
+        $this->assertCount(16, $ns, 'Incorrect number of namespaces');
 
         $expectedNs = [];
 
@@ -60,19 +60,19 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $expectedNs['bibo'] = 'http://purl.org/ontology/bibo/';
         $expectedNs['foaf'] = 'http://xmlns.com/foaf/0.1/';
         $expectedNs['baseData'] = 'http://basedata.com/b/';
-        $this->assertEquals($expectedNs, $ns, 'Incorrect namespaces');
+        $this->assertSame($expectedNs, $ns, 'Incorrect namespaces');
     }
 
-    public function testTConfig()
+    public function testTConfig(): void
     {
         $config = Config::getInstance();
-        $cfg = Config::getConfig();
+        Config::getConfig();
         $tConfig = $config->getTransactionLogConfig();
         $this->assertEquals('tripod_php_testing', $tConfig['database']);
         $this->assertEquals('transaction_log', $tConfig['collection']);
     }
 
-    public function testCardinality()
+    public function testCardinality(): void
     {
         $cardinality = $this->tripodConfig->getCardinality('tripod_php_testing', 'CBD_testing', 'dct:created');
         $this->assertEquals(1, $cardinality, 'Expected cardinality of 1 for dct:created');
@@ -81,7 +81,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $this->assertEquals(-1, $cardinality, 'Expected cardinality of 1 for random:property');
     }
 
-    public function testCompoundIndexAllArraysThrowsException()
+    public function testCompoundIndexAllArraysThrowsException(): void
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage('Compound index IllegalCompoundIndex has more than one field with cardinality > 1 - mongo will not be able to build this index');
@@ -106,7 +106,8 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
                         'indexes' => [
                             'IllegalCompoundIndex' => [
                                 'rdf:type.value' => 1,
-                                'dct:subject.value' => 1],
+                                'dct:subject.value' => 1,
+                            ],
                         ],
                     ],
                 ],
@@ -114,15 +115,15 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         ];
 
         Config::setConfig($config);
-        $mtc = Config::getInstance();
+        Config::getInstance();
     }
 
-    public function testSearchConfig()
+    public function testSearchConfig(): void
     {
         $config = Config::getInstance();
-        $this->assertEquals(MongoSearchProvider::class, $config->getSearchProviderClassName('tripod_php_testing'));
+        $this->assertSame(MongoSearchProvider::class, $config->getSearchProviderClassName('tripod_php_testing'));
 
-        $this->assertEquals(3, count($config->getSearchDocumentSpecifications('tripod_php_testing')));
+        $this->assertCount(3, $config->getSearchDocumentSpecifications('tripod_php_testing'));
         $this->assertCount(2, $config->getCollectionsForSearch('tripod_php_testing'));
     }
 
@@ -130,7 +131,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
      * @testWith ["Tripod\\Mongo\\MongoSearchProvider"]
      *           ["\\Tripod\\Mongo\\MongoSearchProvider"]
      */
-    public function testSearchConfigTrimsSearchProviderLeadingBackslash(string $providerClassName)
+    public function testSearchConfigTrimsSearchProviderLeadingBackslash(string $providerClassName): void
     {
         Config::setConfig([
             'defaultContext' => 'http://talisaspire.com/',
@@ -169,7 +170,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $this->assertEquals(MongoSearchProvider::class, $mtc->getSearchProviderClassName('tripod_php_testing'));
     }
 
-    public function testCardinalityRuleWithNoNamespace()
+    public function testCardinalityRuleWithNoNamespace(): void
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage("Cardinality 'foo:bar' does not have the namespace defined");
@@ -196,10 +197,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             ],
         ];
         Config::setConfig($config);
-        $mtc = Config::getInstance();
+        Config::getInstance();
     }
 
-    public function testGetSearchDocumentSpecificationsByType()
+    public function testGetSearchDocumentSpecificationsByType(): void
     {
         $expectedSpec = [
             [
@@ -245,7 +246,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $this->assertEquals($expectedSpec, $actualSpec);
     }
 
-    public function testGetSearchDocumentSpecificationsById()
+    public function testGetSearchDocumentSpecificationsById(): void
     {
         $expectedSpec
             = [
@@ -290,14 +291,14 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $this->assertEquals($expectedSpec, $actualSpec);
     }
 
-    public function testGetSearchDocumentSpecificationsWhereNoneExists()
+    public function testGetSearchDocumentSpecificationsWhereNoneExists(): void
     {
         $expectedSpec = [];
         $actualSpec = Config::getInstance()->getSearchDocumentSpecifications('something:doesntexist');
-        $this->assertEquals($expectedSpec, $actualSpec);
+        $this->assertSame($expectedSpec, $actualSpec);
     }
 
-    public function testViewSpecCountWithoutTTLThrowsException()
+    public function testViewSpecCountWithoutTTLThrowsException(): void
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage('Aggregate function counts exists in spec, but no TTL defined');
@@ -314,8 +315,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             'tripod_php_testing' => [
                 'data_source' => 'db',
                 'pods' => [
-                    'CBD_testing' => [
-                    ],
+                    'CBD_testing' => [],
                 ],
             ],
         ];
@@ -334,10 +334,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             ],
         ];
         Config::setConfig($config);
-        $mtc = Config::getInstance();
+        Config::getInstance();
     }
 
-    public function testViewSpecCountNestedInJoinWithoutTTLThrowsException()
+    public function testViewSpecCountNestedInJoinWithoutTTLThrowsException(): void
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage('Aggregate function counts exists in spec, but no TTL defined');
@@ -354,8 +354,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             'tripod_php_testing' => [
                 'data_source' => 'db',
                 'pods' => [
-                    'CBD_testing' => [
-                    ],
+                    'CBD_testing' => [],
                 ],
             ],
         ];
@@ -377,10 +376,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             ],
         ];
         Config::setConfig($config);
-        $mtc = Config::getInstance();
+        Config::getInstance();
     }
 
-    public function testTableSpecNestedCountWithoutPropertyThrowsException()
+    public function testTableSpecNestedCountWithoutPropertyThrowsException(): void
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage('Count spec does not contain property');
@@ -397,8 +396,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             'tripod_php_testing' => [
                 'data_source' => 'db',
                 'pods' => [
-                    'CBD_testing' => [
-                    ],
+                    'CBD_testing' => [],
                 ],
             ],
         ];
@@ -418,10 +416,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             ],
         ];
         Config::setConfig($config);
-        $mtc = Config::getInstance();
+        Config::getInstance();
     }
 
-    public function testTableSpecNested2ndLevelCountWithoutFieldNameThrowsException()
+    public function testTableSpecNested2ndLevelCountWithoutFieldNameThrowsException(): void
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage('Count spec does not contain fieldName');
@@ -462,10 +460,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             ],
         ];
         Config::setConfig($config);
-        $mtc = Config::getInstance();
+        Config::getInstance();
     }
 
-    public function testTableSpecFieldWithoutFieldName()
+    public function testTableSpecFieldWithoutFieldName(): void
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage('Field spec does not contain fieldName');
@@ -500,10 +498,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             ],
         ];
         Config::setConfig($config);
-        $mtc = Config::getInstance();
+        Config::getInstance();
     }
 
-    public function testTableSpecFieldWithoutPredicates()
+    public function testTableSpecFieldWithoutPredicates(): void
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage('Field spec does not contain predicates');
@@ -538,10 +536,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             ],
         ];
         Config::setConfig($config);
-        $mtc = Config::getInstance();
+        Config::getInstance();
     }
 
-    public function testTableSpecCountWithoutProperty()
+    public function testTableSpecCountWithoutProperty(): void
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage('Count spec does not contain property');
@@ -576,10 +574,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             ],
         ];
         Config::setConfig($config);
-        $mtc = Config::getInstance();
+        Config::getInstance();
     }
 
-    public function testTableSpecCountWithoutFieldName()
+    public function testTableSpecCountWithoutFieldName(): void
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage('Count spec does not contain fieldName');
@@ -614,10 +612,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             ],
         ];
         Config::setConfig($config);
-        $mtc = Config::getInstance();
+        Config::getInstance();
     }
 
-    public function testTableSpecCountWithoutPropertyAsAString()
+    public function testTableSpecCountWithoutPropertyAsAString(): void
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage('Count spec property was not a string');
@@ -653,10 +651,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             ],
         ];
         Config::setConfig($config);
-        $mtc = Config::getInstance();
+        Config::getInstance();
     }
 
-    public function testConfigWithoutDefaultNamespaceThrowsException()
+    public function testConfigWithoutDefaultNamespaceThrowsException(): void
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage('Mandatory config key [defaultContext] is missing from config');
@@ -672,8 +670,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             'tripod_php_testing' => [
                 'data_source' => 'db',
                 'pods' => [
-                    'CBD_testing' => [
-                    ],
+                    'CBD_testing' => [],
                 ],
             ],
         ];
@@ -694,14 +691,14 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             ],
         ];
         Config::setConfig($config);
-        $mtc = Config::getInstance();
+        Config::getInstance();
     }
 
     /**
      * the indexesGroupedByCollection method should not only return each of the indexes that are defined explicitly in the config.json,
      * but also include indexes that are inserted by Config object because they are needed by tripod.
      */
-    public function testGetIndexesGroupedByCollection()
+    public function testGetIndexesGroupedByCollection(): void
     {
         $indexSpecs = Config::getInstance()->getIndexesGroupedByCollection('tripod_php_testing');
 
@@ -727,7 +724,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $this->assertEquals(['value._graphs.sioc:has_container.u' => 1, 'value._graphs.sioc:topic.u' => 1], $indexSpecs[VIEWS_COLLECTION]['rs1'][0]);
     }
 
-    public function testGetReplicaSetName()
+    public function testGetReplicaSetName(): void
     {
         $config = [];
         $config['defaultContext'] = 'http://talisaspire.com/';
@@ -751,15 +748,13 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             'tripod_php_testing' => [
                 'data_source' => 'rs1',
                 'pods' => [
-                    'CBD_testing' => [
-                    ],
+                    'CBD_testing' => [],
                 ],
             ],
             'testing_2' => [
                 'data_source' => 'mongo1',
                 'pods' => [
-                    'CBD_testing' => [
-                    ],
+                    'CBD_testing' => [],
                 ],
             ],
         ];
@@ -769,10 +764,36 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mtc = Config::getInstance();
         $this->assertEquals('myreplicaset', $mtc->getReplicaSetName($mtc->getDefaultDataSourceForStore('tripod_php_testing')));
 
-        $this->assertNull($mtc->getReplicaSetName('testing_2'));
+        $this->assertNull($mtc->getReplicaSetName($mtc->getDefaultDataSourceForStore('testing_2')));
     }
 
-    public function testGetReplicaSetNameFromConnectionString()
+    public function testGetReplicaSetNameNonExistingDatasource(): void
+    {
+        Config::setConfig([
+            'defaultContext' => 'http://talisaspire.com/',
+            'data_sources' => [
+                'tlog' => [
+                    'type' => 'mongo',
+                    'connection' => 'mongodb://abc:zyx@localhost:27018',
+                ],
+            ],
+            'transaction_log' => [
+                'database' => 'transactions',
+                'collection' => 'transaction_log',
+                'data_source' => 'tlog',
+            ],
+            'stores' => [],
+        ]);
+
+        /** @var Tripod\Mongo\Config */
+        $mtc = Config::getInstance();
+
+        $this->expectException(ConfigException::class);
+        $this->expectExceptionMessage("Data source 'non_existing_data_source' not in configuration");
+        $mtc->getReplicaSetName('non_existing_data_source');
+    }
+
+    public function testGetReplicaSetNameFromConnectionString(): void
     {
         Config::setConfig([
             'defaultContext' => 'http://talisaspire.com/',
@@ -796,7 +817,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $this->assertEquals(null, $mtc->getReplicaSetName('rs2'));
     }
 
-    public function testGetViewSpecification()
+    public function testGetViewSpecification(): void
     {
         $expectedVspec = [
             '_id' => 'v_resource_full',
@@ -832,7 +853,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $this->assertNull($vspec);
     }
 
-    public function testGetTableSpecification()
+    public function testGetTableSpecification(): void
     {
         $expectedTspec = [
             '_id' => 't_resource',
@@ -869,7 +890,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $this->assertNull($tspec);
     }
 
-    public function testSearchConfigNotPresent()
+    public function testSearchConfigNotPresent(): void
     {
         $config = [];
         $config['defaultContext'] = 'http://talisaspire.com/';
@@ -892,15 +913,15 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::setConfig($config);
         $mtc = Config::getInstance();
         $this->assertNull($mtc->getSearchProviderClassName('tripod_php_testing'));
-        $this->assertEquals([], $mtc->getSearchDocumentSpecifications('tripod_php_testing'));
+        $this->assertSame([], $mtc->getSearchDocumentSpecifications('tripod_php_testing'));
     }
 
-    public function testGetAllTypesInSpecifications()
+    public function testGetAllTypesInSpecifications(): void
     {
         $types = $this->tripodConfig->getAllTypesInSpecifications('tripod_php_testing');
-        $this->assertEquals(
+        $this->assertCount(
             12,
-            count($types),
+            $types,
             'There should be 12 types based on the configured view, table and search specifications in config.json'
         );
         $expectedValues = [
@@ -919,14 +940,14 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         ];
 
         foreach ($expectedValues as $expected) {
-            $this->assertContains($expected, $types, "List of types should have contained {$expected}");
+            $this->assertContains($expected, $types, 'List of types should have contained ' . $expected);
         }
     }
 
-    public function testGetPredicatesForTableSpec()
+    public function testGetPredicatesForTableSpec(): void
     {
         $predicates = $this->tripodConfig->getDefinedPredicatesInSpec('tripod_php_testing', 't_users');
-        $this->assertEquals(6, count($predicates), 'There should be 6 predicates defined in t_users in config.json');
+        $this->assertCount(6, $predicates, 'There should be 6 predicates defined in t_users in config.json');
         $expectedValues = [
             'rdf:type',
             'foaf:firstName',
@@ -937,14 +958,14 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         ];
 
         foreach ($expectedValues as $expected) {
-            $this->assertContains($expected, $predicates, "List of predicates should have contained {$expected}");
+            $this->assertContains($expected, $predicates, 'List of predicates should have contained ' . $expected);
         }
     }
 
-    public function testGetPredicatesForSearchDocSpec()
+    public function testGetPredicatesForSearchDocSpec(): void
     {
         $predicates = $this->tripodConfig->getDefinedPredicatesInSpec('tripod_php_testing', 'i_search_list');
-        $this->assertEquals(6, count($predicates), 'There should be 6 predicates defined in i_search_list in config.json');
+        $this->assertCount(6, $predicates, 'There should be 6 predicates defined in i_search_list in config.json');
 
         $expectedValues = [
             'rdf:type',
@@ -956,15 +977,15 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         ];
 
         foreach ($expectedValues as $expected) {
-            $this->assertContains($expected, $predicates, "List of predicates should have contained {$expected}");
+            $this->assertContains($expected, $predicates, 'List of predicates should have contained ' . $expected);
         }
     }
 
-    public function testGetPredicatesForSpecFilter()
+    public function testGetPredicatesForSpecFilter(): void
     {
         $predicates = $this->tripodConfig->getDefinedPredicatesInSpec('tripod_php_testing', 'i_search_filter_parse');
 
-        $this->assertEquals(6, count($predicates), 'There should be 6 predicates defined in i_search_filter_parse in config.json');
+        $this->assertCount(6, $predicates, 'There should be 6 predicates defined in i_search_filter_parse in config.json');
 
         $expectedValues = [
             'rdf:type',
@@ -976,11 +997,11 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         ];
 
         foreach ($expectedValues as $expected) {
-            $this->assertContains($expected, $predicates, "List of predicates should have contained {$expected}");
+            $this->assertContains($expected, $predicates, 'List of predicates should have contained ' . $expected);
         }
     }
 
-    public function testCollectionReadPreferencesAreAppliedToDatabase()
+    public function testCollectionReadPreferencesAreAppliedToDatabase(): void
     {
         $mockConfig = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getDatabase'])
@@ -992,19 +1013,17 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
                 ['tripod_php_testing', 'rs1', ReadPreference::RP_SECONDARY_PREFERRED],
                 ['tripod_php_testing', 'rs1', ReadPreference::RP_NEAREST]
             )
-            ->will($this->returnCallback(
-                function () {
-                    $mongo = new Client(null);
+            ->willReturnCallback(function () {
+                $mongo = new Client();
 
-                    return $mongo->selectDatabase('tripod_php_testing');
-                }
-            ));
+                return $mongo->selectDatabase('tripod_php_testing');
+            });
 
         $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_SECONDARY_PREFERRED);
         $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_NEAREST);
     }
 
-    public function testDataLoadedInConfiguredDataSource()
+    public function testDataLoadedInConfiguredDataSource(): void
     {
         $storeName = 'tripod_php_testing';
 
@@ -1020,13 +1039,13 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             }
         }
 
-        foreach ($config->getViewSpecifications($storeName) as $id => $spec) {
+        foreach ($config->getViewSpecifications($storeName) as $spec) {
             if (!in_array($spec['to_data_source'], $dataSourcesForStore)) {
                 $dataSourcesForStore[] = $spec['to_data_source'];
             }
         }
 
-        foreach ($config->getTableSpecifications($storeName) as $id => $spec) {
+        foreach ($config->getTableSpecifications($storeName) as $spec) {
             if (!in_array($spec['to_data_source'], $dataSourcesForStore)) {
                 $dataSourcesForStore[] = $spec['to_data_source'];
             }
@@ -1053,10 +1072,11 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
 
                 break;
             }
+
             $config->getDatabase($storeName, $source)->drop();
         }
 
-        if ($diff == false) {
+        if ($diff === false) {
             $this->markTestSkipped('All datasources configured for store use same configuration, nothing to test');
         }
 
@@ -1068,16 +1088,19 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $labeller = new Labeller();
         $graph->add_resource_triple($subject, RDF_TYPE, $labeller->qname_to_uri('foaf:Person'));
         $graph->add_literal_triple($subject, FOAF_NAME, 'Anne Example');
+
         $this->tripod->saveChanges(new ExtendedGraph(), $graph);
 
         $newGraph = $this->tripod->describeResource($subject);
         $newGraph->add_literal_triple($subject, $labeller->qname_to_uri('foaf:email'), 'anne@example.com');
+
         $this->tripod->saveChanges($graph, $newGraph);
 
         // Generate views and tables
         foreach ($config->getViewSpecifications($storeName) as $viewId => $viewSpec) {
             $this->tripod->getTripodViews()->generateView($viewId);
         }
+
         foreach ($config->getTableSpecifications($storeName) as $tableId => $tableSpec) {
             $this->tripod->generateTableRows($tableId);
         }
@@ -1087,12 +1110,17 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $lCollection->drop();
         $lCollection->insertOne([_ID_KEY => [_ID_RESOURCE => 'foo', _ID_CONTEXT => 'bar'], _LOCKED_FOR_TRANS => 'foobar']);
         $lCollection->insertOne([_ID_KEY => [_ID_RESOURCE => 'baz', _ID_CONTEXT => 'bar'], _LOCKED_FOR_TRANS => 'wibble']);
+
         $this->tripod->removeInertLocks('foobar', 'reason1');
 
         $collectionsForDataSource = [];
         $collectionsForDataSource['rs1'] = [
-            VIEWS_COLLECTION, SEARCH_INDEX_COLLECTION, TABLE_ROWS_COLLECTION, 'CBD_testing',
-            AUDIT_MANUAL_ROLLBACKS_COLLECTION, LOCKS_COLLECTION,
+            VIEWS_COLLECTION,
+            SEARCH_INDEX_COLLECTION,
+            TABLE_ROWS_COLLECTION,
+            'CBD_testing',
+            AUDIT_MANUAL_ROLLBACKS_COLLECTION,
+            LOCKS_COLLECTION,
         ];
 
         $collectionsForDataSource['rs2'] = [VIEWS_COLLECTION, SEARCH_INDEX_COLLECTION, TABLE_ROWS_COLLECTION, 'CBD_testing_2', 'transaction_log'];
@@ -1107,6 +1135,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
                 if (!isset($specsForDataSource[$spec['to_data_source']][$type])) {
                     $specsForDataSource[$spec['to_data_source']][$type] = [];
                 }
+
                 $specsForDataSource[$spec['to_data_source']][$type][] = $spec['_id'];
             }
         }
@@ -1130,6 +1159,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
                             if ($otherSource == $source) {
                                 continue;
                             }
+
                             foreach ($specsForDataSource[$otherSource]['views'] as $view) {
                                 $this->assertEquals(0, $collection->count(['_id.type' => $view]), $view . ' had at least 1 document in data source ' . $source);
                             }
@@ -1146,6 +1176,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
                             if ($otherSource == $source) {
                                 continue;
                             }
+
                             foreach ($specsForDataSource[$otherSource]['search'] as $search) {
                                 $this->assertEquals(0, $collection->count(['_id.type' => $search]), $search . ' had at least 1 document in data source ' . $source);
                             }
@@ -1161,6 +1192,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
                             if ($otherSource == $source) {
                                 continue;
                             }
+
                             foreach ($specsForDataSource[$otherSource]['table_rows'] as $t) {
                                 $this->assertEquals(0, $collection->count(['_id.type' => $t]), $t . ' had at least 1 document in data source ' . $source);
                             }
@@ -1182,7 +1214,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         }
     }
 
-    public function testTransactionLogIsWrittenToCorrectDBAndCollection()
+    public function testTransactionLogIsWrittenToCorrectDBAndCollection(): void
     {
         $storeName = 'tripod_php_testing';
         $newConfig = Config::getConfig();
@@ -1224,10 +1256,12 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $labeller = new Labeller();
         $graph->add_resource_triple($subject, RDF_TYPE, $labeller->qname_to_uri('foaf:Person'));
         $graph->add_literal_triple($subject, FOAF_NAME, 'Anne Example');
+
         $this->tripod->saveChanges(new ExtendedGraph(), $graph);
 
         $newGraph = $this->tripod->describeResource($subject);
         $newGraph->add_literal_triple($subject, $labeller->qname_to_uri('foaf:email'), 'anne@example.com');
+
         $this->tripod->saveChanges($graph, $newGraph);
 
         // Make sure the dbs do now exist
@@ -1238,6 +1272,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
                 $transactionDbExists = true;
             }
         }
+
         $this->assertTrue($transactionDbExists);
 
         // Make sure the data in the dbs look right
@@ -1245,10 +1280,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $transactionCount = $transactionColletion->count();
         $transactionExampleDocument = $transactionColletion->findOne();
         $this->assertEquals(26, $transactionCount);
-        $this->assertStringContainsString('transaction_', $transactionExampleDocument['_id']);
+        $this->assertStringContainsString('transaction_', (string) $transactionExampleDocument['_id']);
     }
 
-    public function testComputedFieldSpecValidationInvalidFunction()
+    public function testComputedFieldSpecValidationInvalidFunction(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1260,7 +1295,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testComputedFieldSpecValidationMultipleFunctions()
+    public function testComputedFieldSpecValidationMultipleFunctions(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1272,7 +1307,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testComputedFieldSpecValidationMustBeAtBaseLevel()
+    public function testComputedFieldSpecValidationMustBeAtBaseLevel(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1284,7 +1319,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testConditionalSpecValidationEmptyConditional()
+    public function testConditionalSpecValidationEmptyConditional(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1296,7 +1331,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testConditionalSpecValidationMissingThenElse()
+    public function testConditionalSpecValidationMissingThenElse(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1308,7 +1343,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testConditionalSpecValidationEmptyIf()
+    public function testConditionalSpecValidationEmptyIf(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1320,7 +1355,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testConditionalSpecValidationIfNotArray()
+    public function testConditionalSpecValidationIfNotArray(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1332,7 +1367,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testConditionalSpecValidationIfHasTwoValues()
+    public function testConditionalSpecValidationIfHasTwoValues(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1344,7 +1379,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testConditionalSpecValidationIfHasMoreThanThreeValues()
+    public function testConditionalSpecValidationIfHasMoreThanThreeValues(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1356,7 +1391,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testConditionalSpecValidationIfHasInvalidConditionalOperator()
+    public function testConditionalSpecValidationIfHasInvalidConditionalOperator(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1368,7 +1403,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testConditionalSpecValidationIfHasInvalidVariableAsLeftOperand()
+    public function testConditionalSpecValidationIfHasInvalidVariableAsLeftOperand(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1380,7 +1415,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testConditionalSpecValidationIfHasInvalidVariableAsRightOperand()
+    public function testConditionalSpecValidationIfHasInvalidVariableAsRightOperand(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1392,7 +1427,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testConditionalSpecValidationThenHasInvalidVariable()
+    public function testConditionalSpecValidationThenHasInvalidVariable(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1404,7 +1439,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testConditionalSpecValidationElseHasInvalidVariable()
+    public function testConditionalSpecValidationElseHasInvalidVariable(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1416,7 +1451,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testReplaceSpecValidationEmptyFunction()
+    public function testReplaceSpecValidationEmptyFunction(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1428,7 +1463,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testReplaceSpecValidationMissingReplace()
+    public function testReplaceSpecValidationMissingReplace(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1440,7 +1475,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testReplaceSpecValidationMissingSubject()
+    public function testReplaceSpecValidationMissingSubject(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1452,7 +1487,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testReplaceSpecValidationInvalidVariableInSearch()
+    public function testReplaceSpecValidationInvalidVariableInSearch(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1464,7 +1499,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testReplaceSpecValidationInvalidVariableInSearchArray()
+    public function testReplaceSpecValidationInvalidVariableInSearchArray(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1476,7 +1511,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testReplaceSpecValidationInvalidVariableInReplace()
+    public function testReplaceSpecValidationInvalidVariableInReplace(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1488,7 +1523,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testReplaceSpecValidationInvalidVariableInReplaceArray()
+    public function testReplaceSpecValidationInvalidVariableInReplaceArray(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1500,7 +1535,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testReplaceSpecValidationInvalidVariableInSubject()
+    public function testReplaceSpecValidationInvalidVariableInSubject(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1512,7 +1547,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testReplaceSpecValidationInvalidVariableInSubjectArray()
+    public function testReplaceSpecValidationInvalidVariableInSubjectArray(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1524,7 +1559,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testArithmeticSpecValidationEmptyFunction()
+    public function testArithmeticSpecValidationEmptyFunction(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1536,7 +1571,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testArithmeticSpecValidationOneValue()
+    public function testArithmeticSpecValidationOneValue(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1548,7 +1583,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testArithmeticSpecValidationTwoValues()
+    public function testArithmeticSpecValidationTwoValues(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1560,7 +1595,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testArithmeticSpecValidationFourValues()
+    public function testArithmeticSpecValidationFourValues(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1572,7 +1607,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testArithmeticSpecValidationInvalidArithmeticOperator()
+    public function testArithmeticSpecValidationInvalidArithmeticOperator(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1584,7 +1619,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testArithmeticSpecValidationInvalidVariableLeftOperand()
+    public function testArithmeticSpecValidationInvalidVariableLeftOperand(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1596,7 +1631,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testArithmeticSpecValidationInvalidVariableRightOperand()
+    public function testArithmeticSpecValidationInvalidVariableRightOperand(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1608,7 +1643,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testArithmeticSpecValidationInvalidNestedVariable()
+    public function testArithmeticSpecValidationInvalidNestedVariable(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1620,7 +1655,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testArithmeticSpecValidationInvalidNestedOperator()
+    public function testArithmeticSpecValidationInvalidNestedOperator(): void
     {
         $newConfig = Config::getConfig();
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
@@ -1632,18 +1667,19 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         Config::getInstance();
     }
 
-    public function testGetResqueServer()
+    public function testGetResqueServer(): void
     {
         Tripod\Mongo\Config::setValidationLevel(Tripod\Mongo\Config::VALIDATE_MAX);
 
         if (!getenv(MONGO_TRIPOD_RESQUE_SERVER)) {
             putenv(MONGO_TRIPOD_RESQUE_SERVER . '=redis');
         }
+
         $this->assertEquals(getenv(MONGO_TRIPOD_RESQUE_SERVER), Tripod\Mongo\Config::getResqueServer());
     }
 
     // MongoClient creation tests
-    public function testMongoConnectionNoExceptions()
+    public function testMongoConnectionNoExceptions(): void
     {
         $mockConfig = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getMongoClient'])
@@ -1652,17 +1688,13 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig->expects($this->exactly(1))
             ->method('getMongoClient')
             ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])
-            ->will($this->returnCallback(
-                function () {
-                    return new Client();
-                }
-            ));
+            ->willReturnCallback(fn (): Client => new Client());
         $mockConfig->getDatabase('tripod_php_testing', 'rs1', ReadPreference::RP_SECONDARY_PREFERRED);
         $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_SECONDARY_PREFERRED);
         $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_NEAREST);
     }
 
-    public function testMongoConnectionExceptionThrown()
+    public function testMongoConnectionExceptionThrown(): void
     {
         $this->expectException(ConnectionTimeoutException::class);
         $this->expectExceptionMessage('Exception thrown when connecting to Mongo');
@@ -1673,12 +1705,12 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig->expects($this->exactly(30))
             ->method('getMongoClient')
             ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])
-            ->will($this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')));
+            ->willThrowException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo'));
 
         $mockConfig->getDatabase('tripod_php_testing', 'rs1', ReadPreference::RP_SECONDARY_PREFERRED);
     }
 
-    public function testMongoConnectionNoExceptionThrownWhenConnectionThrowsSomeExceptions()
+    public function testMongoConnectionNoExceptionThrownWhenConnectionThrowsSomeExceptions(): void
     {
         $mockConfig = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getMongoClient'])
@@ -1686,18 +1718,15 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig->loadConfig(json_decode(file_get_contents(__DIR__ . '/data/config.json'), true));
         $mockConfig->expects($this->exactly(5))
             ->method('getMongoClient')
-            ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])
-            ->will($this->onConsecutiveCalls(
+            ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])->willReturnOnConsecutiveCalls(
                 $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')),
                 $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')),
                 $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')),
                 $this->throwException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo')),
                 $this->returnCallback(
-                    function () {
-                        return new Client();
-                    }
+                    fn (): Client => new Client()
                 )
-            ));
+            );
 
         $mockConfig->getDatabase('tripod_php_testing', 'rs1', ReadPreference::RP_SECONDARY_PREFERRED);
         $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_SECONDARY_PREFERRED);

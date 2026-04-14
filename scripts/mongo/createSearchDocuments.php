@@ -1,7 +1,7 @@
 <?php
 
 use Tripod\Config;
-use Tripod\iTripodStat;
+use Tripod\ITripodStat;
 use Tripod\Mongo\Driver;
 use Tripod\Timer;
 
@@ -20,9 +20,12 @@ $options = getopt(
     ]
 );
 
-function showUsage($scriptName)
+function showUsage(): void
 {
+    $scriptName = basename(__FILE__);
     $help = <<<END
+        {$scriptName}
+
         Usage:
 
         php {$scriptName} -c/--config path/to/tripod-config.json -s/--storename store-name [options]
@@ -30,10 +33,10 @@ function showUsage($scriptName)
         Options:
             -h --help               This help
             -c --config             path to MongoTripodConfig configuration (required)
-            -s --storename          Store to create views for (required)
+            -s --storename          Store to create search documents for (required)
             -d --spec               Only create for specified search document specs
             -i --id                 Resource ID to regenerate search documents for
-            -a --async              Generate table rows via queue
+            -a --async              Generate search documents via queue
             -q --queue              Queue name to place jobs on (defaults to configured TRIPOD_APPLY_QUEUE value)
 
             --stat-loader           Path to script to initialize a Stat object.  Note, it *must* return an iTripodStat object!
@@ -42,7 +45,8 @@ function showUsage($scriptName)
     echo $help;
 }
 
-if (empty($options) || isset($options['h']) || isset($options['help'])
+if (
+    $options === [] || $options === false || isset($options['h']) || isset($options['help'])
     || (!isset($options['c']) && !isset($options['config']))
     || (!isset($options['s']) && !isset($options['storename']))
 ) {
@@ -50,24 +54,18 @@ if (empty($options) || isset($options['h']) || isset($options['help'])
 
     exit;
 }
+
 $configLocation = $options['c'] ?? $options['config'];
 
 require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
-/**
- * @param string|null      $id
- * @param string|null      $specId
- * @param string|null      $storeName
- * @param iTripodStat|null $stat
- * @param string|null      $queue
- */
-function generateSearchDocuments($id, $specId, $storeName, $stat = null, $queue = null)
+function generateSearchDocuments(?string $id, string $specId, string $storeName, ?ITripodStat $stat = null, ?string $queue = null): void
 {
     $spec = Config::getInstance()->getSearchDocumentSpecification($storeName, $specId);
     if (array_key_exists('from', $spec)) {
         Config::getInstance()->setMongoCursorTimeout(-1);
 
-        echo "Generating {$specId}";
+        echo 'Generating ' . $specId;
         $tripod = new Driver($spec['from'], $storeName, ['stat' => $stat]);
         $search = $tripod->getSearchIndexer();
         if ($id) {
@@ -85,31 +83,13 @@ $t->start();
 
 Config::setConfig(json_decode(file_get_contents($configLocation), true));
 
-if (isset($options['s']) || isset($options['storename'])) {
-    $storeName = $options['s'] ?? $options['storename'];
-} else {
-    $storeName = null;
-}
-
-if (isset($options['d']) || isset($options['spec'])) {
-    $specId = isset($options['d']) ? $options['t'] : $options['spec'];
-} else {
-    $specId = null;
-}
-
-if (isset($options['i']) || isset($options['id'])) {
-    $id = $options['i'] ?? $options['id'];
-} else {
-    $id = null;
-}
+$storeName = $options['s'] ?? $options['storename'] ?? null;
+$specId = $options['d'] ?? $options['spec'] ?? null;
+$id = $options['i'] ?? $options['id'] ?? null;
 
 $queue = null;
 if (isset($options['a']) || isset($options['async'])) {
-    if (isset($options['q']) || isset($options['queue'])) {
-        $queue = $options['queue'];
-    } else {
-        $queue = Config::getInstance()->getApplyQueueName();
-    }
+    $queue = $options['q'] ?? $options['queue'] ?? Config::getInstance()->getApplyQueueName();
 }
 
 $stat = null;

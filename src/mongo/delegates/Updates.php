@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use MongoDB\BSON\ObjectId;
@@ -21,71 +23,47 @@ use Tripod\Timer;
 class Updates extends DriverBase
 {
     /**
-     * @var Labeller
+     * constants for the supported hook functions that can be applied.
      */
-    protected $labeller;
+    public const HOOK_FN_PRE = 'pre';
+    public const HOOK_FN_SUCCESS = 'success';
+    public const HOOK_FN_FAILURE = 'failure';
+
+    protected Driver $tripod;
+
+    protected ?Database $locksDb = null;
+
+    protected ?Collection $locksCollection = null;
+
+    protected ?DiscoverImpactedSubjects $discoverImpactedSubjects = null;
+
+    private ?TransactionLog $transactionLog = null;
 
     /**
-     * @var Driver
-     */
-    protected $tripod;
-
-    /**
-     * @var Database
-     */
-    protected $locksDb;
-
-    /**
-     * @var Collection
-     */
-    protected $locksCollection;
-
-    /**
-     * @var DiscoverImpactedSubjects
-     */
-    protected $discoverImpactedSubjects;
-
-    /**
-     * @var TransactionLog
-     */
-    private $transactionLog;
-
-    /**
-     * @var string the original read preference gets stored here
-     *             when changing for a write
+     * @var int|string the original read preference gets stored here when changing for a write
      */
     private $originalCollectionReadPreference = '';
 
     /**
-     * @var string the original read preference gets stored here
-     *             when changing for a write
+     * @var int|string the original read preference gets stored here when changing for a write
      */
     private $originalDbReadPreference = '';
 
-    /**
-     * @var int
-     */
-    private $retriesToGetLock;
+    private int $retriesToGetLock;
 
     /**
-     * @var array
+     * @var array{OP_VIEWS: bool, OP_TABLES: bool, OP_SEARCH: bool}
      */
-    private $async;
+    private array $async;
+
+    private ?string $queueName = null;
 
     /**
-     * @var string
+     * @var IEventHook[]
      */
-    private $queueName;
+    private array $saveChangesHooks = [];
 
-    /**
-     * @var array
-     */
-    private $saveChangesHooks = [];
-
-    /**
-     * @param array $opts
-     */
-    public function __construct(Driver $tripod, $opts = [])
+    public function __construct(Driver $tripod, array $opts = [])
     {
         $this->tripod = $tripod;
         $this->storeName = $tripod->getStoreName();
@@ -97,7 +75,8 @@ class Updates extends DriverBase
             OP_ASYNC => [OP_VIEWS => false, OP_TABLES => true, OP_SEARCH => true],
             'stat' => null,
             'readPreference' => ReadPreference::RP_PRIMARY_PREFERRED,
-            'retriesToGetLock' => 20], $opts);
+            'retriesToGetLock' => 20,
+        ], $opts);
         $this->readPreference = $opts['readPreference'];
         $this->config = $this->getConfigInstance();
 
@@ -112,6 +91,7 @@ class Updates extends DriverBase
         if (!array_key_exists(OP_VIEWS, $async)) {
             $async[OP_VIEWS] = false;
         }
+
         if (!array_key_exists(OP_TABLES, $async)) {
             $async[OP_TABLES] = true;
         }
@@ -141,19 +121,14 @@ class Updates extends DriverBase
     /**
      * Create and apply a changeset which is the delta between $oldGraph and $newGraph.
      *
-     * @param string|null $context
-     * @param string|null $description
-     *
-     * @return bool
-     *
      * @throws \Exception
      */
     public function saveChanges(
         ExtendedGraph $oldGraph,
         ExtendedGraph $newGraph,
-        $context = null,
-        $description = null
-    ) {
+        ?string $context = null,
+        ?string $description = null
+    ): bool {
         $this->applyHooks($this::HOOK_FN_PRE, $this->saveChangesHooks, [
             'pod' => $this->getPodName(),
             'oldGraph' => $oldGraph,
@@ -187,6 +162,7 @@ class Updates extends DriverBase
 
                     throw new Exception('Result of storeChanges malformed, should have transaction_id and subjectsAndPredicatesOfChange array keys');
                 }
+
                 extract($result); // will unpack into $subjectsAndPredicatesOfChange
 
                 // Process any syncronous operations
@@ -224,16 +200,10 @@ class Updates extends DriverBase
     }
 
     // ////// LOCKS \\\\\\\\
-
     /**
      * Get locked documents for a date range or all documents if no date range is given.
-     *
-     * @param string $fromDateTime
-     * @param string $tillDateTime
-     *
-     * @return array
      */
-    public function getLockedDocuments($fromDateTime = null, $tillDateTime = null)
+    public function getLockedDocuments(?string $fromDateTime = null, ?string $tillDateTime = null): array
     {
         $query = [];
         if (!empty($fromDateTime) || !empty($tillDateTime)) {
@@ -242,10 +212,12 @@ class Updates extends DriverBase
             if (!empty($fromDateTime)) {
                 $query[_LOCKED_FOR_TRANS_TS][MONGO_OPERATION_GTE] = DateUtil::getMongoDate(strtotime($fromDateTime) * 1000);
             }
+
             if (!empty($tillDateTime)) {
                 $query[_LOCKED_FOR_TRANS_TS][MONGO_OPERATION_LTE] = DateUtil::getMongoDate(strtotime($tillDateTime) * 1000);
             }
         }
+
         $docs = $this->getLocksCollection()->find($query, ['sort' => [_LOCKED_FOR_TRANS => 1]]);
 
         if ($this->getLocksCollection()->count($query) == 0) {
@@ -263,14 +235,9 @@ class Updates extends DriverBase
     /**
      * Remove locks that are there forever, creates a audit entry to keep track who and why removed these locks.
      *
-     * @param string $transaction_id
-     * @param string $reason
-     *
-     * @return bool
-     *
-     * @throws \Exception, if something goes wrong when unlocking documents, or creating audit entries
+     * @throws \Exception If something goes wrong when unlocking documents, or creating audit entries
      */
-    public function removeInertLocks($transaction_id, $reason)
+    public function removeInertLocks(string $transaction_id, string $reason): bool
     {
         $query = [_LOCKED_FOR_TRANS => $transaction_id];
         $docs = $this->getLocksCollection()->find($query);
@@ -292,7 +259,7 @@ class Updates extends DriverBase
             $result = $auditCollection->insertOne(
                 [
                     _ID_KEY => $auditDocumentId,
-                    'type' => AUDIT_TYPE_REMOVE_INERT_LOCKS,
+                    _ID_TYPE => AUDIT_TYPE_REMOVE_INERT_LOCKS,
                     'status' => AUDIT_STATUS_IN_PROGRESS,
                     'reason' => $reason,
                     'transaction_id' => $transaction_id,
@@ -352,17 +319,14 @@ class Updates extends DriverBase
     }
 
     // /////// REPLAY TRANSACTION LOG ///////
-
     /**
      * replays all transactions from the transaction log, use the function params to control the from and to date if you
      * only want to replay transactions created during specific window.
      *
      * @param string|null $fromDate only transactions after this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
      * @param string|null $toDate   only transactions before this specified date. This must be a datetime string i.e. '2010-01-15 00:00:00'
-     *
-     * @return bool
      */
-    public function replayTransactionLog($fromDate = null, $toDate = null)
+    public function replayTransactionLog(?string $fromDate = null, ?string $toDate = null): bool
     {
         $cursor = $this->getTransactionLog()->getCompletedTransactions($this->storeName, $this->podName, $fromDate, $toDate);
         foreach ($cursor as $result) {
@@ -373,11 +337,7 @@ class Updates extends DriverBase
     }
 
     // getters and setters for the delegates
-
-    /**
-     * @return TransactionLog
-     */
-    public function getTransactionLog()
+    public function getTransactionLog(): TransactionLog
     {
         if ($this->transactionLog == null) {
             $this->transactionLog = new TransactionLog();
@@ -386,7 +346,7 @@ class Updates extends DriverBase
         return $this->transactionLog;
     }
 
-    public function setTransactionLog(TransactionLog $transactionLog)
+    public function setTransactionLog(TransactionLog $transactionLog): void
     {
         $this->transactionLog = $transactionLog;
     }
@@ -394,16 +354,43 @@ class Updates extends DriverBase
     /**
      * Register save changes event hooks.
      */
-    public function registerSaveChangesEventHook(IEventHook $hook)
+    public function registerSaveChangesEventHook(IEventHook $hook): void
     {
         $this->saveChangesHooks[] = $hook;
+    }
+
+    /**
+     * @param IEventHook[] $hooks
+     *
+     * @throws Exception If an invalid hook function is requested
+     */
+    protected function applyHooks(string $fn, array $hooks, array $args = []): void
+    {
+        switch ($fn) {
+            case $this::HOOK_FN_PRE:
+            case $this::HOOK_FN_SUCCESS:
+            case $this::HOOK_FN_FAILURE:
+                break;
+
+            default:
+                throw new Exception(sprintf('Invalid hook function %s requested', $fn));
+        }
+
+        foreach ($hooks as $hook) {
+            try {
+                call_user_func([$hook, $fn], $args);
+            } catch (\Exception $e) {
+                // don't let rabid hooks stop tripod
+                static::getLogger()->error('Hook ' . get_class($hook) . sprintf(' threw exception %s, continuing', $e->getMessage()));
+            }
+        }
     }
 
     /**
      * Change the read preferences to RP_PRIMARY
      * Used for a write operation.
      */
-    protected function setReadPreferenceToPrimary()
+    protected function setReadPreferenceToPrimary(): void
     {
         // Set db preference
         /** @var ReadPreference $dbReadPref */
@@ -432,12 +419,11 @@ class Updates extends DriverBase
     /**
      * Reset the original read preference after changing with setReadPreferenceToPrimary.
      */
-    protected function resetOriginalReadPreference()
+    protected function resetOriginalReadPreference(): void
     {
-        /** @var ReadPreference $dbReadPref */
-        $dbReadPref = $this->db->__debugInfo()['readPreference'];
+        $dbReadPref = $this->db->getReadPreference();
         if ($this->originalDbReadPreference !== $dbReadPref->getMode()) {
-            $pref = $this->originalDbReadPreference ?? $this->readPreference;
+            $pref = $this->originalDbReadPreference ?: $this->readPreference;
             $dbTagsets = $dbReadPref->getTagsets();
 
             $this->db = $this->db->withOptions([
@@ -446,10 +432,9 @@ class Updates extends DriverBase
         }
 
         // Reset collection object
-        /** @var ReadPreference $collReadPref */
-        $collReadPref = $this->getCollection()->__debugInfo()['readPreference'];
+        $collReadPref = $this->getCollection()->getReadPreference();
         if ($this->originalCollectionReadPreference !== $collReadPref->getMode()) {
-            $pref = $this->originalCollectionReadPreference ?? $this->readPreference;
+            $pref = $this->originalCollectionReadPreference ?: $this->readPreference;
             $collTagsets = $collReadPref->getTagsets();
             $this->collection = $this->collection->withOptions([
                 'readPreference' => new ReadPreference($pref, $collTagsets),
@@ -462,7 +447,7 @@ class Updates extends DriverBase
      *
      * @throws CardinalityException
      */
-    protected function validateGraphCardinality(ExtendedGraph $graph)
+    protected function validateGraphCardinality(ExtendedGraph $graph): void
     {
         $config = $this->getConfigInstance();
         $cardinality = $config->getCardinality($this->getStoreName(), $this->getPodName());
@@ -476,7 +461,7 @@ class Updates extends DriverBase
         foreach ($cardinality as $qname => $cardinalityValue) {
             [$namespace, $predicateName] = explode(':', $qname);
             if (!array_key_exists($namespace, $namespaces)) {
-                throw new CardinalityException("Namespace '{$namespace}' not defined for qname: {$qname}");
+                throw new CardinalityException(sprintf("Namespace '%s' not defined for qname: %s", $namespace, $qname));
             }
 
             // NB: The only constraint we currently support is a value of 1 to enforce one triple per subject/predicate.
@@ -490,7 +475,7 @@ class Updates extends DriverBase
                             $v[] = $predicateValue['value'];
                         }
 
-                        throw new CardinalityException("Cardinality failed on {$subjectUri} for '{$qname}' - should only have 1 value and has: " . implode(', ', $v));
+                        throw new CardinalityException(sprintf("Cardinality failed on %s for '%s' - should only have 1 value and has: ", $subjectUri, $qname) . implode(', ', $v));
                     }
                 }
             }
@@ -498,14 +483,13 @@ class Updates extends DriverBase
     }
 
     /**
-     * @param ChangeSet $cs           Change-set to apply
-     * @param string    $contextAlias
+     * @param ChangeSet $cs Change-set to apply
      *
      * @return array An array of subjects and predicates that have been changed
      *
      * @throws Exception
      */
-    protected function storeChanges(ChangeSet $cs, $contextAlias)
+    protected function storeChanges(ChangeSet $cs, string $contextAlias): array
     {
         $t = new Timer();
         $t->start();
@@ -516,6 +500,7 @@ class Updates extends DriverBase
         // store the details of the transaction in the transaction log
         $mongoGraph = new MongoGraph();
         $mongoGraph->_index = $cs->_index;
+
         $csDoc = $mongoGraph->to_tripod_view_array('changes', $contextAlias); // todo - this changed to tripod view array, why is "changes" the docId?
         $originalCBDs = [];
 
@@ -552,7 +537,7 @@ class Updates extends DriverBase
 
             $t->stop();
             $this->timingLog(MONGO_WRITE, ['duration' => $t->result(), 'subjectsOfChange' => implode(', ', $subjectsOfChange)]);
-            $this->getStat()->timer(MONGO_WRITE . ".{$this->getPodName()}", $t->result());
+            $this->getStat()->timer(MONGO_WRITE . ('.' . $this->getPodName()), $t->result());
 
             return $changes;
         } catch (\Exception $e) {
@@ -568,19 +553,17 @@ class Updates extends DriverBase
             );
             $this->rollbackTransaction($transaction_id, $originalCBDs, $e);
 
-            throw new Exception('Error storing changes: ' . $e->getMessage() . ' >>>' . $e->getTraceAsString());
+            throw new Exception('Error storing changes: ' . $e->getMessage() . ' >>>' . $e->getTraceAsString(), $e->getCode(), $e);
         }
     }
 
     /**
-     * @param string $transaction_id id of the transaction
-     * @param array  $originalCBDs   containing the original CBDS
+     * @param string     $transaction_id id of the transaction
+     * @param array|null $originalCBDs   containing the original CBDS
      *
-     * @return bool
-     *
-     * @throws \Exception
+     * @throws \Throwable
      */
-    protected function rollbackTransaction($transaction_id, $originalCBDs, \Exception $exception)
+    protected function rollbackTransaction(string $transaction_id, ?array $originalCBDs, \Throwable $exception): bool
     {
         // set transaction to cancelling
         $this->getTransactionLog()->cancelTransaction($transaction_id, $exception);
@@ -601,7 +584,7 @@ class Updates extends DriverBase
                         ]
                     );
 
-                    throw new \Exception("Failed to restore Original CBDS for transaction: {$transaction_id} stopped at " . $g[_ID_KEY]);
+                    throw new \Exception(sprintf('Failed to restore Original CBDS for transaction: %s stopped at ', $transaction_id) . $g[_ID_KEY]);
                 }
             }
         } else {
@@ -614,6 +597,7 @@ class Updates extends DriverBase
                 ]
             );
         }
+
         $this->unlockAllDocuments($transaction_id);
 
         // set transaction to failed
@@ -624,20 +608,16 @@ class Updates extends DriverBase
 
     /**
      * Returns a unique transaction ID.
-     *
-     * @return string
      */
-    protected function generateTransactionId()
+    protected function generateTransactionId(): string
     {
         return 'transaction_' . $this->getUniqId();
     }
 
     /**
      * Returns a unique id: for mocking.
-     *
-     * @return string
      */
-    protected function getUniqId()
+    protected function getUniqId(): string
     {
         return uniqid('', true);
     }
@@ -645,15 +625,11 @@ class Updates extends DriverBase
     /**
      * Adds/updates/deletes the graph in the database.
      *
-     * @param array  $originalCBDs
-     * @param string $contextAlias
-     * @param string $transaction_id
-     *
-     * @return array
+     * @return array<string, mixed[]|string>
      *
      * @throws \Exception
      */
-    protected function applyChangeSet(ChangeSet $cs, $originalCBDs, $contextAlias, $transaction_id)
+    protected function applyChangeSet(ChangeSet $cs, array $originalCBDs, string $contextAlias, string $transaction_id): array
     {
         $subjectsAndPredicatesOfChange = [];
         if (in_array($this->getCollection()->getCollectionName(), $this->getConfigInstance()->getPods($this->getStoreName()))) {
@@ -714,21 +690,23 @@ class Updates extends DriverBase
                     if (isset($additionsRemovals['removals'])) {
                         $elemsToRemove = [];
                         foreach ($additionsRemovals['removals'] as $removal) {
-                            $valueIndex = array_search($removal, $valueObject);
+                            $valueIndex = array_search($removal, $valueObject, true);
                             if ($valueIndex === false) {
                                 $values = array_values($removal);
                                 $v = array_pop($values);
-                                $this->errorLog("Removal value {$subjectOfChange} {$predicate} {$v} does not appear in target document to be updated", ['doc' => $doc]);
+                                $this->errorLog(sprintf('Removal value %s %s %s does not appear in target document to be updated', $subjectOfChange, $predicate, $v), ['doc' => $doc]);
 
-                                throw new \Exception("Removal value {$subjectOfChange} {$predicate} {$v} does not appear in target document to be updated");
+                                throw new \Exception(sprintf('Removal value %s %s %s does not appear in target document to be updated', $subjectOfChange, $predicate, $v));
                             }
 
                             $elemsToRemove[] = $valueIndex;
                         }
-                        if (count($elemsToRemove) > 0) {
+
+                        if ($elemsToRemove !== []) {
                             foreach ($elemsToRemove as $elem) {
                                 unset($valueObject[$elem]);
                             }
+
                             $valueObject = array_values($valueObject); // renumbers array after unsets
                         }
                     }
@@ -736,16 +714,14 @@ class Updates extends DriverBase
                     if (count($valueObject) > 0) {
                         // unique value object
                         $valueObject = array_map('unserialize', array_unique(array_map('serialize', $valueObject)));
-
-                        if (count($valueObject) == 1) {
+                        if (count($valueObject) === 1) {
                             $valueObject = $valueObject[0]; // un-array if only one value
                         }
+
                         $this->addOperatorToChange($mongoUpdateOperations, MONGO_OPERATION_SET, [$nsPredicate => $valueObject]);
-                    } else {
+                    } elseif ($predicateExists) {
                         // remove all existing values, if existed in the first place
-                        if ($predicateExists) {
-                            $this->addOperatorToChange($mongoUpdateOperations, MONGO_OPERATION_UNSET, [$nsPredicate => 1]);
-                        }
+                        $this->addOperatorToChange($mongoUpdateOperations, MONGO_OPERATION_UNSET, [$nsPredicate => 1]);
                     }
                 }
 
@@ -774,7 +750,9 @@ class Updates extends DriverBase
                         'upsert' => $update['upsert'],
                         'returnDocument' => FindOneAndUpdate::RETURN_DOCUMENT_AFTER,
                     ]);
-                    array_push($newCBDs, $newDoc);
+                    if ($newDoc) {
+                        $newCBDs[] = $newDoc;
+                    }
                 } catch (\Exception $e) {
                     $this->errorLog(
                         MONGO_WRITE,
@@ -784,7 +762,7 @@ class Updates extends DriverBase
                         ]
                     );
 
-                    throw new \Exception($e);
+                    throw $e;
                 }
             }
 
@@ -801,9 +779,9 @@ class Updates extends DriverBase
     /**
      * Normalize our subjects and predicates of change to use aliases rather than fq uris.
      *
-     * @return array
+     * @param array<string, list<string>> $subjectsAndPredicatesOfChange
      */
-    protected function subjectsAndPredicatesOfChangeUrisToAliases(array $subjectsAndPredicatesOfChange)
+    protected function subjectsAndPredicatesOfChangeUrisToAliases(array $subjectsAndPredicatesOfChange): array
     {
         $aliases = [];
         foreach ($subjectsAndPredicatesOfChange as $subject => $predicates) {
@@ -820,18 +798,13 @@ class Updates extends DriverBase
     /**
      * Given a set of CBD's return the CBD that matches the Subject of Change.
      *
-     * @param string $subjectOfChange
-     * @param string $contextAlias
-     *
      * @return array|null the document from the collection of $cbds that matches the subject of change
      */
-    protected function getDocumentForUpdate($subjectOfChange, $contextAlias, array $cbds)
+    protected function getDocumentForUpdate(string $subjectOfChange, string $contextAlias, array $cbds): ?array
     {
         foreach ($cbds as $c) {
             if ($c[_ID_KEY] == [_ID_RESOURCE => $this->labeller->uri_to_alias($subjectOfChange), _ID_CONTEXT => $contextAlias]) {
                 return $c;
-
-                break;
             }
         }
 
@@ -840,10 +813,8 @@ class Updates extends DriverBase
 
     /**
      * Processes each subject synchronously.
-     *
-     * @param string $contextAlias
      */
-    protected function processSyncOperations(array $subjectsAndPredicatesOfChange, $contextAlias)
+    protected function processSyncOperations(array $subjectsAndPredicatesOfChange, string $contextAlias): void
     {
         foreach ($this->getSyncOperations() as $op) {
             /** @var IComposite $composite */
@@ -877,13 +848,11 @@ class Updates extends DriverBase
 
     /**
      * Adds the operations to the queue to be performed asynchronously.
-     *
-     * @param string $contextAlias
      */
-    protected function queueASyncOperations(array $subjectsAndPredicatesOfChange, $contextAlias)
+    protected function queueASyncOperations(array $subjectsAndPredicatesOfChange, string $contextAlias): void
     {
         $operations = $this->getAsyncOperations();
-        if (!empty($operations)) {
+        if ($operations !== []) {
             $data = [
                 'changes' => $subjectsAndPredicatesOfChange,
                 'operations' => $operations,
@@ -893,7 +862,7 @@ class Updates extends DriverBase
                 'statsConfig' => $this->getStatsConfig(),
             ];
 
-            if (isset($this->queueName)) {
+            if ($this->queueName !== null) {
                 $data[OP_QUEUE] = $this->queueName;
                 $queueName = $this->queueName;
             } else {
@@ -907,12 +876,10 @@ class Updates extends DriverBase
 
     /**
      * For mocking.
-     *
-     * @return DiscoverImpactedSubjects
      */
-    protected function getDiscoverImpactedSubjects()
+    protected function getDiscoverImpactedSubjects(): DiscoverImpactedSubjects
     {
-        if (!isset($this->discoverImpactedSubjects)) {
+        if ($this->discoverImpactedSubjects === null) {
             $this->discoverImpactedSubjects = new DiscoverImpactedSubjects();
         }
 
@@ -924,13 +891,12 @@ class Updates extends DriverBase
      *
      * @param array  $subjectsOfChange array of the subjects that are part of this transaction
      * @param string $transaction_id   id for this transaction
-     * @param string $contextAlias
      *
      * @return array|null returns an array of CBDs, each CBD is the version at the time at which the lock was attained
      *
      * @throws \Exception
      */
-    protected function lockAllDocuments($subjectsOfChange, $transaction_id, $contextAlias)
+    protected function lockAllDocuments(array $subjectsOfChange, string $transaction_id, string $contextAlias): ?array
     {
         for ($retry = 1; $retry <= $this->retriesToGetLock; $retry++) {
             $originalCBDs = [];
@@ -964,15 +930,16 @@ class Updates extends DriverBase
                 }
             }
 
-            if (count($subjectsOfChange) == count($lockedSubjects)) {
+            if (count($subjectsOfChange) === count($lockedSubjects)) {
                 // if all subjects of change locked, we are good.
                 return $originalCBDs;
             }
 
             // If any subject was locked, unlock it
-            if (count($lockedSubjects)) {
+            if ($lockedSubjects !== []) {
                 $this->unlockAllDocuments($transaction_id);
             }
+
             $this->debugLog(
                 MONGO_LOCK,
                 [
@@ -1005,11 +972,9 @@ class Updates extends DriverBase
      *
      * @param string $transaction_id id for this transaction
      *
-     * @return bool
-     *
      * @throws \Exception is thrown if for any reason the update to mongo fails
      */
-    protected function unlockAllDocuments($transaction_id)
+    protected function unlockAllDocuments(string $transaction_id): bool
     {
         $result = $this->getLocksCollection()->deleteMany([_LOCKED_FOR_TRANS => $transaction_id], ['w' => 1]);
 
@@ -1031,20 +996,19 @@ class Updates extends DriverBase
     /**
      * Lock and return a single document for editing.
      *
-     * @param string $s              subject URI of resource to lock
-     * @param string $transaction_id
-     * @param string $contextAlias
+     * @param string $s subject URI of resource to lock
      *
-     * @return array
+     * @return array|false|null
      */
-    protected function lockSingleDocument($s, $transaction_id, $contextAlias)
+    protected function lockSingleDocument(string $s, string $transaction_id, string $contextAlias)
     {
         $countEntriesInLocksCollection = $this->getLocksCollection()
             ->count(
                 [
                     _ID_KEY => [
                         _ID_RESOURCE => $this->labeller->uri_to_alias($s),
-                        _ID_CONTEXT => $contextAlias],
+                        _ID_CONTEXT => $contextAlias,
+                    ],
                 ]
             );
 
@@ -1093,6 +1057,7 @@ class Updates extends DriverBase
                 if (!$result->isAcknowledged()) {
                     throw new \Exception('Failed to create new document: write not acknowledged');
                 }
+
                 $document = $this->getCollection()->findOne([_ID_KEY => [_ID_RESOURCE => $this->labeller->uri_to_alias($s), _ID_CONTEXT => $contextAlias]]);
             } catch (\Exception $e) {
                 $this->errorLog(
@@ -1113,35 +1078,27 @@ class Updates extends DriverBase
     }
 
     // / Collection methods
-
-    /**
-     * @return Collection
-     */
-    protected function getAuditManualRollbacksCollection()
+    protected function getAuditManualRollbacksCollection(): Collection
     {
         return $this->config->getCollectionForManualRollbackAudit($this->storeName);
     }
 
-    /**
-     * @return ObjectId
-     */
-    protected function generateIdForNewMongoDocument()
+    protected function generateIdForNewMongoDocument(): ObjectId
     {
         return new ObjectId();
     }
 
-    /**
-     * @return UTCDateTime
-     */
-    protected function getMongoDate()
+    protected function getMongoDate(): UTCDateTime
     {
         return DateUtil::getMongoDate();
     }
 
     /**
      * Saves a transaction.
+     *
+     * @param array<string, mixed> $transaction
      */
-    protected function applyTransaction(array $transaction)
+    protected function applyTransaction(array $transaction): void
     {
         $changes = $transaction['changes'];
         $newCBDs = $transaction['newCBDs'];
@@ -1149,7 +1106,7 @@ class Updates extends DriverBase
         $subjectsOfChange = [];
         foreach ($changes as $c) {
             if ($c['rdf:type'][VALUE_URI] == 'cs:ChangeSet') {
-                array_push($subjectsOfChange, $c['cs:subjectOfChange']['u']);
+                $subjectsOfChange[] = $c['cs:subjectOfChange'][VALUE_URI];
             }
         }
 
@@ -1167,11 +1124,9 @@ class Updates extends DriverBase
     /**
      * Creates a new Driver instance.
      *
-     * @param array $data
-     *
-     * @return Driver
+     * @param array<string, mixed> $data
      */
-    protected function getTripod($data)
+    protected function getTripod(array $data): Driver
     {
         return new Driver(
             $data['collection'],
@@ -1183,49 +1138,27 @@ class Updates extends DriverBase
     /**
      * This proxy method allows us to mock updates against $this->collection.
      *
-     * @param mixed $query
-     * @param mixed $update
-     * @param mixed $options
-     *
-     * @return bool
+     * @param array|object         $query
+     * @param array|object         $update
+     * @param array<string, mixed> $options
      */
-    protected function updateCollection($query, $update, $options)
+    protected function updateCollection($query, $update, array $options): UpdateResult
     {
         return $this->getCollection()->replaceOne($query, $update, $options);
     }
 
-    /**
-     * Returns the context alias curie for the supplied context or default context.
-     *
-     * @param string|null $context
-     *
-     * @return string
-     */
-    protected function getContextAlias($context = null)
+    protected function getLocksDatabase(): Database
     {
-        $contextAlias = $this->labeller->uri_to_alias((empty($context)) ? $this->defaultContext : $context);
-
-        return (empty($contextAlias)) ? $this->getConfigInstance()->getDefaultContextAlias() : $contextAlias;
-    }
-
-    /**
-     * @return Database
-     */
-    protected function getLocksDatabase()
-    {
-        if (!isset($this->locksDb)) {
+        if ($this->locksDb === null) {
             $this->locksDb = $this->config->getDatabase($this->storeName);
         }
 
         return $this->locksDb;
     }
 
-    /**
-     * @return Collection
-     */
-    protected function getLocksCollection()
+    protected function getLocksCollection(): Collection
     {
-        if (!isset($this->locksCollection)) {
+        if ($this->locksCollection === null) {
             $this->locksCollection = $this->getLocksDatabase()->selectCollection(LOCKS_COLLECTION);
         }
 
@@ -1234,12 +1167,8 @@ class Updates extends DriverBase
 
     /**
      * Helper function to group the changes for $changeUri by namespaced predicate, then by additions and removals.
-     *
-     * @param mixed $changeUri
-     *
-     * @return array
      */
-    private function getAdditionsRemovalsGroupedByNsPredicate(ChangeSet $cs, $changeUri)
+    private function getAdditionsRemovalsGroupedByNsPredicate(ChangeSet $cs, string $changeUri): array
     {
         $additionsGroupedByNsPredicate = $this->getChangesGroupedByNsPredicate($cs, $changeUri, $this->labeller->qname_to_uri('cs:addition'));
         $removalsGroupedByNsPredicate = $this->getChangesGroupedByNsPredicate($cs, $changeUri, $this->labeller->qname_to_uri('cs:removal'));
@@ -1249,12 +1178,15 @@ class Updates extends DriverBase
             if (!isset($mergedResult[$predicate])) {
                 $mergedResult[$predicate] = [];
             }
+
             $mergedResult[$predicate]['additions'] = $values;
         }
+
         foreach ($removalsGroupedByNsPredicate as $predicate => $values) {
             if (!isset($mergedResult[$predicate])) {
                 $mergedResult[$predicate] = [];
             }
+
             $mergedResult[$predicate]['removals'] = $values;
         }
 
@@ -1264,14 +1196,11 @@ class Updates extends DriverBase
     /**
      * Helper method to group changes for $changeUri of a given type by namespaced predicate.
      *
-     * @param mixed $changeUri
-     * @param mixed $changePredicate
-     *
-     * @return array
+     * @param array|string $changePredicate
      *
      * @throws Exception
      */
-    private function getChangesGroupedByNsPredicate(ChangeSet $cs, $changeUri, $changePredicate)
+    private function getChangesGroupedByNsPredicate(ChangeSet $cs, string $changeUri, $changePredicate): array
     {
         $changes = $cs->get_subject_property_values($changeUri, $changePredicate);
 
@@ -1285,7 +1214,7 @@ class Updates extends DriverBase
             }
 
             $object = $cs->get_subject_property_values($c['value'], $this->labeller->qname_to_uri('rdf:object'));
-            if (count($object) != 1) {
+            if (count($object) !== 1) {
                 $this->getLogger()->error('Expecting object array with exactly 1 element', $object);
 
                 throw new Exception('Object of removal malformed');
@@ -1303,27 +1232,32 @@ class Updates extends DriverBase
     /**
      * Helper method to add operator to a set of existing changes ready to be sent to Mongo.
      *
-     * @param mixed $changes
-     * @param mixed $operator
-     * @param mixed $kvp
+     * @param array<string, mixed>                          $changes
+     * @param array<string, int>|array<string, UTCDateTime> $kvp
      */
-    private function addOperatorToChange(&$changes, $operator, $kvp)
+    private function addOperatorToChange(array &$changes, string $operator, array $kvp): void
     {
         if (!isset($changes[$operator]) || !is_array($changes[$operator])) {
             $changes[$operator] = [];
         }
+
         foreach ($kvp as $key => $value) {
             if (isset($changes[$operator][$key])) {
-                $value = array_merge($value, $changes[$operator][$key]);
+                if (!is_array($changes[$operator][$key])) {
+                    $changes[$operator][$key] = [$changes[$operator][$key]];
+                }
+
+                $changes[$operator][$key][] = $value;
+            } else {
+                $changes[$operator][$key] = $value;
             }
-            $changes[$operator][$key] = $value;
         }
     }
 
     /**
-     * @return array
+     * @return int[]|string[]
      */
-    private function getAsyncOperations()
+    private function getAsyncOperations(): array
     {
         $types = [];
         foreach ($this->async as $op => $isAsync) {
@@ -1336,9 +1270,9 @@ class Updates extends DriverBase
     }
 
     /**
-     * @return array
+     * @return int[]|string[]
      */
-    private function getSyncOperations()
+    private function getSyncOperations(): array
     {
         $types = [];
         foreach ($this->async as $op => $isAsync) {

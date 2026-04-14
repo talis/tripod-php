@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Tripod\Config;
 
 /**
@@ -19,10 +21,8 @@ class MongoTripodConfigTest extends MongoTripodPerformanceTestBase
 
     /**
      * Holds tripod config.
-     *
-     * @var array
      */
-    private $config = [];
+    private array $config = [];
 
     /**
      * Do some setup before each test start.
@@ -49,7 +49,7 @@ class MongoTripodConfigTest extends MongoTripodPerformanceTestBase
      *
      * Create some instances of Config to see what amount of time is taken in creating instance and processing in constructor.
      */
-    public function testCreateMongoTripodConfigObject()
+    public function testCreateMongoTripodConfigObject(): void
     {
         $testStartTime = microtime();
 

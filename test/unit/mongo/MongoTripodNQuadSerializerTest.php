@@ -1,17 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 use Tripod\Config;
 use Tripod\Mongo\MongoGraph;
 use Tripod\Mongo\NQuadSerializer;
 
 class MongoTripodNQuadSerializerTest extends MongoTripodTestBase
 {
-    protected function setUp(): void
-    {
-        parent::setup();
-    }
-
-    public function testSerializerSimple()
+    public function testSerializerSimple(): void
     {
         $g = new MongoGraph();
         $g->add_literal_triple('http://example.com/1', $g->qname_to_uri('dct:title'), 'some literal title');
@@ -23,10 +20,10 @@ class MongoTripodNQuadSerializerTest extends MongoTripodTestBase
         $serializer = new NQuadSerializer();
         $actual = $serializer->getSerializedIndex($g->_index, Config::getInstance()->getDefaultContextAlias());
 
-        $this->assertEquals($expected, $actual);
+        $this->assertSame($expected, $actual);
     }
 
-    public function testSerializerWithMultipleSubjects()
+    public function testSerializerWithMultipleSubjects(): void
     {
         $g = new MongoGraph();
         $docs = json_decode(file_get_contents(__DIR__ . '/data/resources.json'), true);
@@ -172,7 +169,7 @@ class MongoTripodNQuadSerializerTest extends MongoTripodTestBase
         // this test now asserts that each line in $expected has been serialised correctly, without failing
         // due to new test data.
         foreach (preg_split("/((\r?\n)|(\r\n?))/", $expected) as $expectedLine) {
-            $this->assertTrue(strpos($actual, rtrim($expectedLine)) !== false, 'Failed checking for line: ' . rtrim($expectedLine));
+            $this->assertStringContainsString(rtrim($expectedLine), $actual, 'Failed checking for line: ' . rtrim($expectedLine));
         }
     }
 }

@@ -17,16 +17,11 @@
             "homepage": "http://talis.com/"
         }
     ],
-    "config": {
-        "audit": {
-            "ignore": ["PKSA-gk21-j82g-2hhy"]
-        }
-    },
     "suggest": {
         "resque/php-resque": "Redis backed library for background jobs"
     },
     "require": {
-        "php" : ">=7.3",
+        "php" : ">=7.4",
         "mongodb/mongodb": "*",
         "monolog/monolog" : "~1.13",
         "semsol/arc2": "2.2.6"
@@ -34,7 +29,9 @@
     "require-dev": {
         "phpunit/phpunit": "^9.6.20",
         "resque/php-resque": "v1.3.6",
-        "friendsofphp/php-cs-fixer": "^3.4"
+        "friendsofphp/php-cs-fixer": "^3.4",
+        "perftools/php-profiler": "^1.2",
+        "phpstan/phpstan": "^2.1"
     },
     "autoload": {
         "classmap": ["src/"]
@@ -44,6 +41,7 @@
     },
     "scripts": {
         "lint": "php-cs-fixer check",
+        "analyse": "phpstan analyse --memory-limit 1024M",
         "test": [
             "Composer\\Config::disableProcessTimeout",
             "phpunit"

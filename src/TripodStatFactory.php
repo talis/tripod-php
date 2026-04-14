@@ -1,12 +1,14 @@
 <?php
 
-namespace Tripod;
+declare(strict_types=1);
 
-use Tripod\Mongo\NoStat;
+namespace Tripod;
 
 class TripodStatFactory
 {
     /**
+     * @param array<string, mixed> $config
+     *
      * @return ITripodStat
      */
     public static function create(array $config = [])

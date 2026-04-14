@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo\Jobs;
 
 use MongoDB\Driver\ReadPreference;
@@ -16,7 +18,9 @@ use Tripod\Timer;
 abstract class JobBase extends DriverBase
 {
     public const TRIPOD_CONFIG_KEY = 'tripodConfig';
+
     public const TRIPOD_CONFIG_GENERATOR = 'tripodConfigGenerator';
+
     public const QUEUE_KEY = 'queue';
 
     /**
@@ -40,18 +44,23 @@ abstract class JobBase extends DriverBase
      */
     public $job;
 
+    /**
+     * @var string[]
+     */
     protected $mandatoryArgs = [];
+
+    /**
+     * @var bool
+     */
     protected $configRequired = false;
 
-    /** @var IConfigInstance */
-    protected $tripodConfig;
+    protected ?IConfigInstance $tripodConfig = null;
 
-    /** @var Timer */
-    protected $timer;
+    protected ?Timer $timer = null;
 
-    private $tripod;
+    private ?Driver $tripod = null;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->debugLog(
             '[JOBID ' . $this->job->payload['id'] . '] ' . get_class($this) . '::perform() start'
@@ -67,13 +76,13 @@ abstract class JobBase extends DriverBase
         }
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         // stat time taken to process item, from time it was created (queued)
         $this->timer->stop();
         $this->debugLog(
             '[JOBID ' . $this->job->payload['id'] . '] ' . get_class($this)
-            . "::perform() done in {$this->timer->result()}ms"
+                . sprintf('::perform() done in %sms', $this->timer->result())
         );
         $this->getStat()->timer($this->getStatTimerSuccessKey(), $this->timer->result());
     }
@@ -81,14 +90,12 @@ abstract class JobBase extends DriverBase
     /**
      * The main method of the job.
      */
-    abstract public function perform();
+    abstract public function perform(): void;
 
     /**
      * Called in every job prior to perform().
-     *
-     * @param \Resque_Job The queued job
      */
-    public static function beforePerform(\Resque_Job $job)
+    public static function beforePerform(\Resque_Job $job): void
     {
         $instance = $job->getInstance();
         if (!$instance instanceof self) {
@@ -104,7 +111,7 @@ abstract class JobBase extends DriverBase
      * @param \Exception|\Throwable $e   Exception or Error
      * @param \Resque_Job           $job The failed job
      */
-    public static function onFailure($e, \Resque_Job $job)
+    public static function onFailure($e, \Resque_Job $job): void
     {
         $failedJob = $job->getInstance();
         if (!$failedJob instanceof self) {
@@ -115,30 +122,9 @@ abstract class JobBase extends DriverBase
         $failedJob->getStat()->increment($failedJob->getStatFailureIncrementKey());
     }
 
-    /**
-     * @param string $message Log message
-     * @param mixed  $params  Log params
-     */
-    public function debugLog($message, $params = null)
+    public function getStat(): ITripodStat
     {
-        parent::debugLog($message, $params);
-    }
-
-    /**
-     * @param string $message Log message
-     * @param mixed  $params  Log params
-     */
-    public function errorLog($message, $params = null)
-    {
-        parent::errorLog($message, $params);
-    }
-
-    /**
-     * @return ITripodStat
-     */
-    public function getStat()
-    {
-        if (!isset($this->statsConfig)) {
+        if ($this->statsConfig === []) {
             $this->getStatsConfig();
         }
 
@@ -147,12 +133,10 @@ abstract class JobBase extends DriverBase
 
     /**
      * Gets the stats config for the job.
-     *
-     * @return array
      */
-    public function getStatsConfig()
+    public function getStatsConfig(): array
     {
-        if (empty($this->statsConfig)) {
+        if ($this->statsConfig === []) {
             $this->setStatsConfig();
         }
 
@@ -161,28 +145,15 @@ abstract class JobBase extends DriverBase
 
     /**
      * Stat string for successful job timer.
-     *
-     * @return string
      */
-    abstract protected function getStatTimerSuccessKey();
+    abstract protected function getStatTimerSuccessKey(): string;
 
     /**
      * Stat string for failed job increment.
-     *
-     * @return string
      */
-    abstract protected function getStatFailureIncrementKey();
+    abstract protected function getStatFailureIncrementKey(): string;
 
-    /**
-     * For mocking.
-     *
-     * @param string $storeName
-     * @param string $podName
-     * @param array  $opts
-     *
-     * @return Driver
-     */
-    protected function getTripod($storeName, $podName, $opts = [])
+    protected function getTripod(string $storeName, string $podName, array $opts = []): Driver
     {
         $this->getTripodConfig();
 
@@ -206,10 +177,8 @@ abstract class JobBase extends DriverBase
 
     /**
      * Make sure each job considers how to validate its args.
-     *
-     * @return array
      */
-    protected function getMandatoryArgs()
+    protected function getMandatoryArgs(): array
     {
         return $this->mandatoryArgs;
     }
@@ -219,23 +188,24 @@ abstract class JobBase extends DriverBase
      *
      * @throws \Exception
      */
-    protected function validateArgs()
+    protected function validateArgs(): void
     {
         $message = null;
         foreach ($this->getMandatoryArgs() as $arg) {
             if (!isset($this->args[$arg])) {
-                $message = "Argument {$arg} was not present in supplied job args for job " . get_class($this);
+                $message = sprintf('Argument %s was not present in supplied job args for job ', $arg) . get_class($this);
                 $this->errorLog($message);
 
                 throw new \Exception($message);
             }
         }
+
         if ($this->configRequired) {
             $this->ensureConfig();
         }
     }
 
-    protected function ensureConfig()
+    protected function ensureConfig(): void
     {
         if (!isset($this->args[self::TRIPOD_CONFIG_KEY]) && !isset($this->args[self::TRIPOD_CONFIG_GENERATOR])) {
             $message = 'Argument ' . self::TRIPOD_CONFIG_KEY . ' or ' . self::TRIPOD_CONFIG_GENERATOR
@@ -247,86 +217,80 @@ abstract class JobBase extends DriverBase
     }
 
     /**
-     * @param string $queueName     Queue name
-     * @param string $class         Class name
-     * @param array  $data          Job arguments
-     * @param int    $retryAttempts If queue fails, retry x times before throwing an exception
+     * @param string               $queueName     Queue name
+     * @param string               $class         Class name
+     * @param array<string, mixed> $data          Job arguments
+     * @param int                  $retryAttempts If queue fails, retry x times before throwing an exception
      *
      * @return string A tracking token for the submitted job
      *
      * @throws JobException If there is a problem queuing the job
      */
-    protected function submitJob($queueName, $class, array $data, $retryAttempts = 5)
+    protected function submitJob(string $queueName, string $class, array $data, int $retryAttempts = 5): string
     {
         // @see https://github.com/chrisboulton/php-resque/issues/228, when this PR is merged we can stop tracking the status in this way
         try {
             if (isset($data[self::TRIPOD_CONFIG_GENERATOR]) && $data[self::TRIPOD_CONFIG_GENERATOR]) {
                 $data[self::TRIPOD_CONFIG_GENERATOR] = $this->serializeConfig($data[self::TRIPOD_CONFIG_GENERATOR]);
             }
-            $token = $this->enqueue($queueName, $class, $data);
-            if (!$this->getJobStatus($token)) {
-                $this->errorLog("Could not retrieve status for queued {$class} job - job {$token} failed to {$queueName}");
 
-                throw new \Exception("Could not retrieve status for queued job - job {$token} failed to {$queueName}");
+            $token = $this->enqueue($queueName, $class, $data);
+            if (!$token || !$this->hasJobStatus($token)) {
+                $this->errorLog(sprintf('Could not retrieve status for queued %s job - job %s failed to %s', $class, $token, $queueName));
+
+                throw new \Exception(sprintf('Could not retrieve status for queued job - job %s failed to %s', $token, $queueName));
             }
-            $this->debugLog("Queued {$class} job with {$token} to {$queueName}");
+
+            $this->debugLog(sprintf('Queued %s job with %s to %s', $class, $token, $queueName));
 
             return $token;
         } catch (\Exception $e) {
             if ($retryAttempts > 0) {
                 sleep(1); // back off for 1 sec
-                $this->warningLog("Exception queuing {$class} job - {$e->getMessage()}, retrying {$retryAttempts} times");
+                $this->warningLog(sprintf('Exception queuing %s job - %s, retrying %d times', $class, $e->getMessage(), $retryAttempts));
 
                 return $this->submitJob($queueName, $class, $data, --$retryAttempts);
             }
-            $this->errorLog("Exception queuing {$class} job - {$e->getMessage()}");
 
-            throw new JobException("Exception queuing job  - {$e->getMessage()}", $e->getCode(), $e);
+            $this->errorLog(sprintf('Exception queuing %s job - %s', $class, $e->getMessage()));
+
+            throw new JobException('Exception queuing job  - ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
     /**
      * Actually enqueues the job with Resque. Returns a tracking token. For mocking.
      *
-     * @param string $queueName
-     * @param string $class
-     * @param mixed  $data
+     * @param array<string, mixed> $data
      *
-     * @internal param bool|\Tripod\Mongo\Jobs\false $tracking
-     *
-     * @return string
+     * @return false|string
      */
-    protected function enqueue($queueName, $class, $data)
+    protected function enqueue(string $queueName, string $class, array $data)
     {
         return \Resque::enqueue($queueName, $class, $data, true);
     }
 
     /**
-     * Given a token, return the job status. For mocking.
-     *
-     * @param string $token
-     *
-     * @return mixed
+     * Given a token, return the job status.
      */
-    protected function getJobStatus($token)
+    protected function hasJobStatus(string $token): bool
     {
         $status = new \Resque_Job_Status($token);
 
-        return $status->get();
+        return !empty($status->get());
     }
 
     /**
      * Take a Tripod Config Serializer and return a config array.
      *
-     * @param array|ITripodConfigSerializer $configSerializer An object that implements ITripodConfigSerializer
-     *
-     * @return array
+     * @param mixed $configSerializer An object that implements ITripodConfigSerializer
      */
-    protected function serializeConfig($configSerializer)
+    protected function serializeConfig($configSerializer): array
     {
         if ($configSerializer instanceof ITripodConfigSerializer) {
             return $configSerializer->serialize();
         }
+
         if (is_array($configSerializer)) {
             return $configSerializer;
         }
@@ -340,10 +304,8 @@ abstract class JobBase extends DriverBase
      * Deserialize a tripodConfigGenerator argument to a Tripod Config object.
      *
      * @param array $config The serialized Tripod config
-     *
-     * @return IConfigInstance
      */
-    protected function deserializeConfig(array $config)
+    protected function deserializeConfig(array $config): IConfigInstance
     {
         Config::setConfig($config);
 
@@ -353,24 +315,23 @@ abstract class JobBase extends DriverBase
     /**
      * Sets the Tripod config for the job.
      */
-    protected function setTripodConfig()
+    protected function setTripodConfig(): void
     {
         if (isset($this->args[self::TRIPOD_CONFIG_GENERATOR])) {
             $config = $this->args[self::TRIPOD_CONFIG_GENERATOR];
         } else {
             $config = $this->args[self::TRIPOD_CONFIG_KEY];
         }
+
         $this->tripodConfig = $this->deserializeConfig($config);
     }
 
     /**
      * Returns the Tripod config required by the job.
-     *
-     * @return IConfigInstance
      */
-    protected function getTripodConfig()
+    protected function getTripodConfig(): IConfigInstance
     {
-        if (!isset($this->tripodConfig)) {
+        if ($this->tripodConfig === null) {
             $this->ensureConfig();
             $this->setTripodConfig();
         }
@@ -379,21 +340,11 @@ abstract class JobBase extends DriverBase
     }
 
     /**
-     * Sets the stats config for the job.
-     */
-    protected function setStatsConfig()
-    {
-        if (isset($this->args['statsConfig'])) {
-            $this->statsConfig = $this->args['statsConfig'];
-        }
-    }
-
-    /**
      * Tripod options to pass between jobs.
      *
-     * @return array
+     * @return array<string, mixed>
      */
-    protected function getTripodOptions()
+    protected function getTripodOptions(): array
     {
         $statsConfig = $this->getStatsConfig();
         $options = [];
@@ -407,17 +358,14 @@ abstract class JobBase extends DriverBase
     /**
      * Convenience method to pass config to job data.
      *
-     * @return array
+     * @return array<string, mixed>
      */
-    protected function generateConfigJobArgs()
+    protected function generateConfigJobArgs(): array
     {
         $configInstance = $this->getConfigInstance();
         $args = [];
-        if ($configInstance instanceof ITripodConfigSerializer) {
-            $config = $configInstance->serialize();
-        } else {
-            $config = Config::getConfig();
-        }
+        $config = $configInstance->serialize();
+
         if (isset($config['class'])) {
             $args[self::TRIPOD_CONFIG_GENERATOR] = $config;
         } else {
@@ -425,5 +373,15 @@ abstract class JobBase extends DriverBase
         }
 
         return $args;
+    }
+
+    /**
+     * Sets the stats config for the job.
+     */
+    private function setStatsConfig(): void
+    {
+        if (isset($this->args['statsConfig'])) {
+            $this->statsConfig = $this->args['statsConfig'];
+        }
     }
 }

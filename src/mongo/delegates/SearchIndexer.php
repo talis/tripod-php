@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo\Composites;
 
 use MongoDB\Collection;
@@ -16,18 +18,12 @@ use Tripod\Timer;
 
 class SearchIndexer extends CompositeBase
 {
-    protected $labeller;
+    private Driver $tripod;
 
-    protected $stat;
-    private $tripod;
-
-    /**
-     * @var ISearchProvider
-     */
-    private $configuredProvider;
+    private ?ISearchProvider $searchProvider = null;
 
     /**
-     * @param string $readPreference
+     * @param int|string $readPreference
      *
      * @throws SearchException
      */
@@ -46,7 +42,7 @@ class SearchIndexer extends CompositeBase
     /**
      * Receive update from subject.
      */
-    public function update(ImpactedSubject $subject)
+    public function update(ImpactedSubject $subject): void
     {
         $resource = $subject->getResourceId();
         $resourceUri = $resource[_ID_RESOURCE];
@@ -60,31 +56,20 @@ class SearchIndexer extends CompositeBase
         );
     }
 
-    /**
-     * @return array
-     */
-    public function getTypesInSpecifications()
+    public function getTypesInSpecifications(): array
     {
         return $this->config->getTypesInSearchSpecifications($this->storeName, $this->getPodName());
     }
 
     /**
      * Returns the operation this composite can satisfy.
-     *
-     * @return string
      */
-    public function getOperationType()
+    public function getOperationType(): string
     {
         return OP_SEARCH;
     }
 
-    /**
-     * @param string $storeName
-     * @param string $specId
-     *
-     * @return array|null
-     */
-    public function getSpecification($storeName, $specId)
+    public function getSpecification(string $storeName, string $specId): ?array
     {
         return $this->config->getSearchDocumentSpecification($storeName, $specId);
     }
@@ -92,12 +77,9 @@ class SearchIndexer extends CompositeBase
     /**
      * Removes all existing documents for the supplied resource and regenerate the search documents.
      *
-     * @param string            $resourceUri
-     * @param string            $context
-     * @param string            $podName
      * @param array|string|null $specType
      */
-    public function generateAndIndexSearchDocuments($resourceUri, $context, $podName, $specType = [])
+    public function generateAndIndexSearchDocuments(string $resourceUri, string $context, string $podName, $specType = []): void
     {
         $mongoCollection = $this->config->getCollectionForCBD($this->storeName, $podName);
 
@@ -110,15 +92,15 @@ class SearchIndexer extends CompositeBase
         // 2. regenerate search documents for this resource
         $documentsToIndex = [];
         // first work out what its type is
-        $query = ['_id' => [
-            'r' => $this->labeller->uri_to_alias($resourceUri),
-            'c' => $this->getContextAlias($context),
+        $query = [_ID_KEY => [
+            _ID_RESOURCE => $this->labeller->uri_to_alias($resourceUri),
+            _ID_CONTEXT => $this->getContextAlias($context),
         ]];
 
         $resourceAndType = $mongoCollection->find(
             $query,
             [
-                'projection' => ['_id' => 1, 'rdf:type' => 1],
+                'projection' => [_ID_KEY => 1, 'rdf:type' => 1],
                 'maxTimeMS' => $this->config->getMongoCursorTimeout(),
             ]
         );
@@ -152,19 +134,14 @@ class SearchIndexer extends CompositeBase
     }
 
     /**
-     * @param string      $searchDocumentType
-     * @param string|null $resourceUri
-     * @param string|null $context
-     * @param string|null $queueName
-     *
      * @return array|null Will return an array with a count and group id, if $queueName is sent and $resourceUri is null
      */
     public function generateSearchDocuments(
-        $searchDocumentType,
-        $resourceUri = null,
-        $context = null,
-        $queueName = null
-    ) {
+        string $searchDocumentType,
+        ?string $resourceUri = null,
+        ?string $context = null,
+        ?string $queueName = null
+    ): ?array {
         $t = new Timer();
         $t->start();
         // default the context
@@ -174,26 +151,26 @@ class SearchIndexer extends CompositeBase
         if ($resourceUri) {
             $this->generateAndIndexSearchDocuments($resourceUri, $contextAlias, $spec['from'], $searchDocumentType);
 
-            return;
+            return null;
         }
 
         // default collection
         $from = $spec['from'] ?? $this->podName;
 
         $types = [];
-        if (is_array($spec['type'])) {
-            foreach ($spec['type'] as $type) {
-                $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($type)];
-                $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($type)];
+        if (isset($spec[_ID_TYPE])) {
+            if (is_array($spec[_ID_TYPE])) {
+                foreach ($spec[_ID_TYPE] as $type) {
+                    $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($type)];
+                    $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($type)];
+                }
+            } else {
+                $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($spec[_ID_TYPE])];
+                $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($spec[_ID_TYPE])];
             }
-        } else {
-            $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($spec['type'])];
-            $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($spec['type'])];
         }
+
         $filter = ['$or' => $types];
-        if (isset($resource)) {
-            $filter['_id'] = [_ID_RESOURCE => $this->labeller->uri_to_alias($resource), _ID_CONTEXT => $contextAlias];
-        }
 
         $count = $this->getConfigInstance()->getCollectionForCBD($this->getStoreName(), $from)->count($filter);
         $docs = $this->getConfigInstance()
@@ -205,16 +182,17 @@ class SearchIndexer extends CompositeBase
 
         $jobOptions = [];
         $subjects = [];
-        if ($queueName && !$resourceUri) {
+        if ($queueName) {
             $jobOptions['statsConfig'] = $this->getStatsConfig();
             $jobGroup = $this->getJobGroup($this->storeName);
             $jobOptions[ApplyOperation::TRACKING_KEY] = $jobGroup->getId()->__toString();
             $jobGroup->setJobCount($count);
         }
+
         foreach ($docs as $doc) {
-            if ($queueName && !$resourceUri) {
+            if ($queueName) {
                 $subject = new ImpactedSubject(
-                    $doc['_id'],
+                    $doc[_ID_KEY],
                     OP_SEARCH,
                     $this->storeName,
                     $from,
@@ -237,17 +215,18 @@ class SearchIndexer extends CompositeBase
             }
         }
 
-        if (!empty($subjects)) {
+        if ($subjects !== []) {
             $this->queueApplyJob($subjects, $queueName, $jobOptions);
         }
 
         $t->stop();
         $this->timingLog(MONGO_CREATE_TABLE, [
-            'type' => $spec['type'],
+            'type' => $spec[_ID_TYPE] ?? null,
             'duration' => $t->result(),
             'filter' => $filter,
-            'from' => $from]);
-        $this->getStat()->timer(MONGO_CREATE_SEARCH_DOC . ".{$searchDocumentType}", $t->result());
+            'from' => $from,
+        ]);
+        $this->getStat()->timer(MONGO_CREATE_SEARCH_DOC . ('.' . $searchDocumentType), $t->result());
 
         $stat = ['count' => $count];
         if (isset($jobOptions[ApplyOperation::TRACKING_KEY])) {
@@ -258,47 +237,29 @@ class SearchIndexer extends CompositeBase
     }
 
     /**
-     * @param string $context
-     *
-     * @return array|mixed
+     * @return mixed[]
      */
-    public function findImpactedComposites(array $resourcesAndPredicates, $context)
+    public function findImpactedComposites(array $resourcesAndPredicates, string $contextAlias): array
     {
-        return $this->getSearchProvider()->findImpactedDocuments($resourcesAndPredicates, $context);
+        return $this->getSearchProvider()->findImpactedDocuments($resourcesAndPredicates, $contextAlias);
     }
 
-    /**
-     * @param string $typeId
-     *
-     * @return array|bool
-     */
-    public function deleteSearchDocumentsByTypeId($typeId)
+    public function deleteSearchDocumentsByTypeId(string $typeId): int
     {
         return $this->getSearchProvider()->deleteSearchDocumentsByTypeId($typeId);
     }
 
-    /**
-     * @return ISearchProvider
-     */
-    protected function getSearchProvider()
+    protected function getSearchProvider(): ?ISearchProvider
     {
-        return $this->configuredProvider;
+        return $this->searchProvider;
     }
 
-    /**
-     * @param string $context
-     *
-     * @return SearchDocuments
-     */
-    protected function getSearchDocumentGenerator(Collection $collection, $context)
+    protected function getSearchDocumentGenerator(Collection $collection, string $context): SearchDocuments
     {
         return new SearchDocuments($this->storeName, $collection, $context, $this->tripod->getStat());
     }
 
-    /**
-     * @return array
-     */
-    protected function deDupe(array $input)
+    protected function deDupe(array $input): array
     {
         $output = [];
         foreach ($input as $i) {
@@ -318,7 +279,7 @@ class SearchIndexer extends CompositeBase
      *
      * @throws SearchException If provider class cannot be found
      */
-    protected function setSearchProvider(Driver $tripod, ?IConfigInstance $config = null)
+    protected function setSearchProvider(Driver $tripod, ?IConfigInstance $config = null): void
     {
         if (is_null($config)) {
             $config = $this->getConfigInstance();
@@ -326,10 +287,10 @@ class SearchIndexer extends CompositeBase
 
         $provider = $config->getSearchProviderClassName($tripod->getStoreName());
         if (class_exists($provider)) {
-            $this->configuredProvider = new $provider($tripod);
+            $this->searchProvider = new $provider($tripod);
         } else {
             throw new SearchException(
-                "Did not recognise Search Provider, or could not find class: {$provider}"
+                'Did not recognise Search Provider, or could not find class: ' . $provider
             );
         }
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo\Jobs;
 
 use Tripod\Mongo\IndexUtils;
@@ -7,10 +9,13 @@ use Tripod\Mongo\IndexUtils;
 class EnsureIndexes extends JobBase
 {
     public const STORENAME_KEY = 'storeName';
+
     public const REINDEX_KEY = 'reindex';
+
     public const BACKGROUND_KEY = 'background';
 
     protected $mandatoryArgs = [self::STORENAME_KEY, self::REINDEX_KEY, self::BACKGROUND_KEY];
+
     protected $configRequired = true;
 
     /**
@@ -18,7 +23,7 @@ class EnsureIndexes extends JobBase
      *
      * @throws \Exception
      */
-    public function perform()
+    public function perform(): void
     {
         $this->debugLog('Ensuring indexes for tenant=' . $this->args[self::STORENAME_KEY] . ', reindex=' . $this->args[self::REINDEX_KEY] . ', background=' . $this->args[self::BACKGROUND_KEY]);
 
@@ -31,13 +36,8 @@ class EnsureIndexes extends JobBase
 
     /**
      * This method is use to schedule an EnsureIndexes job.
-     *
-     * @param string  $storeName
-     * @param booelan $reindex
-     * @param string  $queueName
-     * @param mixed   $background
      */
-    public function createJob($storeName, $reindex, $background, $queueName = null)
+    public function createJob(string $storeName, bool $reindex, bool $background, ?string $queueName = null): void
     {
         $configInstance = $this->getConfigInstance();
         if (!$queueName) {
@@ -57,28 +57,21 @@ class EnsureIndexes extends JobBase
 
     /**
      * Stat string for successful job timer.
-     *
-     * @return string
      */
-    protected function getStatTimerSuccessKey()
+    protected function getStatTimerSuccessKey(): string
     {
         return MONGO_QUEUE_ENSURE_INDEXES_SUCCESS;
     }
 
     /**
      * Stat string for failed job increment.
-     *
-     * @return string
      */
-    protected function getStatFailureIncrementKey()
+    protected function getStatFailureIncrementKey(): string
     {
         return MONGO_QUEUE_ENSURE_INDEXES_FAIL;
     }
 
-    /**
-     * @return IndexUtils
-     */
-    protected function getIndexUtils()
+    protected function getIndexUtils(): IndexUtils
     {
         return new IndexUtils();
     }

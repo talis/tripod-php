@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Tripod\Config;
 use Tripod\Mongo\Composites\SearchIndexer;
 use Tripod\Mongo\Composites\Tables;
@@ -12,9 +14,9 @@ use Tripod\Mongo\Labeller;
 
 class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
 {
-    protected $args = [];
+    private array $args = [];
 
-    public function testMandatoryArgTripodConfig()
+    public function testMandatoryArgTripodConfig(): void
     {
         $this->setArgs();
         unset($this->args['tripodConfig']);
@@ -26,7 +28,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $this->performJob($job);
     }
 
-    public function testMandatoryArgStoreName()
+    public function testMandatoryArgStoreName(): void
     {
         $this->setArgs();
         unset($this->args['storeName']);
@@ -38,7 +40,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $this->performJob($job);
     }
 
-    public function testMandatoryArgPodName()
+    public function testMandatoryArgPodName(): void
     {
         $this->setArgs();
         unset($this->args['podName']);
@@ -50,7 +52,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $this->performJob($job);
     }
 
-    public function testMandatoryArgChanges()
+    public function testMandatoryArgChanges(): void
     {
         $this->setArgs();
         unset($this->args['changes']);
@@ -62,7 +64,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $this->performJob($job);
     }
 
-    public function testMandatoryArgOperations()
+    public function testMandatoryArgOperations(): void
     {
         $this->setArgs();
         unset($this->args['operations']);
@@ -74,7 +76,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $this->performJob($job);
     }
 
-    public function testMandatoryArgContextAlias()
+    public function testMandatoryArgContextAlias(): void
     {
         $this->setArgs();
         unset($this->args['contextAlias']);
@@ -86,7 +88,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $this->performJob($job);
     }
 
-    public function testSubmitApplyOperationsJob()
+    public function testSubmitApplyOperationsJob(): void
     {
         $this->setArgs();
 
@@ -124,13 +126,11 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
 
         $tripod->expects($this->exactly(3))
             ->method('getComposite')
-            ->will($this->returnValueMap(
-                [
-                    [OP_VIEWS, $views],
-                    [OP_TABLES, $tables],
-                    [OP_SEARCH, $search],
-                ]
-            ));
+            ->willReturnMap([
+                [OP_VIEWS, $views],
+                [OP_TABLES, $tables],
+                [OP_SEARCH, $search],
+            ]);
 
         $discoverImpactedSubjects = $this->getMockBuilder(DiscoverImpactedSubjects::class)
             ->onlyMethods(['getTripod', 'getApplyOperation', 'getStat'])
@@ -145,7 +145,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
 
         $discoverImpactedSubjects->expects($this->once())
             ->method('getTripod')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $discoverImpactedSubjects->args = $this->args;
         $discoverImpactedSubjects->job = new Resque_Job('queue', ['id' => uniqid()]);
@@ -168,9 +168,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $views->expects($this->once())
             ->method('getImpactedSubjects')
             ->with($this->args['changes'], $this->args['contextAlias'])
-            ->will($this->returnValue(
-                [$viewSubject]
-            ));
+            ->willReturn([$viewSubject]);
 
         $tableSubjects = [
             new ImpactedSubject(
@@ -198,22 +196,20 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $tables->expects($this->once())
             ->method('getImpactedSubjects')
             ->with($this->args['changes'], $this->args['contextAlias'])
-            ->will($this->returnValue(
-                $tableSubjects
-            ));
+            ->willReturn($tableSubjects);
 
         $search->expects($this->once())
             ->method('getImpactedSubjects')
             ->with($this->args['changes'], $this->args['contextAlias'])
-            ->will($this->returnValue([]));
+            ->willReturn([]);
 
         $discoverImpactedSubjects->expects($this->exactly(2))
             ->method('getApplyOperation')
-            ->will($this->returnValue($applyOperation));
+            ->willReturn($applyOperation);
 
         $discoverImpactedSubjects->expects($this->exactly(5))
             ->method('getStat')
-            ->will($this->returnValue($statMock));
+            ->willReturn($statMock);
 
         $applyOperation->expects($this->exactly(2))
             ->method('createJob')
@@ -246,7 +242,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $this->performJob($discoverImpactedSubjects);
     }
 
-    public function testCreateJobDefaultQueue()
+    public function testCreateJobDefaultQueue(): void
     {
         $labeller = new Labeller();
 
@@ -280,7 +276,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $discoverImpactedSubjects->createJob($jobData);
     }
 
-    public function testCreateJobSpecifyQueue()
+    public function testCreateJobSpecifyQueue(): void
     {
         $labeller = new Labeller();
 
@@ -316,7 +312,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $discoverImpactedSubjects->createJob($jobData, $queueName);
     }
 
-    public function testManualQueueNamePersistsThroughJob()
+    public function testManualQueueNamePersistsThroughJob(): void
     {
         $discoverImpactedSubjects = $this->getMockBuilder(DiscoverImpactedSubjects::class)
             ->onlyMethods(['getTripod', 'getApplyOperation'])
@@ -360,13 +356,11 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
 
         $tripod->expects($this->exactly(3))
             ->method('getComposite')
-            ->will($this->returnValueMap(
-                [
-                    [OP_VIEWS, $views],
-                    [OP_TABLES, $tables],
-                    [OP_SEARCH, $search],
-                ]
-            ));
+            ->willReturnMap([
+                [OP_VIEWS, $views],
+                [OP_TABLES, $tables],
+                [OP_SEARCH, $search],
+            ]);
 
         $applyOperation = $this->getMockBuilder(ApplyOperation::class)
             ->onlyMethods(['createJob'])
@@ -385,9 +379,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $views->expects($this->once())
             ->method('getImpactedSubjects')
             ->with($this->args['changes'], $this->args['contextAlias'])
-            ->will($this->returnValue(
-                [$viewSubject]
-            ));
+            ->willReturn([$viewSubject]);
 
         $tableSubject = new ImpactedSubject(
             [
@@ -403,22 +395,20 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $tables->expects($this->once())
             ->method('getImpactedSubjects')
             ->with($this->args['changes'], $this->args['contextAlias'])
-            ->will($this->returnValue(
-                [$tableSubject]
-            ));
+            ->willReturn([$tableSubject]);
 
         $search->expects($this->once())
             ->method('getImpactedSubjects')
             ->with($this->args['changes'], $this->args['contextAlias'])
-            ->will($this->returnValue([]));
+            ->willReturn([]);
 
         $discoverImpactedSubjects->expects($this->once())
             ->method('getTripod')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $discoverImpactedSubjects->expects($this->exactly(2))
             ->method('getApplyOperation')
-            ->will($this->returnValue($applyOperation));
+            ->willReturn($applyOperation);
 
         $applyOperation->expects($this->exactly(2))
             ->method('createJob')
@@ -436,7 +426,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $this->performJob($discoverImpactedSubjects);
     }
 
-    public function testDiscoverOperationWillSubmitApplyOperationForDistinctQueues()
+    public function testDiscoverOperationWillSubmitApplyOperationForDistinctQueues(): void
     {
         $config = Config::getConfig();
 
@@ -632,20 +622,20 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $tables->expects($this->once())
             ->method('getImpactedSubjects')
             ->with($this->args['changes'], $this->args['contextAlias'])
-            ->will($this->returnValue([$tableSubject1, $tableSubject2]));
+            ->willReturn([$tableSubject1, $tableSubject2]);
 
         $tripod->expects($this->once())
             ->method('getComposite')
             ->with(OP_TABLES)
-            ->will($this->returnValue($tables));
+            ->willReturn($tables);
 
         $discoverImpactedSubjects->expects($this->once())
             ->method('getTripod')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $discoverImpactedSubjects->expects($this->exactly(3))
             ->method('getApplyOperation')
-            ->will($this->returnValue($applyOperation));
+            ->willReturn($applyOperation);
 
         $applyOperation->expects($this->exactly(3))
             ->method('createJob')
@@ -667,7 +657,7 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $this->performJob($discoverImpactedSubjects);
     }
 
-    public function testManuallySpecifiedQueueWillOverrideQueuesDefinedInConfig()
+    public function testManuallySpecifiedQueueWillOverrideQueuesDefinedInConfig(): void
     {
         $config = Config::getConfig();
 
@@ -806,34 +796,32 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
         $tables->expects($this->once())
             ->method('getImpactedSubjects')
             ->with($this->args['changes'], $this->args['contextAlias'])
-            ->will($this->returnValue($tableSubjects));
+            ->willReturn($tableSubjects);
 
         $tripod->expects($this->once())
             ->method('getComposite')
             ->with(OP_TABLES)
-            ->will($this->returnValue($tables));
+            ->willReturn($tables);
 
         $discoverImpactedSubjects->expects($this->once())
             ->method('getTripod')
-            ->will($this->returnValue($tripod));
+            ->willReturn($tripod);
 
         $discoverImpactedSubjects->expects($this->once())
             ->method('getApplyOperation')
-            ->will($this->returnValue($applyOperation));
+            ->willReturn($applyOperation);
 
         $applyOperation->expects($this->once())
             ->method('createJob')
-            ->withConsecutive(
-                [
-                    $tableSubjects,
-                    $args['queue'],
-                ]
+            ->with(
+                $tableSubjects,
+                $args['queue'],
             );
 
         $this->performJob($discoverImpactedSubjects);
     }
 
-    protected function setArgs()
+    private function setArgs(): void
     {
         $this->args = [
             'tripodConfig' => Config::getConfig(),

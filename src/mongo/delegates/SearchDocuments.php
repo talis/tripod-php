@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use MongoDB\Collection;
@@ -13,12 +15,9 @@ class SearchDocuments extends DriverBase
      * Construct accepts actual objects rather than strings as this class is a delegate of
      * Tripod and should inherit connections set up there.
      *
-     * @param string           $storeName
-     * @param string           $defaultContext
-     * @param ITripodStat|null $stat
-     * @param string           $readPreference
+     * @param int|string $readPreference
      */
-    public function __construct($storeName, Collection $collection, $defaultContext, $stat = null, $readPreference = ReadPreference::RP_PRIMARY)
+    public function __construct(string $storeName, Collection $collection, string $defaultContext, ?ITripodStat $stat = null, $readPreference = ReadPreference::RP_PRIMARY)
     {
         $this->labeller = new Labeller();
         $this->storeName = $storeName;
@@ -30,35 +29,26 @@ class SearchDocuments extends DriverBase
     }
 
     /**
-     * @param string $specId
-     * @param string $resource
-     * @param string $context
-     *
-     * @return array|null
-     *
      * @throws \Exception
      */
-    public function generateSearchDocumentBasedOnSpecId($specId, $resource, $context)
+    public function generateSearchDocumentBasedOnSpecId(string $specId, ?string $resource, ?string $context): ?array
     {
         if (empty($resource)) {
             throw new \Exception('Resource must be specified');
         }
+
         if (empty($context)) {
             throw new \Exception('Context must be specified');
         }
 
         $searchSpec = $this->getSearchDocumentSpecification($specId);
         if (empty($searchSpec)) {
-            $this->debugLog("Could not find Search Document Specification for {$specId}");
+            $this->debugLog('Could not find Search Document Specification for ' . $specId);
 
             return null;
         }
 
-        if (isset($searchSpec['from'])) {
-            $from = $searchSpec['from'];
-        } else {
-            $from = $this->podName;
-        }
+        $from = $searchSpec['from'] ?? $this->podName;
 
         // work out whether or not to index at all
         $proceedWithGeneration = false;
@@ -66,11 +56,12 @@ class SearchDocuments extends DriverBase
         foreach ($searchSpec['filter'] as $indexRules) {
             // run a query to work out
             if (!empty($indexRules['condition'])) {
-                $irFrom = (!empty($indexRules['from'])) ? $indexRules['from'] : $this->podName;
+                $irFrom = (empty($indexRules['from'])) ? $this->podName : $indexRules['from'];
                 // add id of current record to rules..
-                $indexRules['condition']['_id'] = [
-                    'r' => $this->labeller->uri_to_alias($resource),
-                    'c' => $this->labeller->uri_to_alias($context)];
+                $indexRules['condition'][_ID_KEY] = [
+                    _ID_RESOURCE => $this->labeller->uri_to_alias($resource),
+                    _ID_CONTEXT => $this->labeller->uri_to_alias($context),
+                ];
 
                 if ($this->getConfigInstance()->getCollectionForCBD($this->storeName, $irFrom)->findOne($indexRules['condition'])) {
                     // match found, add this spec id to those that should be generated
@@ -82,40 +73,42 @@ class SearchDocuments extends DriverBase
             }
         }
 
-        if ($proceedWithGeneration == false) {
-            $this->debugLog("Unable to proceed with generating {$specId} search document for {$resource}, does not satisfy rules");
+        if ($proceedWithGeneration === false) {
+            $this->debugLog(sprintf('Unable to proceed with generating %s search document for %s, does not satisfy rules', $specId, $resource));
 
             return null;
         }
 
         $_id = [
-            'r' => $this->labeller->uri_to_alias($resource),
-            'c' => $this->labeller->uri_to_alias($context),
+            _ID_RESOURCE => $this->labeller->uri_to_alias($resource),
+            _ID_CONTEXT => $this->labeller->uri_to_alias($context),
         ];
 
-        $sourceDocument = $this->getConfigInstance()->getCollectionForCBD($this->storeName, $from)->findOne(['_id' => $_id]);
+        $sourceDocument = $this->getConfigInstance()->getCollectionForCBD($this->storeName, $from)->findOne([_ID_KEY => $_id]);
 
         if (empty($sourceDocument)) {
-            $this->debugLog("Source document not found for {$resource}, cannot proceed generating {$specId} search document");
+            $this->debugLog(sprintf('Source document not found for %s, cannot proceed generating %s search document', $resource, $specId));
 
             return null;
         }
 
-        $this->debugLog("Processing {$specId}");
+        $this->debugLog('Processing ' . $specId);
 
         // build the document
         $generatedDocument = [\_CREATED_TS => DateUtil::getMongoDate()];
         $this->addIdToImpactIndex($_id, $generatedDocument);
 
-        $_id['type'] = $specId;
-        $generatedDocument['_id'] = $_id;
+        $_id[_ID_TYPE] = $specId;
+        $generatedDocument[_ID_KEY] = $_id;
 
         if (isset($searchSpec['fields'])) {
             $this->addFields($sourceDocument, $searchSpec['fields'], $generatedDocument);
         }
+
         if (isset($searchSpec['indices'])) {
             $this->addFields($sourceDocument, $searchSpec['indices'], $generatedDocument, true);
         }
+
         if (isset($searchSpec['joins'])) {
             $this->doJoin($sourceDocument, $searchSpec['joins'], $generatedDocument, $from);
         }
@@ -123,23 +116,8 @@ class SearchDocuments extends DriverBase
         return $generatedDocument;
     }
 
-    /**
-     * @param string $resource
-     * @param string $context
-     *
-     * @return array
-     *
-     * @throws \Exception
-     */
-    public function generateSearchDocumentsBasedOnRdfTypes(array $rdfTypes, $resource, $context)
+    public function generateSearchDocumentsBasedOnRdfTypes(array $rdfTypes, string $resource, string $context): array
     {
-        if (empty($resource)) {
-            throw new \Exception('Resource must be specified');
-        }
-        if (empty($context)) {
-            throw new \Exception('Context must be specified');
-        }
-
         // this is what is returned
         $generatedSearchDocuments = [];
 
@@ -154,30 +132,22 @@ class SearchDocuments extends DriverBase
             } // no point doing anything else if there is no spec for the type
 
             foreach ($specs as $searchSpec) {
-                $generatedSearchDocuments[] = $this->generateSearchDocumentBasedOnSpecId($searchSpec['_id'], $resource, $context);
+                $generatedSearchDocuments[] = $this->generateSearchDocumentBasedOnSpecId($searchSpec[_ID_KEY], $resource, $context);
             }
         }
+
         $timer->stop();
 
         // echo "\n\tTook " . $timer->result() . " ms to generate search documents\n";
         return $generatedSearchDocuments;
     }
 
-    /**
-     * @return string
-     */
-    public function getSearchCollectionName()
+    public function getSearchCollectionName(): string
     {
         return SEARCH_INDEX_COLLECTION;
     }
 
-    /**
-     * @param array  $source
-     * @param array  $joins
-     * @param array  $target
-     * @param string $from
-     */
-    protected function doJoin($source, $joins, &$target, $from)
+    protected function doJoin(array $source, array $joins, array &$target, string $from): void
     {
         // expand sequences before proceeding
         $this->expandSequence($joins, $source);
@@ -186,13 +156,13 @@ class SearchDocuments extends DriverBase
             if (isset($source[$predicate])) {
                 $joinUris = [];
 
-                if (isset($source[$predicate]['u'])) {
+                if (isset($source[$predicate][VALUE_URI])) {
                     // single value for join
-                    $joinUris[] = ['r' => $source[$predicate]['u'], 'c' => $this->defaultContext]; // todo: check that default context is the right thing to set here and below
+                    $joinUris[] = [_ID_RESOURCE => $source[$predicate][VALUE_URI], _ID_CONTEXT => $this->defaultContext]; // todo: check that default context is the right thing to set here and below
                 } else {
                     // multiple values for join
                     foreach ($source[$predicate] as $v) {
-                        $joinUris[] = ['r' => $v['u'], 'c' => $this->defaultContext];
+                        $joinUris[] = [_ID_RESOURCE => $v[VALUE_URI], _ID_CONTEXT => $this->defaultContext];
                     }
                 }
 
@@ -204,7 +174,7 @@ class SearchDocuments extends DriverBase
                     : $config->getCollectionForCBD($this->storeName, $from)
                 );
 
-                $cursor = $collection->find(['_id' => ['$in' => $joinUris]], [
+                $cursor = $collection->find([_ID_KEY => ['$in' => $joinUris]], [
                     'maxTimeMS' => $this->getConfigInstance()->getMongoCursorTimeout(),
                 ]);
 
@@ -231,10 +201,7 @@ class SearchDocuments extends DriverBase
         }
     }
 
-    /**
-     * @param bool $isIndex
-     */
-    protected function addFields(array $source, array $fieldsOrIndices, array &$target, $isIndex = false)
+    protected function addFields(array $source, array $fieldsOrIndices, array &$target, bool $isIndex = false): void
     {
         foreach ($fieldsOrIndices as $f) {
             if (isset($f['predicates'])) {
@@ -257,6 +224,7 @@ class SearchDocuments extends DriverBase
                             }
                         }
                     }
+
                     // now add the values
                     $this->addValuesToTarget($values, $f, $target);
                 }
@@ -269,7 +237,8 @@ class SearchDocuments extends DriverBase
                     if ($f['value'] == '_link_') {
                         $this->warningLog("Search spec value '_link_' is deprecated", $f);
                     }
-                    $values[] = $this->labeller->qname_to_alias($source['_id']['r']);
+
+                    $values[] = $this->labeller->qname_to_alias($source[_ID_KEY][_ID_RESOURCE]);
                 }
 
                 $this->addValuesToTarget($values, $f, $target);
@@ -277,22 +246,16 @@ class SearchDocuments extends DriverBase
         }
     }
 
-    /**
-     * @param mixed $specId
-     *
-     * @return array|null
-     */
-    protected function getSearchDocumentSpecification($specId)
+    protected function getSearchDocumentSpecification(string $specId): ?array
     {
         return $this->getConfigInstance()->getSearchDocumentSpecification($this->storeName, $specId);
     }
 
     /**
-     * @param array $values
-     * @param array $field
-     * @param array $target
+     * @param array<string, mixed> $field
+     * @param array<int, mixed>    $values
      */
-    private function addValuesToTarget($values, $field, &$target)
+    private function addValuesToTarget(array $values, array $field, array &$target): void
     {
         $objName = null;
         $name = $field['fieldName'];
@@ -301,19 +264,14 @@ class SearchDocuments extends DriverBase
             $parts = explode('.', $name);
             $objName = $parts[0];
             $name = $parts[1];
-        }  // todo: if theres more than 2 parts throw error
-
-        $limit = null;
-        if (isset($field['limit'])) {
-            $limit = $field['limit'];
-        } else {
-            $limit = count($values);
         }
 
-        if (count($values) > 0) {
+        $limit = $field['limit'] ?? count($values);
+
+        if ($values !== []) {
             for ($i = 0; $i < $limit; $i++) {
                 $v = $values[$i];
-                if (empty($objName)) {
+                if (in_array($objName, [null, '', '0'], true)) {
                     if (!isset($target[$name])) {
                         $target[$name] = $v;
                     } elseif (is_array($target[$name])) {
@@ -324,17 +282,15 @@ class SearchDocuments extends DriverBase
                         $target[$name][] = $existingVal;
                         $target[$name][] = $v;
                     }
+                } elseif (!isset($target[$objName][$name])) {
+                    $target[$objName][$name] = $v;
+                } elseif (is_array($target[$objName][$name])) {
+                    $target[$objName][$name][] = $v;
                 } else {
-                    if (!isset($target[$objName][$name])) {
-                        $target[$objName][$name] = $v;
-                    } elseif (is_array($target[$objName][$name])) {
-                        $target[$objName][$name][] = $v;
-                    } else {
-                        $existingVal = $target[$objName][$name];
-                        $target[$objName][$name] = [];
-                        $target[$objName][$name][] = $existingVal;
-                        $target[$objName][$name][] = $v;
-                    }
+                    $existingVal = $target[$objName][$name];
+                    $target[$objName][$name] = [];
+                    $target[$objName][$name][] = $existingVal;
+                    $target[$objName][$name][] = $v;
                 }
             }
         }

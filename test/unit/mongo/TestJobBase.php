@@ -1,5 +1,6 @@
 <?php
 
+use Tripod\Mongo\IConfigInstance;
 use Tripod\Mongo\Jobs\JobBase;
 
 class TestJobBase extends JobBase
@@ -8,19 +9,19 @@ class TestJobBase extends JobBase
      * Expose this method for testing.
      * {@inheritDoc}
      */
-    public function getTripodConfig()
+    public function getTripodConfig(): IConfigInstance
     {
         return parent::getTripodConfig();
     }
 
-    public function perform() {}
+    public function perform(): void {}
 
-    protected function getStatTimerSuccessKey()
+    protected function getStatTimerSuccessKey(): string
     {
         return 'TEST_SUCCESS';
     }
 
-    protected function getStatFailureIncrementKey()
+    protected function getStatFailureIncrementKey(): string
     {
         return 'TEST_FAIL';
     }

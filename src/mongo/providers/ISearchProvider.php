@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod;
 
 use Tripod\Exceptions\Exception;
@@ -12,37 +14,27 @@ interface ISearchProvider
      *
      * @param array $document the document to index
      *
-     * @return mixed
-     *
      * @throws SearchException if there was an error indexing the document
      */
-    public function indexDocument($document);
+    public function indexDocument(array $document): void;
 
     /**
      * Removes a single document from the search index based on the specified resource and context and spec id.
      * If spec id is not specified this method will delete all search documents that match the resource and context.
      *
-     * @param string            $resource
-     * @param string            $context
      * @param array|string|null $specId
-     *
-     * @return mixed
      *
      * @throws SearchException if there was an error removing the document
      */
-    public function deleteDocument($resource, $context, $specId = []);
+    public function deleteDocument(string $resource, string $context, $specId = []): void;
 
     /**
      * Returns the ids of all documents that contain and impact index entry
      * matching the resource and context specified.
      *
-     * @param string $context
-     *
-     * @internal param $resource
-     *
      * @return array the ids of search documents that had matching entries in their impact index
      */
-    public function findImpactedDocuments(array $resourcesAndPredicates, $context);
+    public function findImpactedDocuments(array $resourcesAndPredicates, string $context): array;
 
     /**
      * Executes the query and returns a structure representing a search results.
@@ -56,18 +48,18 @@ interface ISearchProvider
      *      duration    - the time it took to execute the query and build the result structure
      *  results     - an array of results.
      *
-     * @param string $q       the query as input by a user
+     * @param string $query   the query as input by a user
      * @param string $type    the search document type to restrict results in other words _id.type
      * @param array  $indices an array of indices (from spec) to match query terms against, must specify at least one
      * @param array  $fields  an array of the fields (from spec) you want included in the search results
      * @param int    $limit   the number of results to return per page
      * @param int    $offset  the offset to skip to
      *
-     * @return mixed a structure representing the search results
+     * @return array a structure representing the search results
      *
      * @throws SearchException if there was an error performing the search, or if the parameters are invalid
      */
-    public function search($q, $type, $indices = [], $fields = [], $limit = 10, $offset = 0);
+    public function search(string $query, string $type, array $indices = [], array $fields = [], int $limit = 10, int $offset = 0): array;
 
     /**
      * Removes all documents from search index based on the specified type id.
@@ -76,9 +68,9 @@ interface ISearchProvider
      *
      * @param string $typeId search type id
      *
-     * @return array|bool response returned by mongo
+     * @return int The number of search documents deleted
      *
      * @throws Exception if there was an error performing the operation
      */
-    public function deleteSearchDocumentsByTypeId($typeId);
+    public function deleteSearchDocumentsByTypeId(string $typeId): int;
 }

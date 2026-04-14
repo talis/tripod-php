@@ -20,14 +20,15 @@ $options = getopt(
     ]
 );
 
-function showUsage()
+function showUsage(): void
 {
-    $help = <<<'END'
-        createTables.php
+    $scriptName = basename(__FILE__);
+    $help = <<<END
+        {$scriptName}
 
         Usage:
 
-        php createTables.php -c/--config path/to/tripod-config.json -s/--storename store-name [options]
+        php {$scriptName} -c/--config path/to/tripod-config.json -s/--storename store-name [options]
 
         Options:
             -h --help               This help
@@ -44,7 +45,8 @@ function showUsage()
     echo $help;
 }
 
-if (empty($options) || isset($options['h']) || isset($options['help'])
+if (
+    $options === [] || $options === false || isset($options['h']) || isset($options['help'])
     || (!isset($options['c']) && !isset($options['config']))
     || (!isset($options['s']) && !isset($options['storename']))
 ) {
@@ -52,24 +54,22 @@ if (empty($options) || isset($options['h']) || isset($options['help'])
 
     exit;
 }
+
 $configLocation = $options['c'] ?? $options['config'];
 
 require_once dirname(__FILE__, 3) . '/src/tripod.inc.php';
 
 /**
- * @param string|null      $id
- * @param string|null      $tableId
- * @param string|null      $storeName
- * @param ITripodStat|null $stat
- * @param string|null      $queue
+ * @param string|null $tableId
+ * @param string|null $storeName
  */
-function generateTables($id, $tableId, $storeName, $stat = null, $queue = null)
+function generateTables(?string $id, string $tableId, string $storeName, ?ITripodStat $stat = null, ?string $queue = null): void
 {
     $tableSpec = Config::getInstance()->getTableSpecification($storeName, $tableId);
     if (array_key_exists('from', $tableSpec)) {
         Config::getInstance()->setMongoCursorTimeout(-1);
 
-        echo "Generating {$tableId}";
+        echo 'Generating ' . $tableId;
         $tripod = new Driver($tableSpec['from'], $storeName, ['stat' => $stat]);
         $tTables = $tripod->getTripodTables();
         if ($id) {
@@ -87,31 +87,13 @@ $t->start();
 
 Config::setConfig(json_decode(file_get_contents($configLocation), true));
 
-if (isset($options['s']) || isset($options['storename'])) {
-    $storeName = $options['s'] ?? $options['storename'];
-} else {
-    $storeName = null;
-}
-
-if (isset($options['t']) || isset($options['spec'])) {
-    $tableId = $options['t'] ?? $options['spec'];
-} else {
-    $tableId = null;
-}
-
-if (isset($options['i']) || isset($options['id'])) {
-    $id = $options['i'] ?? $options['id'];
-} else {
-    $id = null;
-}
+$storeName = $options['s'] ?? $options['storename'] ?? null;
+$tableId = $options['t'] ?? $options['spec'] ?? null;
+$id = $options['i'] ?? $options['id'] ?? null;
 
 $queue = null;
 if (isset($options['a']) || isset($options['async'])) {
-    if (isset($options['q']) || isset($options['queue'])) {
-        $queue = $options['queue'];
-    } else {
-        $queue = Config::getInstance()->getApplyQueueName();
-    }
+    $queue = $options['q'] ?? $options['queue'] ?? Config::getInstance()->getApplyQueueName();
 }
 
 $stat = null;

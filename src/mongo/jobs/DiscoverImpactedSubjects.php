@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo\Jobs;
 
 use Tripod\Mongo\Composites\IComposite;
@@ -9,24 +11,25 @@ use Tripod\Timer;
 class DiscoverImpactedSubjects extends JobBase
 {
     public const STORE_NAME_KEY = 'storeName';
+
     public const POD_NAME_KEY = 'podName';
+
     public const OPERATIONS_KEY = 'operations';
+
     public const CHANGES_KEY = 'changes';
+
     public const CONTEXT_ALIAS_KEY = 'contextAlias';
 
-    /**
-     * @var ApplyOperation
-     */
-    protected $applyOperation;
+    protected ?ApplyOperation $applyOperation = null;
 
     /**
-     * @var array
+     * @var array<string, ImpactedSubject[]>
      */
     protected $subjectsGroupedByQueue = [];
 
     protected $configRequired = true;
 
-    protected $subjectCount;
+    protected int $subjectCount;
 
     protected $mandatoryArgs = [
         self::STORE_NAME_KEY,
@@ -36,7 +39,7 @@ class DiscoverImpactedSubjects extends JobBase
         self::CONTEXT_ALIAS_KEY,
     ];
 
-    public function tearDown()
+    public function tearDown(): void
     {
         parent::tearDown();
         $this->getStat()->increment(MONGO_QUEUE_DISCOVER_JOB . '.' . SUBJECT_COUNT, $this->subjectCount);
@@ -47,7 +50,7 @@ class DiscoverImpactedSubjects extends JobBase
      *
      * @throws \Exception
      */
-    public function perform()
+    public function perform(): void
     {
         $tripod = $this->getTripod(
             $this->args[self::STORE_NAME_KEY],
@@ -74,12 +77,9 @@ class DiscoverImpactedSubjects extends JobBase
                     $this->subjectCount++;
                     $subjectTimer = new Timer();
                     $subjectTimer->start();
-                    if (isset($this->args[self::QUEUE_KEY]) || count($subject->getSpecTypes()) == 0) {
-                        if (isset($this->args[self::QUEUE_KEY])) {
-                            $queueName = $this->args[self::QUEUE_KEY];
-                        } else {
-                            $queueName = $configInstance::getApplyQueueName();
-                        }
+                    if (isset($this->args[self::QUEUE_KEY]) || count($subject->getSpecTypes()) === 0) {
+                        $queueName = $this->args[self::QUEUE_KEY] ?? $configInstance::getApplyQueueName();
+
                         $this->addSubjectToQueue($subject, $queueName);
                     } else {
                         $specsGroupedByQueue = [];
@@ -111,15 +111,19 @@ class DiscoverImpactedSubjects extends JobBase
 
                                     break;
                             }
+
                             if (!$spec || !isset($spec['queue'])) {
                                 if (!$spec) {
                                     $spec = [];
                                 }
+
                                 $spec['queue'] = $configInstance::getApplyQueueName();
                             }
+
                             if (!isset($specsGroupedByQueue[$spec['queue']])) {
                                 $specsGroupedByQueue[$spec['queue']] = [];
                             }
+
                             $specsGroupedByQueue[$spec['queue']][] = $specType;
                         }
 
@@ -135,24 +139,24 @@ class DiscoverImpactedSubjects extends JobBase
                             $this->addSubjectToQueue($queuedSubject, $queueName);
                         }
                     }
+
                     $subjectTimer->stop();
                     // stat time taken to discover impacted subjects for the given subject of change
                     $this->getStat()->timer(MONGO_QUEUE_DISCOVER_SUBJECT, $subjectTimer->result());
                 }
-                if (!empty($this->subjectsGroupedByQueue)) {
+
+                if ($this->subjectsGroupedByQueue !== []) {
                     foreach ($this->subjectsGroupedByQueue as $queueName => $subjects) {
                         $this->getApplyOperation()->createJob($subjects, $queueName, $this->getTripodOptions());
                     }
+
                     $this->subjectsGroupedByQueue = [];
                 }
             }
         }
     }
 
-    /**
-     * @param string|null $queueName
-     */
-    public function createJob(array $data, $queueName = null)
+    public function createJob(array $data, ?string $queueName = null): void
     {
         $configInstance = $this->getConfigInstance();
         if (!$queueName) {
@@ -160,48 +164,41 @@ class DiscoverImpactedSubjects extends JobBase
         } elseif (strpos($queueName, $configInstance::getDiscoverQueueName()) === false) {
             $queueName = $configInstance::getDiscoverQueueName() . '::' . $queueName;
         }
+
         $this->submitJob($queueName, get_class($this), array_merge($data, $this->generateConfigJobArgs()));
     }
 
     /**
      * Stat string for successful job timer.
-     *
-     * @return string
      */
-    protected function getStatTimerSuccessKey()
+    protected function getStatTimerSuccessKey(): string
     {
         return MONGO_QUEUE_DISCOVER_SUCCESS;
     }
 
     /**
      * Stat string for failed job increment.
-     *
-     * @return string
      */
-    protected function getStatFailureIncrementKey()
+    protected function getStatFailureIncrementKey(): string
     {
         return MONGO_QUEUE_DISCOVER_FAIL;
     }
 
-    /**
-     * @param string $queueName
-     */
-    protected function addSubjectToQueue(ImpactedSubject $subject, $queueName)
+    protected function addSubjectToQueue(ImpactedSubject $subject, string $queueName): void
     {
         if (!array_key_exists($queueName, $this->subjectsGroupedByQueue)) {
             $this->subjectsGroupedByQueue[$queueName] = [];
         }
+
         $this->subjectsGroupedByQueue[$queueName][] = $subject;
     }
 
     /**
      * For mocking.
-     *
-     * @return ApplyOperation
      */
-    protected function getApplyOperation()
+    protected function getApplyOperation(): ApplyOperation
     {
-        if (!isset($this->applyOperation)) {
+        if ($this->applyOperation === null) {
             $this->applyOperation = new ApplyOperation();
         }
 

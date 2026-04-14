@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tripod\Mongo;
 
 use MongoDB\Driver\ReadPreference;
@@ -9,49 +11,35 @@ use Tripod\ITripodStat;
 /**
  * A subject that has been involved in an modification event (create/update, delete) and will therefore require
  * view, table and search doc generation.
+ *
+ * @phpstan-type ResourceId array{r: string, c: string}
  */
 class ImpactedSubject
 {
-    /**
-     * @var string
-     */
-    private $operation;
+    private ?string $operation = null;
 
     /**
-     * @var array
+     * @var ResourceId
      */
-    private $resourceId;
+    private array $resourceId;
 
     /**
-     * @var array
+     * @var string[]
      */
-    private $specTypes;
+    private array $specTypes;
+
+    private string $storeName;
+
+    private string $podName;
+
+    private ?ITripodStat $tripodStat = null;
 
     /**
-     * @var string
-     */
-    private $storeName;
-
-    /**
-     * @var string
-     */
-    private $podName;
-
-    /**
-     * @var ITripodStat|null
-     */
-    private $stat;
-
-    /**
-     * @param string $operation
-     * @param string $storeName
-     * @param string $podName
-     *
      * @throws Exception
      */
-    public function __construct(array $resourceId, $operation, $storeName, $podName, array $specTypes = [], ?ITripodStat $stat = null)
+    public function __construct(array $resourceId, string $operation, string $storeName, string $podName, array $specTypes = [], ?ITripodStat $stat = null)
     {
-        if (!is_array($resourceId) || !array_key_exists(_ID_RESOURCE, $resourceId) || !array_key_exists(_ID_CONTEXT, $resourceId)) {
+        if (!array_key_exists(_ID_RESOURCE, $resourceId) || !array_key_exists(_ID_CONTEXT, $resourceId)) {
             throw new Exception('Parameter $resourceId needs to be of type array with ' . _ID_RESOURCE . ' and ' . _ID_CONTEXT . ' keys');
         }
 
@@ -60,54 +48,45 @@ class ImpactedSubject
         if (in_array($operation, [OP_VIEWS, OP_TABLES, OP_SEARCH])) {
             $this->operation = $operation;
         } else {
-            throw new Exception("Invalid operation: {$operation}");
+            throw new Exception('Invalid operation: ' . $operation);
         }
 
         $this->storeName = $storeName;
         $this->podName = $podName;
         $this->specTypes = $specTypes;
 
-        if ($stat) {
-            $this->stat = $stat;
+        if ($stat instanceof ITripodStat) {
+            $this->tripodStat = $stat;
         }
     }
 
-    /**
-     * @return string
-     */
-    public function getOperation()
+    public function getOperation(): ?string
     {
         return $this->operation;
     }
 
-    /**
-     * @return string
-     */
-    public function getPodName()
+    public function getPodName(): string
     {
         return $this->podName;
     }
 
     /**
-     * @return array
+     * @return mixed[]
      */
-    public function getResourceId()
+    public function getResourceId(): array
     {
         return $this->resourceId;
     }
 
     /**
-     * @return array
+     * @return mixed[]
      */
-    public function getSpecTypes()
+    public function getSpecTypes(): array
     {
         return $this->specTypes;
     }
 
-    /**
-     * @return string
-     */
-    public function getStoreName()
+    public function getStoreName(): string
     {
         return $this->storeName;
     }
@@ -115,9 +94,9 @@ class ImpactedSubject
     /**
      * Serialises the data as an array.
      *
-     * @return array
+     * @return array<string, mixed[]|string>
      */
-    public function toArray()
+    public function toArray(): array
     {
         return [
             'resourceId' => $this->resourceId,
@@ -131,21 +110,20 @@ class ImpactedSubject
     /**
      * Perform the update on the composite defined by the operation.
      */
-    public function update()
+    public function update(): void
     {
         $tripod = $this->getTripod();
-        if (isset($this->stat)) {
-            $tripod->setStat($this->stat);
+        if ($this->tripodStat !== null) {
+            $tripod->setStat($this->tripodStat);
         }
+
         $tripod->getComposite($this->operation)->update($this);
     }
 
     /**
      * For mocking.
-     *
-     * @return Driver
      */
-    protected function getTripod()
+    protected function getTripod(): Driver
     {
         return new Driver($this->getPodName(), $this->getStoreName(), [
             'readPreference' => ReadPreference::RP_PRIMARY,
