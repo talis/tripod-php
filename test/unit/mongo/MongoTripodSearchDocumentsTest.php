@@ -8,6 +8,7 @@ use Tripod\Mongo\Composites\SearchIndexer;
 use Tripod\Mongo\Driver;
 use Tripod\Mongo\ImpactedSubject;
 use Tripod\Mongo\Labeller;
+use Tripod\Mongo\MongoGraph;
 use Tripod\Mongo\SearchDocuments;
 use Tripod\Mongo\Updates;
 
@@ -82,6 +83,88 @@ class MongoTripodSearchDocumentsTest extends MongoTripodTestBase
         $this->assertEquals('René Chapus', $generatedDocuments['result']['author']);
         $this->assertContains('rené chapus', $generatedDocuments['search_terms']);
         $this->assertEquals('http://talisaspire.com/resources/doc13', $generatedDocuments['_id']['r']);
+    }
+
+    public function testGenerateSearchDocumentHandlesNonStringLiterals(): void
+    {
+        $doc = [
+            '_id' => [
+                'r' => 'http://talisaspire.com/resources/typedDoc1',
+                'c' => 'http://talisaspire.com/',
+            ],
+            '_version' => 0,
+            'dct:title' => [
+                'l' => 'Typed PHP: Stronger Types For Cleaner Code',
+            ],
+            'rdf:type' => [
+                ['u' => 'http://purl.org/ontology/bibo/Book'],
+            ],
+            'dct:date' => ['l' => 2016],
+            'temp:price' => ['l' => 19.99],
+            'temp:isHardcover' => ['l' => true],
+        ];
+
+        $searchSpecs = [
+            '_id' => 'i_search_resource',
+            'type' => ['bibo:Book'],
+            'from' => 'CBD_testing',
+            'filter' => [
+                [
+                    'condition' => [
+                        'dct:title.l' => ['$exists' => true],
+                    ],
+                ],
+            ],
+            'indices' => [
+                [
+                    'fieldName' => 'search_terms',
+                    'predicates' => ['dct:title'],
+                ],
+            ],
+            'fields' => [
+                [
+                    'fieldName' => 'result.title',
+                    'predicates' => ['dct:title'],
+                    'limit' => 1,
+                ],
+                [
+                    'fieldName' => 'result.date',
+                    'predicates' => ['dct:date'],
+                    'limit' => 1,
+                ],
+                [
+                    'fieldName' => 'result.price',
+                    'predicates' => ['temp:price'],
+                    'limit' => 1,
+                ],
+                [
+                    'fieldName' => 'result.isHardcover',
+                    'predicates' => ['temp:isHardcover'],
+                    'limit' => 1,
+                ],
+            ],
+        ];
+
+        $graph = new MongoGraph();
+        $graph->add_tripod_array($doc);
+        $this->tripod->saveChanges(new ExtendedGraph(), $graph, $doc['_id'][_ID_CONTEXT]);
+
+        $mockSearchDocuments = $this->getMockBuilder(SearchDocuments::class)
+            ->onlyMethods(['getSearchDocumentSpecification'])
+            ->setConstructorArgs([$this->tripod->getStoreName(), $this->getTripodCollection($this->tripod), 'http://talisaspire.com/'])
+            ->getMock();
+
+        $mockSearchDocuments->expects($this->once())
+            ->method('getSearchDocumentSpecification')
+            ->willReturn($searchSpecs);
+
+        $generatedDocuments = $mockSearchDocuments->generateSearchDocumentBasedOnSpecId('i_search_resource', 'http://talisaspire.com/resources/typedDoc1', 'http://talisaspire.com/');
+        $this->assertEquals([
+            'title' => 'Typed PHP: Stronger Types For Cleaner Code',
+            'date' => '2016',
+            'price' => '19.99',
+            'isHardcover' => '1',
+        ], $generatedDocuments['result']);
     }
 
     public function testGenerateSearchDocumentBasedOnSpecIdWithFieldNamePredicatesHavingNoValueInCollection(): void
