@@ -210,16 +210,17 @@ class SearchDocuments extends DriverBase
                     $values = [];
 
                     if (isset($source[$p])) {
-                        if (isset($source[$p][VALUE_URI])) {
-                            $values[] = ($isIndex) ? mb_strtolower(trim($source[$p][VALUE_URI]), 'UTF-8') : trim($source[$p][VALUE_URI]);
-                        } elseif (isset($source[$p][VALUE_LITERAL])) {
-                            $values[] = ($isIndex) ? mb_strtolower(trim($source[$p][VALUE_LITERAL]), 'UTF-8') : trim($source[$p][VALUE_LITERAL]);
-                        } elseif (is_array($source[$p])) {
-                            foreach ($source[$p] as $v) {
+                        $sourceValue = $source[$p];
+                        if (isset($sourceValue[VALUE_URI])) {
+                            $values[] = $this->normalizeSearchValue($sourceValue[VALUE_URI], $isIndex);
+                        } elseif (isset($sourceValue[VALUE_LITERAL])) {
+                            $values[] = $this->normalizeSearchValue($sourceValue[VALUE_LITERAL], $isIndex);
+                        } elseif (is_array($sourceValue)) {
+                            foreach ($sourceValue as $v) {
                                 if (isset($v[VALUE_URI])) {
-                                    $values[] = ($isIndex) ? mb_strtolower(trim($v[VALUE_URI]), 'UTF-8') : trim($v[VALUE_URI]);
+                                    $values[] = $this->normalizeSearchValue($v[VALUE_URI], $isIndex);
                                 } elseif (isset($v[VALUE_LITERAL])) {
-                                    $values[] = ($isIndex) ? mb_strtolower(trim($v[VALUE_LITERAL]), 'UTF-8') : trim($v[VALUE_LITERAL]);
+                                    $values[] = $this->normalizeSearchValue($v[VALUE_LITERAL], $isIndex);
                                 }
                             }
                         }
@@ -249,6 +250,18 @@ class SearchDocuments extends DriverBase
     protected function getSearchDocumentSpecification(string $specId): ?array
     {
         return $this->getConfigInstance()->getSearchDocumentSpecification($this->storeName, $specId);
+    }
+
+    /**
+     * @param bool|float|int|string $value
+     *
+     * @return string
+     */
+    private function normalizeSearchValue($value, bool $isIndex)
+    {
+        $value = trim((string) $value);
+
+        return $isIndex ? mb_strtolower($value, 'UTF-8') : $value;
     }
 
     /**
