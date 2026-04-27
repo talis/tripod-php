@@ -126,7 +126,7 @@ class ImpactedSubject
     protected function getTripod(): Driver
     {
         return new Driver($this->getPodName(), $this->getStoreName(), [
-            'readPreference' => ReadPreference::RP_PRIMARY,
+            'readPreference' => ReadPreference::PRIMARY,
         ]);
     }
 }

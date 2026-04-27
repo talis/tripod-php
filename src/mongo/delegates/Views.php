@@ -23,10 +23,8 @@ class Views extends CompositeBase
     /**
      * Construct accepts actual objects rather than strings as this class is a delegate of
      * Tripod and should inherit connections set up there.
-     *
-     * @param int|string $readPreference
      */
-    public function __construct(string $storeName, Collection $collection, ?string $defaultContext, ?ITripodStat $stat = null, $readPreference = ReadPreference::RP_PRIMARY)
+    public function __construct(string $storeName, Collection $collection, ?string $defaultContext, ?ITripodStat $stat = null, string $readPreference = ReadPreference::PRIMARY)
     {
         $this->storeName = $storeName;
         $this->labeller = new Labeller();
@@ -671,7 +669,7 @@ class Views extends CompositeBase
                                 $obj[$p] = $source[$p];
                             }
 
-                            if (isset($source[$p], $source[$p][$i])) {
+                            if (isset($source[$p][$i])) {
                                 if (!isset($obj[$p])) {
                                     $obj[$p] = [];
                                 }
@@ -686,7 +684,7 @@ class Views extends CompositeBase
             }
         } else {
             foreach ($source as $p => $val) {
-                if (isset($viewSpec['joins'], $viewSpec['joins'][$p], $viewSpec['joins'][$p]['maxJoins'])) {
+                if (isset($viewSpec['joins'][$p]['maxJoins'])) {
                     // todo: refactor with above (extract method)
                     // only include up to maxJoins
                     for ($i = 0; $i < $viewSpec['joins'][$p]['maxJoins']; $i++) {
@@ -695,7 +693,7 @@ class Views extends CompositeBase
                         }
 
                         if ($val && isset($val[$i])) {
-                            if (!$obj[$p]) {
+                            if (!isset($obj[$p])) {
                                 $obj[$p] = [];
                             }
 

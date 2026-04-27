@@ -568,11 +568,9 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param int|string $readPreference
-     *
      * @throws ConfigException
      */
-    public function getDatabase(string $storeName, ?string $dataSource = null, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Database
+    public function getDatabase(string $storeName, ?string $dataSource = null, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Database
     {
         if (!isset($this->dbConfig[$storeName])) {
             throw new ConfigException(sprintf("Store name '%s' not in configuration", $storeName));
@@ -590,13 +588,11 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param int|string $readPreference
-     *
      * @throws ConfigException
      */
-    public function getCollectionForCBD(string $storeName, string $podName, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection
+    public function getCollectionForCBD(string $storeName, string $podName, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection
     {
-        if (isset($this->podConnections[$storeName], $this->podConnections[$storeName][$podName])) {
+        if (isset($this->podConnections[$storeName][$podName])) {
             return $this->getMongoCollection(
                 $this->getDatabase($storeName, $this->podConnections[$storeName][$podName], $readPreference),
                 $podName
@@ -607,11 +603,9 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param int|string $readPreference
-     *
      * @throws ConfigException
      */
-    public function getCollectionForView(string $storeName, string $viewId, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection
+    public function getCollectionForView(string $storeName, string $viewId, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection
     {
         if (!isset($this->viewSpecs[$storeName][$viewId])) {
             throw new ConfigException(sprintf("View id '%s' not in configuration for store '%s'", $viewId, $storeName));
@@ -626,11 +620,9 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param int|string $readPreference
-     *
      * @throws ConfigException
      */
-    public function getCollectionForSearchDocument(string $storeName, string $searchDocumentId, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection
+    public function getCollectionForSearchDocument(string $storeName, string $searchDocumentId, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection
     {
         if (!isset($this->searchDocSpecs[$storeName][$searchDocumentId])) {
             throw new ConfigException(sprintf("Search document id '%s' not in configuration for store '%s'", $searchDocumentId, $storeName));
@@ -645,11 +637,9 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param int|string $readPreference
-     *
      * @throws ConfigException
      */
-    public function getCollectionForTable(string $storeName, string $tableId, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection
+    public function getCollectionForTable(string $storeName, string $tableId, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection
     {
         if (!isset($this->tableSpecs[$storeName][$tableId])) {
             throw new ConfigException(sprintf("Table id '%s' not in configuration for store '%s'", $tableId, $storeName));
@@ -664,13 +654,11 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param int|string $readPreference
-     *
      * @return Collection[]
      *
      * @throws ConfigException
      */
-    public function getCollectionsForTables(string $storeName, array $tables = [], $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): array
+    public function getCollectionsForTables(string $storeName, array $tables = [], string $readPreference = ReadPreference::PRIMARY_PREFERRED): array
     {
         if (!isset($this->tableSpecs[$storeName])) {
             return [];
@@ -701,13 +689,11 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param int|string $readPreference
-     *
      * @return Collection[]
      *
      * @throws ConfigException
      */
-    public function getCollectionsForViews(string $storeName, array $views = [], $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): array
+    public function getCollectionsForViews(string $storeName, array $views = [], string $readPreference = ReadPreference::PRIMARY_PREFERRED): array
     {
         if (!isset($this->viewSpecs[$storeName])) {
             return [];
@@ -738,13 +724,11 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param int|string $readPreference
-     *
      * @return Collection[]
      *
      * @throws ConfigException
      */
-    public function getCollectionsForSearch(string $storeName, array $searchSpecIds = [], $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): array
+    public function getCollectionsForSearch(string $storeName, array $searchSpecIds = [], string $readPreference = ReadPreference::PRIMARY_PREFERRED): array
     {
         if (!isset($this->searchDocSpecs[$storeName])) {
             return [];
@@ -774,10 +758,7 @@ class Config implements IConfigInstance
         return $collections;
     }
 
-    /**
-     * @param int|string $readPreference
-     */
-    public function getCollectionForTTLCache(string $storeName, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection
+    public function getCollectionForTTLCache(string $storeName, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection
     {
         return $this->getMongoCollection(
             $this->getDatabase($storeName, $this->dbConfig[$storeName]['data_source'], $readPreference),
@@ -785,10 +766,7 @@ class Config implements IConfigInstance
         );
     }
 
-    /**
-     * @param int|string $readPreference
-     */
-    public function getCollectionForLocks(string $storeName, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection
+    public function getCollectionForLocks(string $storeName, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection
     {
         return $this->getMongoCollection(
             $this->getDatabase($storeName, $this->dbConfig[$storeName]['data_source'], $readPreference),
@@ -796,10 +774,7 @@ class Config implements IConfigInstance
         );
     }
 
-    /**
-     * @param int|string $readPreference
-     */
-    public function getCollectionForManualRollbackAudit(string $storeName, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection
+    public function getCollectionForManualRollbackAudit(string $storeName, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection
     {
         return $this->getMongoCollection(
             $this->getDatabase($storeName, $this->dbConfig[$storeName]['data_source'], $readPreference),
@@ -807,10 +782,7 @@ class Config implements IConfigInstance
         );
     }
 
-    /**
-     * @param int|string $readPreference
-     */
-    public function getCollectionForJobGroups(string $storeName, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection
+    public function getCollectionForJobGroups(string $storeName, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection
     {
         return $this->getMongoCollection(
             $this->getDatabase($storeName, $this->dbConfig[$storeName]['data_source'], $readPreference),
@@ -819,11 +791,9 @@ class Config implements IConfigInstance
     }
 
     /**
-     * @param int|string $readPreference
-     *
      * @throws ConfigException
      */
-    public function getTransactionLogDatabase($readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Database
+    public function getTransactionLogDatabase(string $readPreference = ReadPreference::PRIMARY_PREFERRED): Database
     {
         $client = $this->getConnectionForDataSource($this->tConfig['data_source']);
         $db = $client->selectDatabase($this->tConfig['database']);

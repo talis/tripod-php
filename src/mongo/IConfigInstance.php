@@ -184,56 +184,56 @@ interface IConfigInstance extends ITripodConfigSerializer
     /**
      * @param string      $storeName      Store (database) name
      * @param string|null $dataSource     Database server identifier
-     * @param int|string  $readPreference Mongo read preference
+     * @param string      $readPreference Mongo read preference
      *
      * @throws ConfigException
      */
-    public function getDatabase(string $storeName, ?string $dataSource = null, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Database;
+    public function getDatabase(string $storeName, ?string $dataSource = null, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Database;
 
     /**
-     * @param string     $storeName      Store (database) name
-     * @param string     $podName        Pod (collection) name
-     * @param int|string $readPreference Mongo read preference
+     * @param string $storeName      Store (database) name
+     * @param string $podName        Pod (collection) name
+     * @param string $readPreference Mongo read preference
      *
      * @throws ConfigException
      */
-    public function getCollectionForCBD(string $storeName, string $podName, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection;
+    public function getCollectionForCBD(string $storeName, string $podName, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection;
 
     /**
-     * @param string     $storeName      Store (database) name
-     * @param string     $viewId         View spec ID
-     * @param int|string $readPreference Mongo read preference
+     * @param string $storeName      Store (database) name
+     * @param string $viewId         View spec ID
+     * @param string $readPreference Mongo read preference
      *
      * @throws ConfigException
      */
-    public function getCollectionForView(string $storeName, string $viewId, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection;
+    public function getCollectionForView(string $storeName, string $viewId, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection;
 
     /**
-     * @param string     $storeName        Store (database) name
-     * @param string     $searchDocumentId Search document spec ID
-     * @param int|string $readPreference   Mongo read preference
+     * @param string $storeName        Store (database) name
+     * @param string $searchDocumentId Search document spec ID
+     * @param string $readPreference   Mongo read preference
      *
      * @throws ConfigException
      */
     public function getCollectionForSearchDocument(
         string $storeName,
         string $searchDocumentId,
-        $readPreference = ReadPreference::RP_PRIMARY_PREFERRED
+        string $readPreference = ReadPreference::PRIMARY_PREFERRED
     ): Collection;
 
     /**
-     * @param string     $storeName      Store (database) name
-     * @param string     $tableId        Table spec ID
-     * @param int|string $readPreference Mongo read preference
+     * @param string $storeName      Store (database) name
+     * @param string $tableId        Table spec ID
+     * @param string $readPreference Mongo read preference
      *
      * @throws ConfigException
      */
-    public function getCollectionForTable(string $storeName, string $tableId, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection;
+    public function getCollectionForTable(string $storeName, string $tableId, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection;
 
     /**
-     * @param string     $storeName      Store (database) name
-     * @param array      $tables         Array of table spec IDs
-     * @param int|string $readPreference Mongo read preference
+     * @param string $storeName      Store (database) name
+     * @param array  $tables         Array of table spec IDs
+     * @param string $readPreference Mongo read preference
      *
      * @return Collection[]
      *
@@ -242,13 +242,13 @@ interface IConfigInstance extends ITripodConfigSerializer
     public function getCollectionsForTables(
         string $storeName,
         array $tables = [],
-        $readPreference = ReadPreference::RP_PRIMARY_PREFERRED
+        string $readPreference = ReadPreference::PRIMARY_PREFERRED
     ): array;
 
     /**
-     * @param string     $storeName      Store (database) name
-     * @param array      $views          Array of view spec IDs
-     * @param int|string $readPreference Mongo read preference
+     * @param string $storeName      Store (database) name
+     * @param array  $views          Array of view spec IDs
+     * @param string $readPreference Mongo read preference
      *
      * @return Collection[]
      *
@@ -257,13 +257,13 @@ interface IConfigInstance extends ITripodConfigSerializer
     public function getCollectionsForViews(
         string $storeName,
         array $views = [],
-        $readPreference = ReadPreference::RP_PRIMARY_PREFERRED
+        string $readPreference = ReadPreference::PRIMARY_PREFERRED
     ): array;
 
     /**
-     * @param string     $storeName      Store (database) name
-     * @param array      $searchSpecIds  Array of search document spec IDs
-     * @param int|string $readPreference Mongo read preference
+     * @param string $storeName      Store (database) name
+     * @param array  $searchSpecIds  Array of search document spec IDs
+     * @param string $readPreference Mongo read preference
      *
      * @return Collection[]
      *
@@ -272,41 +272,38 @@ interface IConfigInstance extends ITripodConfigSerializer
     public function getCollectionsForSearch(
         string $storeName,
         array $searchSpecIds = [],
-        $readPreference = ReadPreference::RP_PRIMARY_PREFERRED
+        string $readPreference = ReadPreference::PRIMARY_PREFERRED
     ): array;
 
     /**
-     * @param string     $storeName      Store (database) name
-     * @param int|string $readPreference Mongo read preference
+     * @param string $storeName      Store (database) name
+     * @param string $readPreference Mongo read preference
      */
-    public function getCollectionForTTLCache(string $storeName, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection;
+    public function getCollectionForTTLCache(string $storeName, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection;
+
+    public function getCollectionForLocks(string $storeName, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection;
 
     /**
-     * @param int|string $readPreference
-     */
-    public function getCollectionForLocks(string $storeName, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection;
-
-    /**
-     * @param string     $storeName      Store (database) name
-     * @param int|string $readPreference Mongo read preference
+     * @param string $storeName      Store (database) name
+     * @param string $readPreference Mongo read preference
      */
     public function getCollectionForManualRollbackAudit(
         string $storeName,
-        $readPreference = ReadPreference::RP_PRIMARY_PREFERRED
+        string $readPreference = ReadPreference::PRIMARY_PREFERRED
     ): Collection;
 
     /**
-     * @param string     $storeName      Store (database) name
-     * @param int|string $readPreference Mongo read preference
+     * @param string $storeName      Store (database) name
+     * @param string $readPreference Mongo read preference
      */
-    public function getCollectionForJobGroups(string $storeName, $readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Collection;
+    public function getCollectionForJobGroups(string $storeName, string $readPreference = ReadPreference::PRIMARY_PREFERRED): Collection;
 
     /**
-     * @param int|string $readPreference Mongo read preference
+     * @param string $readPreference Mongo read preference
      *
      * @throws ConfigException
      */
-    public function getTransactionLogDatabase($readPreference = ReadPreference::RP_PRIMARY_PREFERRED): Database;
+    public function getTransactionLogDatabase(string $readPreference = ReadPreference::PRIMARY_PREFERRED): Database;
 
     /**
      * Return the maximum batch size for async operations.

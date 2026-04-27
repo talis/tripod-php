@@ -132,6 +132,8 @@ class MongoGraphTest extends MongoTripodTestBase
     public function addTripodArrayContainingValidLiteralValues_Provider(): iterable
     {
         yield ['A String'];
+        yield [''];
+        yield ['0'];
         yield [1];
         yield [1.2];
         yield [true];
@@ -200,8 +202,9 @@ class MongoGraphTest extends MongoTripodTestBase
 
     public function addTripodArrayContainingInvalidPredicates_Provider(): iterable
     {
+        yield [''];
+        yield ['0'];
         yield [1];
-        yield [1.2];
         yield [true];
     }
 
@@ -255,6 +258,7 @@ class MongoGraphTest extends MongoTripodTestBase
     public function addTripodArrayContainingInvalidSubject_Provider(): iterable
     {
         yield [''];
+        yield ['0'];
         yield [1];
         yield [1.2];
         yield [true];
@@ -318,6 +322,8 @@ class MongoGraphTest extends MongoTripodTestBase
     {
         yield [1];
         yield [1.2];
+        yield [''];
+        yield ['0'];
         yield [true];
         yield [[]];
         yield [null];

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
+use Resque\JobHandler;
 use Tripod\Config;
 use Tripod\Exceptions\JobException;
 use Tripod\Mongo\Composites\SearchIndexer;
@@ -25,7 +26,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         unset($this->args['tripodConfig']);
         $job = new ApplyOperation();
         $job->args = $this->args;
-        $job->job = new Resque_Job('queue', ['id' => uniqid()]);
+        $job->job = new JobHandler('queue', ['id' => uniqid()]);
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Argument tripodConfig or tripodConfigGenerator was not present in supplied job args for job Tripod\Mongo\Jobs\ApplyOperation');
         $this->performJob($job);
@@ -37,7 +38,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         unset($this->args['subjects']);
         $job = new ApplyOperation();
         $job->args = $this->args;
-        $job->job = new Resque_Job('queue', ['id' => uniqid()]);
+        $job->job = new JobHandler('queue', ['id' => uniqid()]);
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Argument subjects was not present in supplied job args for job Tripod\Mongo\Jobs\ApplyOperation');
         $this->performJob($job);
@@ -51,7 +52,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ->getMock();
 
         $applyOperation->args = $this->args;
-        $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
+        $applyOperation->job = new JobHandler('queue', ['id' => uniqid()]);
 
         $statMock = $this->getMockStat(
             $this->args['statsConfig']['config']['host'],
@@ -129,7 +130,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ->getMock();
 
         $applyOperation->args = $this->args;
-        $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
+        $applyOperation->job = new JobHandler('queue', ['id' => uniqid()]);
 
         $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
@@ -231,7 +232,7 @@ class ApplyOperationTest extends ResqueJobTestBase
             ->getMock();
 
         $applyOperation->args = $this->args;
-        $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
+        $applyOperation->job = new JobHandler('queue', ['id' => uniqid()]);
 
         $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
@@ -358,7 +359,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         $this->args['subjects'] = [$impactedSubject->toArray()];
 
         $applyOperation->args = $this->args;
-        $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
+        $applyOperation->job = new JobHandler('queue', ['id' => uniqid()]);
 
         $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
@@ -436,7 +437,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         );
 
         $applyOperation->args = $this->args;
-        $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
+        $applyOperation->job = new JobHandler('queue', ['id' => uniqid()]);
 
         $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
@@ -539,7 +540,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         );
 
         $applyOperation->args = $this->args;
-        $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
+        $applyOperation->job = new JobHandler('queue', ['id' => uniqid()]);
 
         $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
@@ -646,7 +647,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         );
 
         $applyOperation->args = $this->args;
-        $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
+        $applyOperation->job = new JobHandler('queue', ['id' => uniqid()]);
 
         $subject = $this->getMockBuilder(ImpactedSubject::class)
             ->onlyMethods(['getTripod'])
@@ -721,7 +722,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         );
 
         $applyOperation->args = $this->args;
-        $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
+        $applyOperation->job = new JobHandler('queue', ['id' => uniqid()]);
 
         $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();
@@ -817,7 +818,7 @@ class ApplyOperationTest extends ResqueJobTestBase
         );
 
         $applyOperation->args = $this->args;
-        $applyOperation->job = new Resque_Job('queue', ['id' => uniqid()]);
+        $applyOperation->job = new JobHandler('queue', ['id' => uniqid()]);
 
         $jobTrackerId = new ObjectId();
         $applyOperation->args[ApplyOperation::TRACKING_KEY] = $jobTrackerId->__toString();

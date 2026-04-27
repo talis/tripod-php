@@ -29,6 +29,8 @@ class ExtendedGraphTest extends TestCase
     public function addValidValueToLiteralResultsInTriple_Provider(): iterable
     {
         yield ['String'];
+        yield [''];
+        yield ['0'];
         yield [1];
         yield [1.2];
         yield [true];
@@ -63,7 +65,7 @@ class ExtendedGraphTest extends TestCase
      */
     public function testAddInvalidSubjectToLiteralThrowsException($value): void
     {
-        $this->expectExceptionMessageMatches('/^(The subject is invalid|Argument 1.+must be of the type string.+)$/');
+        $this->expectExceptionMessageMatches('/^The subject is invalid$|Argument #?1.+must be of (the )?type string.+/');
 
         $graph = new ExtendedGraph();
         $graph->add_resource_triple($value, 'http://some/predicate', 'http://someplace.com');
@@ -72,6 +74,7 @@ class ExtendedGraphTest extends TestCase
     public function addInvalidSubjectToLiteralResultsInNoTriple_Provider(): iterable
     {
         yield [''];
+        yield ['0'];
         yield [1];
         yield [1.2];
         yield [true];
@@ -88,7 +91,7 @@ class ExtendedGraphTest extends TestCase
      */
     public function testAddInvalidPredicateToLiteralThrowsException($value): void
     {
-        $this->expectExceptionMessageMatches('/^(The predicate is invalid|Argument 2.+must be of the type string.+)$/');
+        $this->expectExceptionMessageMatches('/^The predicate is invalid$|Argument #?2.+must be of (the )?type string.+/');
 
         $graph = new ExtendedGraph();
         $graph->add_resource_triple('http://some/subject/1', $value, 'http://someplace.com');
@@ -97,6 +100,7 @@ class ExtendedGraphTest extends TestCase
     public function addInvalidPredicateToLiteralResultsInNoTriple_Provider(): iterable
     {
         yield [''];
+        yield ['0'];
         yield [1];
         yield [1.2];
         yield [true];
@@ -158,7 +162,7 @@ class ExtendedGraphTest extends TestCase
      */
     public function testAddInvalidSubjectToResourceThrowsException($value): void
     {
-        $this->expectExceptionMessageMatches('/^(The subject is invalid|Argument 1.+must be of the type string.+)$/');
+        $this->expectExceptionMessageMatches('/^The subject is invalid$|Argument #?1.+must be of (the )?type string.+/');
 
         $graph = new ExtendedGraph();
         $graph->add_resource_triple($value, 'http://some/predicate', 'http://someplace.com');
@@ -167,6 +171,7 @@ class ExtendedGraphTest extends TestCase
     public function addInvalidSubjectToResourceResultsInNoTriple_Provider(): iterable
     {
         yield [''];
+        yield ['0'];
         yield [1];
         yield [1.2];
         yield [true];
@@ -183,7 +188,7 @@ class ExtendedGraphTest extends TestCase
      */
     public function testAddInvalidPredicateToResourceThrowsException($value): void
     {
-        $this->expectExceptionMessageMatches('/^(The predicate is invalid|Argument 2.+must be of the type string.+)$/');
+        $this->expectExceptionMessageMatches('/^The predicate is invalid$|Argument #?2.+must be of (the )?type string.+/');
 
         $graph = new ExtendedGraph();
         $graph->add_resource_triple('http://some/subject/1', $value, 'http://someplace.com');
@@ -192,6 +197,7 @@ class ExtendedGraphTest extends TestCase
     public function addInvalidPredicateToResourceResultsInNoTriple_Provider(): iterable
     {
         yield [''];
+        yield ['0'];
         yield [1];
         yield [1.2];
         yield [true];

@@ -41,7 +41,7 @@ class Driver extends DriverBase implements IDriver
      *                                   <li>defaultContext: (string) to use where a specific default context is not defined. Default is Null</li>
      *                                   <li>async: (array) determines the async behaviour of views, tables and search. For each of these array keys, if set to true, generation of these elements will be done asyncronously on save. Default is array(OP_VIEWS=>false,OP_TABLES=>true,OP_SEARCH=>true)</li>
      *                                   <li>stat: this sets the stats object to use to record statistics around operations performed by Driver. Default is null</li>
-     *                                   <li>readPreference: The Read preference to set for Mongo: Default is ReadPreference::RP_PRIMARY_PREFERRED</li>
+     *                                   <li>readPreference: The Read preference to set for Mongo: Default is ReadPreference::PRIMARY_PREFERRED</li>
      *                                   <li>retriesToGetLock: Retries to do when unable to get lock on a document, default is 20</li></ul>
      */
     public function __construct(string $podName, string $storeName, array $opts = [])
@@ -50,7 +50,7 @@ class Driver extends DriverBase implements IDriver
             'defaultContext' => null,
             OP_ASYNC => [OP_VIEWS => false, OP_TABLES => true, OP_SEARCH => true],
             'statsConfig' => [],
-            'readPreference' => ReadPreference::RP_PRIMARY_PREFERRED,
+            'readPreference' => ReadPreference::PRIMARY_PREFERRED,
             'retriesToGetLock' => 20,
         ], $opts);
 
@@ -321,7 +321,7 @@ class Driver extends DriverBase implements IDriver
                 $cursor = $this->collection->aggregate($ops);
                 foreach ($cursor as $doc) {
                     if (!is_array($doc[_ID_KEY])) {
-                        $results[$doc[_ID_KEY]] = $doc['total'];
+                        $results[$doc[_ID_KEY] ?? ''] = $doc['total'];
                     } else {
                         $results[implode(';', $doc[_ID_KEY])] = $doc['total'];
                     }
@@ -618,7 +618,7 @@ class Driver extends DriverBase implements IDriver
     protected function getDataUpdater(): Updates
     {
         if ($this->updates === null) {
-            $readPreference = $this->collection->getReadPreference()->getMode();
+            $readPreference = $this->collection->getReadPreference()->getModeString();
 
             $opts = [
                 'defaultContext' => $this->defaultContext,

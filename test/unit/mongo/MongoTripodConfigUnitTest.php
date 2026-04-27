@@ -1010,8 +1010,8 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig->expects($this->exactly(2))
             ->method('getDatabase')
             ->withConsecutive(
-                ['tripod_php_testing', 'rs1', ReadPreference::RP_SECONDARY_PREFERRED],
-                ['tripod_php_testing', 'rs1', ReadPreference::RP_NEAREST]
+                ['tripod_php_testing', 'rs1', ReadPreference::SECONDARY_PREFERRED],
+                ['tripod_php_testing', 'rs1', ReadPreference::NEAREST]
             )
             ->willReturnCallback(function () {
                 $mongo = new Client();
@@ -1019,8 +1019,8 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
                 return $mongo->selectDatabase('tripod_php_testing');
             });
 
-        $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_SECONDARY_PREFERRED);
-        $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_NEAREST);
+        $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::SECONDARY_PREFERRED);
+        $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::NEAREST);
     }
 
     public function testDataLoadedInConfiguredDataSource(): void
@@ -1689,9 +1689,9 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             ->method('getMongoClient')
             ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])
             ->willReturnCallback(fn (): Client => new Client());
-        $mockConfig->getDatabase('tripod_php_testing', 'rs1', ReadPreference::RP_SECONDARY_PREFERRED);
-        $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_SECONDARY_PREFERRED);
-        $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_NEAREST);
+        $mockConfig->getDatabase('tripod_php_testing', 'rs1', ReadPreference::SECONDARY_PREFERRED);
+        $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::SECONDARY_PREFERRED);
+        $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::NEAREST);
     }
 
     public function testMongoConnectionExceptionThrown(): void
@@ -1707,7 +1707,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
             ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])
             ->willThrowException(new ConnectionTimeoutException('Exception thrown when connecting to Mongo'));
 
-        $mockConfig->getDatabase('tripod_php_testing', 'rs1', ReadPreference::RP_SECONDARY_PREFERRED);
+        $mockConfig->getDatabase('tripod_php_testing', 'rs1', ReadPreference::SECONDARY_PREFERRED);
     }
 
     public function testMongoConnectionNoExceptionThrownWhenConnectionThrowsSomeExceptions(): void
@@ -1728,8 +1728,8 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
                 )
             );
 
-        $mockConfig->getDatabase('tripod_php_testing', 'rs1', ReadPreference::RP_SECONDARY_PREFERRED);
-        $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_SECONDARY_PREFERRED);
-        $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::RP_NEAREST);
+        $mockConfig->getDatabase('tripod_php_testing', 'rs1', ReadPreference::SECONDARY_PREFERRED);
+        $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::SECONDARY_PREFERRED);
+        $mockConfig->getCollectionForCBD('tripod_php_testing', 'CBD_testing', ReadPreference::NEAREST);
     }
 }
