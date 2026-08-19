@@ -52,6 +52,9 @@ class ExtendedGraph
         RDF_TYPE,
     ];
 
+    /**
+     * @var string[]
+     */
     public array $parser_errors = [];
 
     /**
@@ -600,6 +603,9 @@ class ExtendedGraph
         }
     }
 
+    /**
+     * @return string[]
+     */
     public function get_parser_errors(): array
     {
         return $this->parser_errors;
@@ -912,6 +918,8 @@ class ExtendedGraph
      * Fetch an array of all the subject that have and rdf type that matches that given.
      *
      * @param ObjectResource $o the type to match
+     *
+     * @return TripleSubject[] list of all the subjects in the graph that have the given type
      */
     public function get_subjects_of_type(string $o): array
     {
@@ -923,6 +931,8 @@ class ExtendedGraph
      *
      * @param TriplePredicate $p the predicate to match
      * @param ObjectResource  $o the resource object to match
+     *
+     * @return TripleSubject[] list of all the subjects in the graph that have a triple with the given predicate and resource object
      */
     public function get_subjects_where_resource(string $p, string $o): array
     {
@@ -934,6 +944,8 @@ class ExtendedGraph
      *
      * @param TriplePredicate $p the predicate to match
      * @param ObjectValue     $o the literal object to match
+     *
+     * @return TripleSubject[] list of all the subjects in the graph that have a triple with the given predicate and literal object
      */
     public function get_subjects_where_literal(string $p, $o): array
     {
@@ -1809,6 +1821,8 @@ class ExtendedGraph
      * @param TriplePredicate $p
      * @param ObjectValue     $o
      * @param ObjectType      $type
+     *
+     * @return TripleSubject[] list of all the subjects in the graph that have a triple with the given predicate, object and object type
      */
     private function get_subjects_where(string $p, $o, string $type): array
     {
