@@ -923,7 +923,7 @@ class ExtendedGraph
      */
     public function get_subjects_of_type(string $o): array
     {
-        return $this->get_subjects_where_resource('http://www.w3.org/1999/02/22-rdf-syntax-ns#type', $o);
+        return $this->get_subjects_where_resource(self::rdf_type, $o);
     }
 
     /**
