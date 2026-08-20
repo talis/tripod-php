@@ -135,11 +135,10 @@ abstract class DriverBase
         }
 
         $retries = 1;
-        $exception = null;
-        $cursorSuccess = false;
-
-        do {
+        while (true) {
             try {
+                $exception = null;
+
                 foreach ($cursor as $result) {
                     // handle MONGO_VIEWS that have expired due to ttl. These are expired
                     // on read (lazily) rather than on write
@@ -156,16 +155,22 @@ abstract class DriverBase
                     $graph->add_tripod_array($result);
                 }
 
-                $cursorSuccess = true;
+                // Cursor exhausted successfully, break out of retry loop.
+                break;
             } catch (\Exception $e) {
+                $exception = $e;
+
+                if ($retries >= Config::CONNECTION_RETRIES) {
+                    break;
+                }
+
                 self::getLogger()->error('CursorException attempt ' . $retries . '. Retrying...:' . $e->getMessage());
                 sleep(1);
                 $retries++;
-                $exception = $e;
             }
-        } while ($retries <= Config::CONNECTION_RETRIES && $cursorSuccess === false);
+        }
 
-        if ($cursorSuccess === false && $exception !== null) {
+        if (isset($exception)) {
             self::getLogger()->error('CursorException failed after ' . $retries . ' attempts (MAX:' . Config::CONNECTION_RETRIES . '): ' . $exception->getMessage());
 
             throw $exception;
