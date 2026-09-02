@@ -2236,7 +2236,6 @@ class MongoTripodDriverTest extends MongoTripodTestBase
             ->method('getStatFromStatFactory')
             ->willReturn($mockStat);
 
-        /** @var StatsD */
         $stat = $tripod->getStat();
 
         $this->assertInstanceOf(StatsD::class, $stat);
