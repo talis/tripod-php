@@ -20,34 +20,42 @@ use Tripod\StatsD;
 
 abstract class MongoTripodTestBase extends TestCase
 {
-    protected ?Driver $tripod;
+    protected Driver $tripod;
 
-    protected ?TransactionLog $tripodTransactionLog;
+    protected TransactionLog $tripodTransactionLog;
 
     protected function setUp(): void
     {
-        $config = json_decode(file_get_contents($this->getConfigLocation()), true);
-        if (getenv('TRIPOD_DATASOURCE_RS1_CONFIG')) {
-            $config['data_sources']['rs1'] = json_decode(getenv('TRIPOD_DATASOURCE_RS1_CONFIG'), true);
+        $config = $this->decodeJsonFile($this->getConfigLocation());
+        $rs1Config = getenv('TRIPOD_DATASOURCE_RS1_CONFIG');
+        if ($rs1Config) {
+            $config['data_sources']['rs1'] = json_decode($rs1Config, true);
         }
 
-        if (getenv('TRIPOD_DATASOURCE_RS2_CONFIG')) {
-            $config['data_sources']['rs2'] = json_decode(getenv('TRIPOD_DATASOURCE_RS2_CONFIG'), true);
+        $rs2Config = getenv('TRIPOD_DATASOURCE_RS2_CONFIG');
+        if ($rs2Config) {
+            $config['data_sources']['rs2'] = json_decode($rs2Config, true);
         }
 
         Config::setConfig($config);
     }
 
-    protected function tearDown(): void
+    /**
+     * Decode a JSON fixture file into an array.
+     */
+    protected function decodeJsonFile(string $path): array
     {
-        // these are important to keep the Mongo open connection pool size down!
-        $this->tripod = null;
-        $this->tripodTransactionLog = null;
+        $decoded = json_decode((string) file_get_contents($path), true);
+        if (!is_array($decoded)) {
+            self::fail('Expected JSON fixture to decode to an array: ' . $path);
+        }
+
+        return $decoded;
     }
 
     protected function loadResourceData(): void
     {
-        $docs = json_decode(file_get_contents(__DIR__ . '/data/resources.json'), true);
+        $docs = $this->decodeJsonFile(__DIR__ . '/data/resources.json');
         foreach ($docs as $d) {
             $this->addDocument($d);
         }
@@ -116,6 +124,10 @@ abstract class MongoTripodTestBase extends TestCase
     protected function getDocument($_id, $collection = null, bool $fromTransactionLog = false): ?array
     {
         if ($fromTransactionLog) {
+            if (!is_string($_id)) {
+                throw new InvalidArgumentException('Transaction log lookups require a string id');
+            }
+
             return $this->tripodTransactionLog->getTransaction($_id);
         }
 
@@ -125,6 +137,10 @@ abstract class MongoTripodTestBase extends TestCase
 
         if ($collection instanceof Driver) {
             return $this->getTripodCollection($collection)->findOne(['_id' => $_id]);
+        }
+
+        if (!$collection instanceof Collection) {
+            throw new InvalidArgumentException('Expected a MongoDB collection or a Driver instance');
         }
 
         return $collection->findOne(['_id' => $_id]);
@@ -176,14 +192,10 @@ abstract class MongoTripodTestBase extends TestCase
         $this->assertEquals($expectedNumberOfRemovals, $actualRemovals, 'Number of removals did not match expectd value');
     }
 
-    /**
-     * @param array<string, mixed> $doc
-     */
     protected function assertTransactionDate(array $doc, string $key): void
     {
         $this->assertArrayHasKey($key, $doc, 'the date property: {$key} was not present in document');
         $this->assertInstanceOf(UTCDateTime::class, $doc[$key]);
-        $this->assertInstanceOf(DateTimeInterface::class, $doc[$key]->toDateTime());
     }
 
     protected function assertDocumentVersion(array $_id, ?int $expectedValue = null, bool $hasVersion = true, ?Driver $tripod = null): void
@@ -195,6 +207,7 @@ abstract class MongoTripodTestBase extends TestCase
         }
 
         $doc = $this->getDocument($_id, $tripod);
+        $this->assertNotNull($doc);
         if ($hasVersion) {
             $this->assertArrayHasKey('_version', $doc, 'Document for ' . var_export($_id, true) . ' should have a version, but none found');
 
@@ -222,6 +235,7 @@ abstract class MongoTripodTestBase extends TestCase
         }
 
         $doc = $this->getDocument($_id, $tripod);
+        $this->assertNotNull($doc);
 
         $this->assertArrayHasKey($property, $doc, 'Document for ' . var_export($_id, true) . sprintf(' should have property [%s], but none found', $property));
         if ($expectedValue !== null) {
@@ -245,8 +259,6 @@ abstract class MongoTripodTestBase extends TestCase
 
         $doc = $this->getDocument($_id, $tripod, $fromTransactionLog);
         if ($doc === null) {
-            $this->assertNull($doc); // @phpstan-ignore method.alreadyNarrowedType
-
             return; // if document doesn't exist then it doesn't have the property, so assertion is successful
         }
 
@@ -272,7 +284,7 @@ abstract class MongoTripodTestBase extends TestCase
         if ($useTransactionTripod) {
             $this->assertNull($doc, 'Document with _id:[' . print_r($_id, true) . '] exists, but it should not');
         } else {
-            $this->assertTrue(is_array($doc), 'Document should be array');
+            $this->assertNotNull($doc, 'Document should exist');
             $keys = array_keys($doc);
             $this->assertCount(4, $keys);
             $this->assertArrayHasKey('_id', $doc);
@@ -333,6 +345,7 @@ abstract class MongoTripodTestBase extends TestCase
      * @param string     $host
      * @param int|string $port
      * @param string     $prefix
+     * @param string[]   $mockedMethods
      *
      * @return MockObject&StatsD
      */
@@ -347,7 +360,7 @@ abstract class MongoTripodTestBase extends TestCase
     }
 
     /**
-     * @return array<string, array<string, int|string>|class-string<StatsD>>
+     * @return array{class: class-string<StatsD>, config: array{host: string, port: int, prefix: string}}
      */
     protected function getStatsDConfig(): array
     {
@@ -376,7 +389,7 @@ abstract class MongoTripodTestBase extends TestCase
 
     private function loadDataViaTripod(Driver $tripod, string $filename): void
     {
-        $docs = json_decode(file_get_contents(__DIR__ . $filename), true);
+        $docs = $this->decodeJsonFile(__DIR__ . $filename);
         foreach ($docs as $d) {
             $g = new MongoGraph();
             $g->add_tripod_array($d);
@@ -392,7 +405,7 @@ class TestTripod extends Driver
      */
     public function getCollectionReadPreference()
     {
-        return $this->collection->getReadPreference();
+        return $this->getCollection()->getReadPreference();
     }
 }
 

@@ -26,13 +26,17 @@ class Tables extends BSONDocument
     /**
      * Models the table row from the source data.
      *
-     * @param array<string, mixed> $doc Database document
+     * @param array $doc Database document
      *
-     * @return array
+     * @return array<string, mixed>
      */
     protected function toTableRow(array $doc)
     {
-        $result = $doc['value'] ?? [];
+        $value = isset($doc['value']) && is_array($doc['value']) ? $doc['value'] : [];
+        $result = [];
+        foreach ($value as $key => $fieldValue) {
+            $result[(string) $key] = $fieldValue;
+        }
         if (isset($result[_IMPACT_INDEX])) {
             unset($result[_IMPACT_INDEX]);
         }

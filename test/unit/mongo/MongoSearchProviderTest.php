@@ -49,7 +49,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
                 $t[] = $result['rdf:type']['u'];
             } elseif (is_array($result['rdf:type'])) {
                 foreach ($result['rdf:type'] as $_t) {
-                    if (isset($_t['u'])) {
+                    if (is_array($_t) && isset($_t['u'])) {
                         $t[] = $_t['u'];
                     }
                 }
@@ -232,6 +232,7 @@ class MongoSearchProviderTest extends MongoTripodTestBase
         $result = [];
         foreach (Config::getInstance()->getCollectionsForSearch('tripod_php_testing') as $collection) {
             $result = $collection->findOne(['_id.r' => 'http://talisaspire.com/resources/doc1']);
+            $this->assertNotNull($result);
             if ($result) {
                 break;
             }

@@ -251,7 +251,7 @@ class MongoSearchProvider implements ISearchProvider
         try {
             $searchTypes = [];
             if (!empty($specId)) {
-                $specTypes = $this->config->getSearchDocumentSpecifications($this->storeName, null, true);
+                $specTypes = array_filter($this->config->getSearchDocumentSpecifications($this->storeName, null, true), 'is_string');
                 if (is_string($specId)) {
                     if (!in_array($specId, $specTypes)) {
                         return;
@@ -261,7 +261,7 @@ class MongoSearchProvider implements ISearchProvider
                     $searchTypes[] = $specId;
                 } elseif (is_array($specId)) {
                     // Only filter on search document spec types
-                    $specId = array_intersect($specTypes, $specId);
+                    $specId = array_intersect($specTypes, array_filter($specId, 'is_string'));
                     if ($specId === []) {
                         return;
                     }
@@ -405,13 +405,14 @@ class MongoSearchProvider implements ISearchProvider
         $filter = [];
         $filter['_id.type'] = $type;
 
-        if (count($indices) === 1) {
-            $searchIndex = $indices[0];
-            $filter[$searchIndex] = ['$all' => $regexes];
+        if (count($indices) === 1 && is_string($indices[0])) {
+            $filter[$indices[0]] = ['$all' => $regexes];
         } else {
             $filter['$or'] = [];
             foreach ($indices as $searchIndex) {
-                $filter['$or'][] = [$searchIndex => ['$all' => $regexes]];
+                if (is_string($searchIndex)) {
+                    $filter['$or'][] = [$searchIndex => ['$all' => $regexes]];
+                }
             }
         }
 
@@ -508,14 +509,15 @@ class MongoSearchProvider implements ISearchProvider
         $deleteResponse = $this->getCollectionForSearchSpec($typeId)
             ->deleteMany($query);
 
-        return $deleteResponse->getDeletedCount();
+        // (int) cast: getDeletedCount() is nullable on mongodb/mongodb 1.x
+        return (int) $deleteResponse->getDeletedCount();
     }
 
     /**
      * Count the number of documents in the spec that match $filters.
      *
-     * @param string               $searchSpec Search spec ID
-     * @param array<string, mixed> $filters    Query filters to get count on
+     * @param string $searchSpec Search spec ID
+     * @param array  $filters    Query filters to get count on
      *
      * @return int
      */

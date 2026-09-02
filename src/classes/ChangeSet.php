@@ -9,6 +9,7 @@ namespace Tripod;
  * Adapted from Moriarty's changeset.
  *
  * @phpstan-import-type ObjectType from ExtendedGraph
+ * @phpstan-import-type ObjectValue from ExtendedGraph
  * @phpstan-import-type TripleSubject from ExtendedGraph
  * @phpstan-import-type TriplePredicate from ExtendedGraph
  * @phpstan-import-type TripleObject from ExtendedGraph
@@ -25,18 +26,7 @@ class ChangeSet extends ExtendedGraph
     public array $after = [];
 
     /**
-     * @var array{
-     *   subjectOfChange?: string,
-     *   createdDate?: string,
-     *   creatorName?: string,
-     *   changeReason?: string,
-     *   after?: TripleGraph,
-     *   before?: TripleGraph,
-     *   after_rdfxml?: string,
-     *   before_rdfxml?: string,
-     *   properties?: array<string, array>,
-     *   'http://purl.org/dc/terms/source'?: array|string
-     * }
+     * The raw changeset arguments as supplied to the constructor.
      */
     public array $a;
 
@@ -78,7 +68,7 @@ class ChangeSet extends ExtendedGraph
                     $parser->parse(false, $a[$rdf]);
                     $a[$rdf] = $parser->getSimpleIndex(0);
                 } elseif (
-                    is_array($a[$rdf]) && isset($a[$rdf][0]['s'])
+                    is_array($a[$rdf]) && isset($a[$rdf][0]) && is_array($a[$rdf][0]) && isset($a[$rdf][0]['s'])
                 ) { // triples array
                     /** @var \ARC2_RDFSerializer $ser */
                     $ser = \ARC2::getTurtleSerializer();
@@ -111,13 +101,20 @@ class ChangeSet extends ExtendedGraph
         $removals = empty($this->after) ? $this->before : ExtendedGraph::diff($this->before, $this->after);
 
         // remove etag triples
-        foreach (['removals' => $removals, 'additions' => $additions] as $name => $graph) {
-            foreach ($graph as $uri => $properties) {
-                if (isset($properties['http://schemas.talis.com/2005/dir/schema#etag'])) {
-                    unset(${$name}[$uri]['http://schemas.talis.com/2005/dir/schema#etag']);
-                    if (count(${$name}[$uri]) === 0) {
-                        unset(${$name}[$uri]);
-                    }
+        foreach ($removals as $uri => $properties) {
+            if (isset($properties['http://schemas.talis.com/2005/dir/schema#etag'])) {
+                unset($removals[$uri]['http://schemas.talis.com/2005/dir/schema#etag']);
+                if (count($removals[$uri]) === 0) {
+                    unset($removals[$uri]);
+                }
+            }
+        }
+
+        foreach ($additions as $uri => $properties) {
+            if (isset($properties['http://schemas.talis.com/2005/dir/schema#etag'])) {
+                unset($additions[$uri]['http://schemas.talis.com/2005/dir/schema#etag']);
+                if (count($additions[$uri]) === 0) {
+                    unset($additions[$uri]);
                 }
             }
         }
@@ -158,7 +155,7 @@ class ChangeSet extends ExtendedGraph
         $reifiedAdditions = ExtendedGraph::reify($additions, 'Add');
         foreach ($reifiedAdditions as $nodeID => $props) {
             $subject = $props['http://www.w3.org/1999/02/22-rdf-syntax-ns#subject'][0]['value'];
-            if (in_array($subject, $subjectIndex)) {
+            if (is_string($subject) && in_array($subject, $subjectIndex)) {
                 $csID = $csIndex[$subject];
                 $this->addT($csID, $CSNS . 'addition', $nodeID, 'bnode');
             }
@@ -177,7 +174,7 @@ class ChangeSet extends ExtendedGraph
         $reifiedRemovals = ExtendedGraph::reify($removals, 'Remove');
         foreach ($reifiedRemovals as $nodeID => $props) {
             $subject = $props['http://www.w3.org/1999/02/22-rdf-syntax-ns#subject'][0]['value'];
-            if (in_array($subject, $subjectIndex)) {
+            if (is_string($subject) && in_array($subject, $subjectIndex)) {
                 $csID = $csIndex[$subject];
                 $this->addT($csID, $CSNS . 'removal', $nodeID, 'bnode');
             }
@@ -189,10 +186,10 @@ class ChangeSet extends ExtendedGraph
     /**
      * adds a triple to the internal simpleIndex holding all the changesets and statements.
      *
-     * @param TripleSubject                      $s      Subject URI
-     * @param TriplePredicate                    $p      Predicate URI
-     * @param string|TripleObject|TripleObject[] $o      Object URI or literal value
-     * @param ObjectType                         $o_type Object type (bnode, uri, literal)
+     * @param TripleSubject                           $s      Subject URI
+     * @param TriplePredicate                         $p      Predicate URI
+     * @param ObjectValue|TripleObject|TripleObject[] $o      Object URI or literal value, a single triple object, or a list of triple objects
+     * @param ObjectType                              $o_type Object type (bnode, uri, literal)
      *
      * @author Keith
      */
@@ -202,9 +199,14 @@ class ChangeSet extends ExtendedGraph
             foreach ($o as $obj) {
                 $this->addT($s, $p, $obj);
             }
+        } elseif (is_array($o)) {
+            // PHPStan cannot discriminate a single triple object from a list of
+            // triple objects, so assert what the isset() check above ruled out.
+            /** @var TripleObject $tripleObject */
+            $tripleObject = $o;
+            $this->_index[$s][$p][] = $tripleObject;
         } else {
-            $obj = is_array($o) ? $o : ['value' => $o, 'type' => $o_type];
-            $this->_index[$s][$p][] = $obj;
+            $this->_index[$s][$p][] = ['value' => $o, 'type' => $o_type];
         }
     }
 
@@ -213,7 +215,9 @@ class ChangeSet extends ExtendedGraph
         /** @var \ARC2_RDFSerializer $ser */
         $ser = \ARC2::getRDFXMLSerializer();
 
-        return $ser->getSerializedIndex($this->_index);
+        $serialized = $ser->getSerializedIndex($this->_index);
+
+        return is_string($serialized) ? $serialized : '';
     }
 
     public function to_rdfxml(): string
@@ -236,15 +240,18 @@ class ChangeSet extends ExtendedGraph
 
     /**
      * Returns a unique array of the subjects of change in this changeset.
+     *
+     * @return string[]
      */
     public function get_subjects_of_change(): array
     {
         $subjects = [];
-
-        /** @noinspection PhpParamsInspection */
-        $changes = $this->get_subjects_of_type($this->qname_to_uri('cs:ChangeSet'));
+        $changes = $this->get_subjects_of_type((string) $this->qname_to_uri('cs:ChangeSet'));
         foreach ($changes as $change) {
-            $subjects[] = $this->get_first_resource($change, $this->qname_to_uri('cs:subjectOfChange'));
+            $subjectOfChange = $this->get_first_resource($change, (string) $this->qname_to_uri('cs:subjectOfChange'));
+            if ($subjectOfChange !== null) {
+                $subjects[] = $subjectOfChange;
+            }
         }
 
         return array_unique($subjects);

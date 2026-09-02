@@ -131,6 +131,7 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
         $this->assertDocumentDoesNotHaveProperty(['r' => $subjectTwo, 'c' => 'http://talisaspire.com/'], _LOCKED_FOR_TRANS_TS, $this->tripod);
 
         $transaction = $mockTripodUpdate->getTransactionLog()->getTransaction($mockTransactionId);
+        $this->assertNotNull($transaction);
         $this->assertEquals('Did not obtain locks on documents', $transaction['error']['reason']);
         $this->assertEquals('failed', $transaction['status']);
     }
@@ -190,6 +191,7 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
         $this->assertDocumentDoesNotHaveProperty(['r' => $subjectTwo, 'c' => 'http://talisaspire.com/'], _LOCKED_FOR_TRANS_TS, $this->tripod);
 
         $transaction = $mockTripodUpdate->getTransactionLog()->getTransaction($mockTransactionId);
+        $this->assertNotNull($transaction);
         $this->assertEquals('Did not obtain locks on documents', $transaction['error']['reason']);
         $this->assertEquals('failed', $transaction['status']);
     }
@@ -388,6 +390,7 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
         $this->assertDocumentDoesNotHaveProperty(['r' => $subjectTwo, 'c' => 'http://talisaspire.com/'], _LOCKED_FOR_TRANS_TS, $this->tripod);
 
         $transaction = $mockTripodUpdate->getTransactionLog()->getTransaction($mockTransactionId);
+        $this->assertNotNull($transaction);
         $this->assertEquals('Exception throw by mock test during applychangeset', $transaction['error']['reason']);
         $this->assertEquals('failed', $transaction['status']);
     }
@@ -400,11 +403,11 @@ class MongoTripodTransactionRollbackTest extends MongoTripodTestBase
      * returns an empty array. Have to do this because I want to mock the behavour of lockSingleDocument so I can throw an error for one subject
      * but allow it go through normally for another which you cant do with a mock, hence this hack!
      *
-     * @param mixed $s
-     * @param mixed $transactionId
-     * @param mixed $context
+     * @param string|null $s
+     * @param string      $transactionId
+     * @param string      $context
      *
-     * @return array
+     * @return array|false|null
      */
     public function lockSingleDocumentCauseFailureCallback($s, $transactionId, $context)
     {

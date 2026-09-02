@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Tripod\Mongo;
 
 use Tripod\Exceptions\Exception;
+use Tripod\Exceptions\LabellerException;
 use Tripod\ExtendedGraph;
 
 require_once TRIPOD_DIR . 'mongo/MongoTripodConstants.php';
 
+/**
+ * @phpstan-import-type TripleObject from ExtendedGraph
+ */
 class MongoGraph extends ExtendedGraph
 {
     /**
@@ -22,6 +26,20 @@ class MongoGraph extends ExtendedGraph
     public function __construct()
     {
         $this->_labeller = new Labeller();
+    }
+
+    /**
+     * Convert a QName to a URI using registered namespace prefixes. Unlike the base graph
+     * this uses the Mongo labeller, which throws for unresolvable qnames instead of
+     * returning null, so the result is always a string.
+     *
+     * @return ($qName is null ? null : string)
+     *
+     * @throws LabellerException
+     */
+    public function qname_to_uri(?string $qName): ?string
+    {
+        return $this->_labeller->qname_to_uri($qName);
     }
 
     /**
@@ -86,8 +104,6 @@ class MongoGraph extends ExtendedGraph
 
     /**
      * Returns a mongo-ready doc for views, which can have multiple graphs in the same doc.
-     *
-     * @return array<string, mixed>
      */
     public function to_tripod_view_array(string $docId, ?string $context): array
     {
@@ -109,8 +125,6 @@ class MongoGraph extends ExtendedGraph
     }
 
     /**
-     * @param array<string, mixed> $tarray
-     *
      * @throws Exception
      */
     private function add_tarray_to_index(array $tarray): void
@@ -144,7 +158,7 @@ class MongoGraph extends ExtendedGraph
     /**
      * Convert from Tripod value object format (comapct) to ExtendedGraph format (verbose).
      *
-     * @param array<string, mixed> $mongoValueObject
+     * @return TripleObject[]
      */
     private function toGraphValueObject(array $mongoValueObject): array
     {
@@ -178,19 +192,14 @@ class MongoGraph extends ExtendedGraph
                             continue;
                         }
 
-                        $valueTypeLabel = 'literal';
+                        $simpleGraphValueObject[] = ['type' => 'literal', 'value' => $value];
                     } else {
                         if (!$this->isValidResource($value)) {
                             continue;
                         }
 
-                        $valueTypeLabel = 'uri';
+                        $simpleGraphValueObject[] = ['type' => 'uri', 'value' => $this->_labeller->qname_to_alias($value)];
                     }
-
-                    $simpleGraphValueObject[] = [
-                        'type' => $valueTypeLabel,
-                        'value' => ($type == VALUE_URI) ? $this->_labeller->qname_to_alias($value) : $value,
-                    ];
                 }
             }
         }
@@ -201,8 +210,6 @@ class MongoGraph extends ExtendedGraph
 
     /**
      * Convert from ExtendedGraph value object format (verbose) to Tripod format (compact).
-     *
-     * @param array<string, mixed> $simpleGraphValueObject
      */
     private function toMongoTripodValueObject(array $simpleGraphValueObject): array
     {

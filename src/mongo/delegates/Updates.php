@@ -52,7 +52,7 @@ class Updates extends DriverBase
     private int $retriesToGetLock;
 
     /**
-     * @var array{OP_VIEWS: bool, OP_TABLES: bool, OP_SEARCH: bool}
+     * @var array<string, bool> keyed by OP_VIEWS/OP_TABLES/OP_SEARCH; OP_SEARCH is absent when no search provider is configured
      */
     private array $async;
 
@@ -77,17 +77,19 @@ class Updates extends DriverBase
             'readPreference' => ReadPreference::PRIMARY_PREFERRED,
             'retriesToGetLock' => 20,
         ], $opts);
-        $this->readPreference = $opts['readPreference'];
+        $this->readPreference = is_string($opts['readPreference']) && $opts['readPreference'] !== ''
+            ? $opts['readPreference']
+            : ReadPreference::PRIMARY_PREFERRED;
         $this->config = $this->getConfigInstance();
 
         // default context
-        $this->defaultContext = $opts['defaultContext'];
+        $this->defaultContext = is_string($opts['defaultContext']) ? $opts['defaultContext'] : null;
 
         // max retries to get lock
-        $this->retriesToGetLock = $opts['retriesToGetLock'];
+        $this->retriesToGetLock = is_int($opts['retriesToGetLock']) ? $opts['retriesToGetLock'] : 20;
 
         // fill in and default any missing keys for $async array
-        $async = $opts[OP_ASYNC];
+        $async = is_array($opts[OP_ASYNC]) ? $opts[OP_ASYNC] : [];
         if (!array_key_exists(OP_VIEWS, $async)) {
             $async[OP_VIEWS] = false;
         }
@@ -107,13 +109,20 @@ class Updates extends DriverBase
 
         // If a custom queue name was specified, store it
         if (array_key_exists(OP_QUEUE, $async)) {
-            $this->queueName = $async[OP_QUEUE];
+            $this->queueName = is_string($async[OP_QUEUE]) ? $async[OP_QUEUE] : null;
             unset($async[OP_QUEUE]);
         }
 
-        $this->async = $async;
+        $asyncFlags = [];
+        foreach ($async as $op => $isAsync) {
+            if (is_string($op)) {
+                $asyncFlags[$op] = (bool) $isAsync;
+            }
+        }
 
-        if (isset($opts['statsConfig'])) {
+        $this->async = $asyncFlags;
+
+        if (isset($opts['statsConfig']) && is_array($opts['statsConfig'])) {
             $this->statsConfig = $opts['statsConfig'];
         }
     }
@@ -378,7 +387,10 @@ class Updates extends DriverBase
 
         foreach ($hooks as $hook) {
             try {
-                call_user_func([$hook, $fn], $args);
+                $hookFn = [$hook, $fn];
+                if (is_callable($hookFn)) {
+                    call_user_func($hookFn, $args);
+                }
             } catch (\Exception $e) {
                 // don't let rabid hooks stop tripod
                 static::getLogger()->error('Hook ' . get_class($hook) . sprintf(' threw exception %s, continuing', $e->getMessage()));
@@ -399,9 +411,9 @@ class Updates extends DriverBase
         $dbPref = $dbReadPref->getModeString();
         $dbTagsets = $dbReadPref->getTagsets();
 
-        $this->originalDbReadPreference = $this->db->getReadPreference()->getModeString();
+        $this->originalDbReadPreference = $dbPref;
         if ($dbPref !== ReadPreference::PRIMARY) {
-            $this->db = $this->db->withOptions(['readPreference' => new ReadPreference(ReadPreference::PRIMARY, $dbTagsets)]);
+            $this->db = $this->getDatabase()->withOptions(['readPreference' => new ReadPreference(ReadPreference::PRIMARY, $dbTagsets)]);
         }
 
         /** @var ReadPreference $collReadPref */
@@ -412,7 +424,7 @@ class Updates extends DriverBase
         // Set collection preference
         $this->originalCollectionReadPreference = $collPref;
         if ($collPref !== ReadPreference::PRIMARY) {
-            $this->collection = $this->collection->withOptions(['readPreference' => new ReadPreference(ReadPreference::PRIMARY, $collTagsets)]);
+            $this->collection = $this->getCollection()->withOptions(['readPreference' => new ReadPreference(ReadPreference::PRIMARY, $collTagsets)]);
         }
     }
 
@@ -421,12 +433,12 @@ class Updates extends DriverBase
      */
     protected function resetOriginalReadPreference(): void
     {
-        $dbReadPref = $this->db->getReadPreference();
+        $dbReadPref = $this->getDatabase()->getReadPreference();
         if ($this->originalDbReadPreference !== $dbReadPref->getModeString()) {
             $pref = $this->originalDbReadPreference ?: $this->readPreference;
             $dbTagsets = $dbReadPref->getTagsets();
 
-            $this->db = $this->db->withOptions([
+            $this->db = $this->getDatabase()->withOptions([
                 'readPreference' => new ReadPreference($pref, $dbTagsets),
             ]);
         }
@@ -436,7 +448,7 @@ class Updates extends DriverBase
         if ($this->originalCollectionReadPreference !== $collReadPref->getModeString()) {
             $pref = $this->originalCollectionReadPreference ?: $this->readPreference;
             $collTagsets = $collReadPref->getTagsets();
-            $this->collection = $this->collection->withOptions([
+            $this->collection = $this->getCollection()->withOptions([
                 'readPreference' => new ReadPreference($pref, $collTagsets),
             ]);
         }
@@ -625,7 +637,7 @@ class Updates extends DriverBase
     /**
      * Adds/updates/deletes the graph in the database.
      *
-     * @return array<string, mixed[]|string>
+     * @return array{newCBDs: list<array>, subjectsAndPredicatesOfChange: array<string, list<string>>, transaction_id: string}
      *
      * @throws \Exception
      */
@@ -634,7 +646,6 @@ class Updates extends DriverBase
         $subjectsAndPredicatesOfChange = [];
         if (in_array($this->getCollection()->getCollectionName(), $this->getConfigInstance()->getPods($this->getStoreName()))) {
             // how many subjects of change?
-            /** @noinspection PhpParamsInspection */
             $changes = $cs->get_subjects_of_type($this->labeller->qname_to_uri('cs:ChangeSet'));
 
             // gather together all the updates (we'll apply them later)....
@@ -644,6 +655,9 @@ class Updates extends DriverBase
 
             foreach ($changes as $changeUri) {
                 $subjectOfChange = $cs->get_first_resource($changeUri, $this->labeller->qname_to_uri('cs:subjectOfChange'));
+                if ($subjectOfChange === null) {
+                    throw new Exception('ChangeSet ' . $changeUri . ' has no cs:subjectOfChange');
+                }
                 if (!array_key_exists($subjectOfChange, $subjectsAndPredicatesOfChange)) {
                     $subjectsAndPredicatesOfChange[$subjectOfChange] = [];
                 }
@@ -780,6 +794,8 @@ class Updates extends DriverBase
      * Normalize our subjects and predicates of change to use aliases rather than fq uris.
      *
      * @param array<string, list<string>> $subjectsAndPredicatesOfChange
+     *
+     * @return array<string, list<string>>
      */
     protected function subjectsAndPredicatesOfChangeUrisToAliases(array $subjectsAndPredicatesOfChange): array
     {
@@ -803,7 +819,7 @@ class Updates extends DriverBase
     protected function getDocumentForUpdate(string $subjectOfChange, string $contextAlias, array $cbds): ?array
     {
         foreach ($cbds as $c) {
-            if ($c[_ID_KEY] == [_ID_RESOURCE => $this->labeller->uri_to_alias($subjectOfChange), _ID_CONTEXT => $contextAlias]) {
+            if (is_array($c) && $c[_ID_KEY] == [_ID_RESOURCE => $this->labeller->uri_to_alias($subjectOfChange), _ID_CONTEXT => $contextAlias]) {
                 return $c;
             }
         }
@@ -822,13 +838,12 @@ class Updates extends DriverBase
             $opSubjects = $composite->getImpactedSubjects($subjectsAndPredicatesOfChange, $contextAlias);
             if (!empty($opSubjects)) {
                 foreach ($opSubjects as $subject) {
-                    // @var $subject ImpactedSubject
                     $t = new Timer();
                     $t->start();
 
                     // Call update on the subject, rather than the composite directly, in case the change was to
                     // another pod
-                    $subject->update($subject);
+                    $subject->update();
 
                     $t->stop();
 
@@ -889,8 +904,9 @@ class Updates extends DriverBase
     /**
      * Attempts to lock all subjects of change in a pass, if failed unlocked locked subjects and do a retry of all again.
      *
-     * @param array  $subjectsOfChange array of the subjects that are part of this transaction
-     * @param string $transaction_id   id for this transaction
+     * @param array    $subjectsOfChange array of the subjects that are part of this transaction
+     * @param string   $transaction_id   id for this transaction
+     * @param string[] $subjectsOfChange
      *
      * @return array|null returns an array of CBDs, each CBD is the version at the time at which the lock was attained
      *
@@ -1095,8 +1111,6 @@ class Updates extends DriverBase
 
     /**
      * Saves a transaction.
-     *
-     * @param array<string, mixed> $transaction
      */
     protected function applyTransaction(array $transaction): void
     {
@@ -1123,8 +1137,6 @@ class Updates extends DriverBase
 
     /**
      * Creates a new Driver instance.
-     *
-     * @param array<string, mixed> $data
      */
     protected function getTripod(array $data): Driver
     {
@@ -1138,9 +1150,8 @@ class Updates extends DriverBase
     /**
      * This proxy method allows us to mock updates against $this->collection.
      *
-     * @param array|object         $query
-     * @param array|object         $update
-     * @param array<string, mixed> $options
+     * @param array|object $query
+     * @param array|object $update
      */
     protected function updateCollection($query, $update, array $options): UpdateResult
     {
@@ -1196,7 +1207,7 @@ class Updates extends DriverBase
     /**
      * Helper method to group changes for $changeUri of a given type by namespaced predicate.
      *
-     * @param array|string $changePredicate
+     * @param string|string[] $changePredicate
      *
      * @throws Exception
      */
@@ -1206,14 +1217,15 @@ class Updates extends DriverBase
 
         $changesGroupedByNsPredicate = [];
         foreach ($changes as $c) {
-            $predicate = $cs->get_first_resource($c['value'], $this->labeller->qname_to_uri('rdf:predicate'));
-            $nsPredicate = $this->labeller->uri_to_qname($predicate);
+            $changeNode = (string) $c['value'];
+            $predicate = $cs->get_first_resource($changeNode, $this->labeller->qname_to_uri('rdf:predicate'));
+            $nsPredicate = (string) $this->labeller->uri_to_qname($predicate);
 
             if (!array_key_exists($nsPredicate, $changesGroupedByNsPredicate)) {
                 $changesGroupedByNsPredicate[$nsPredicate] = [];
             }
 
-            $object = $cs->get_subject_property_values($c['value'], $this->labeller->qname_to_uri('rdf:object'));
+            $object = $cs->get_subject_property_values($changeNode, $this->labeller->qname_to_uri('rdf:object'));
             if (count($object) !== 1) {
                 $this->getLogger()->error('Expecting object array with exactly 1 element', $object);
 
@@ -1221,7 +1233,7 @@ class Updates extends DriverBase
             }
 
             $valueType = ($object[0]['type'] == 'uri') ? VALUE_URI : VALUE_LITERAL;
-            $value = ($valueType === VALUE_URI) ? $this->labeller->uri_to_alias($object[0]['value']) : $object[0]['value'];
+            $value = ($valueType === VALUE_URI) ? $this->labeller->uri_to_alias((string) $object[0]['value']) : $object[0]['value'];
 
             $changesGroupedByNsPredicate[$nsPredicate][] = [$valueType => $value];
         }
@@ -1231,9 +1243,6 @@ class Updates extends DriverBase
 
     /**
      * Helper method to add operator to a set of existing changes ready to be sent to Mongo.
-     *
-     * @param array<string, mixed>                          $changes
-     * @param array<string, int>|array<string, UTCDateTime> $kvp
      */
     private function addOperatorToChange(array &$changes, string $operator, array $kvp): void
     {
@@ -1255,7 +1264,7 @@ class Updates extends DriverBase
     }
 
     /**
-     * @return int[]|string[]
+     * @return string[]
      */
     private function getAsyncOperations(): array
     {
@@ -1270,7 +1279,7 @@ class Updates extends DriverBase
     }
 
     /**
-     * @return int[]|string[]
+     * @return string[]
      */
     private function getSyncOperations(): array
     {

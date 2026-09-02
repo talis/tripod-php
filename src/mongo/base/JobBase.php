@@ -70,13 +70,18 @@ abstract class JobBase extends Job
 
     public function tearDown(): void
     {
+        $timer = $this->timer;
+        if ($timer === null) {
+            return;
+        }
+
         // stat time taken to process item, from time it was created (queued)
-        $this->timer->stop();
+        $timer->stop();
         $this->debugLog(
             '[JOBID ' . $this->job->payload['id'] . '] ' . get_class($this)
-                . sprintf('::perform() done in %sms', $this->timer->result())
+                . sprintf('::perform() done in %sms', $timer->result())
         );
-        $this->getStat()->timer($this->getStatTimerSuccessKey(), $this->timer->result());
+        $this->getStat()->timer($this->getStatTimerSuccessKey(), $timer->result());
     }
 
     /**
@@ -125,11 +130,13 @@ abstract class JobBase extends Job
             $this->getStatsConfig();
         }
 
-        if ($this->stat == null) {
-            $this->setStat($this->getStatFromStatFactory());
+        $stat = $this->stat;
+        if ($stat == null) {
+            $stat = $this->getStatFromStatFactory();
+            $this->setStat($stat);
         }
 
-        return $this->stat;
+        return $stat;
     }
 
     public function setStat(ITripodStat $stat): void
@@ -231,10 +238,10 @@ abstract class JobBase extends Job
     }
 
     /**
-     * @param string               $queueName     Queue name
-     * @param string               $class         Class name
-     * @param array<string, mixed> $data          Job arguments
-     * @param int                  $retryAttempts If queue fails, retry x times before throwing an exception
+     * @param string $queueName     Queue name
+     * @param string $class         Class name
+     * @param array  $data          Job arguments
+     * @param int    $retryAttempts If queue fails, retry x times before throwing an exception
      *
      * @return string A tracking token for the submitted job
      *
@@ -275,13 +282,15 @@ abstract class JobBase extends Job
     /**
      * Actually enqueues the job with Resque. Returns a tracking token. For mocking.
      *
-     * @param array<string, mixed> $data
-     *
      * @return false|string
      */
     protected function enqueue(string $queueName, string $class, array $data)
     {
-        return Resque::enqueue($queueName, $class, $data, true);
+        $token = Resque::enqueue($queueName, $class, $data, true);
+
+        // Resque's docblock claims bool|string, but a job ID string is returned whenever
+        // the job is created; false only when a beforeEnqueue hook cancels creation.
+        return is_string($token) ? $token : false;
     }
 
     /**
@@ -358,13 +367,16 @@ abstract class JobBase extends Job
             $this->setTripodConfig();
         }
 
-        return $this->tripodConfig;
+        $tripodConfig = $this->tripodConfig;
+        if ($tripodConfig === null) {
+            throw new \RuntimeException('Tripod config could not be initialised for job');
+        }
+
+        return $tripodConfig;
     }
 
     /**
      * Tripod options to pass between jobs.
-     *
-     * @return array<string, mixed>
      */
     protected function getTripodOptions(): array
     {
@@ -379,8 +391,6 @@ abstract class JobBase extends Job
 
     /**
      * Convenience method to pass config to job data.
-     *
-     * @return array<string, mixed>
      */
     protected function generateConfigJobArgs(): array
     {
@@ -402,7 +412,7 @@ abstract class JobBase extends Job
      */
     private function setStatsConfig(): void
     {
-        if (isset($this->args['statsConfig'])) {
+        if (isset($this->args['statsConfig']) && is_array($this->args['statsConfig'])) {
             $this->statsConfig = $this->args['statsConfig'];
         }
     }

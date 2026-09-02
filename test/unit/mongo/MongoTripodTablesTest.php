@@ -8,7 +8,6 @@ use MongoDB\DeleteResult;
 use MongoDB\Driver\Cursor;
 use MongoDB\Driver\Exception\BulkWriteException;
 use MongoDB\Driver\Manager;
-use MongoDB\Model\BSONDocument;
 use MongoDB\UpdateResult;
 use Tripod\Config;
 use Tripod\Exceptions\ConfigException;
@@ -333,7 +332,7 @@ class MongoTripodTablesTest extends MongoTripodTestBase
         $count = 234;
         $docs = [];
 
-        $configOptions = json_decode(file_get_contents(__DIR__ . '/data/config.json'), true);
+        $configOptions = $this->decodeJsonFile(__DIR__ . '/data/config.json');
 
         for ($i = 0; $i < $count; $i++) {
             $docs[] = ['_id' => ['r' => 'tenantLists:batch' . $i, 'c' => 'tenantContexts:DefaultGraph']];
@@ -706,7 +705,9 @@ class MongoTripodTablesTest extends MongoTripodTestBase
         $this->assertEquals(1, $rows['head']['count'], 'Expected one row');
 
         // Lowercasing a mongodate object should be the same as running a __toString() on the date object
-        $this->assertEquals($rows['results'][0]['mongoDate']->__toString(), $rows['results'][0]['lowercaseDate']);
+        $mongoDate = $rows['results'][0]['mongoDate'];
+        $this->assertInstanceOf(UTCDateTime::class, $mongoDate);
+        $this->assertEquals($mongoDate->__toString(), $rows['results'][0]['lowercaseDate']);
     }
 
     /**
@@ -955,7 +956,6 @@ class MongoTripodTablesTest extends MongoTripodTestBase
 
         // Walk through the processSyncOperations process manually for tables
 
-        /** @var Tripod\Mongo\Composites\Tables $table */
         $table = $tripod->getComposite(OP_TABLES);
         $this->assertInstanceOf(Tripod\Mongo\Composites\Tables::class, $table);
 
@@ -1821,14 +1821,15 @@ class MongoTripodTablesTest extends MongoTripodTestBase
             ],
         ];
         $doc = new Tables();
-        $this->assertInstanceOf(BSONDocument::class, $doc);
         $this->assertEquals([], $doc->getArrayCopy());
         $doc = new Tables($dbDoc);
         $this->assertEquals('XMEN-004', $doc['code']);
-        $this->assertEquals('http://talis.com/modules/xmen-004', $doc['_id']['r']);
+        $id = $doc['_id'];
+        $this->assertIsArray($id);
+        $this->assertEquals('http://talis.com/modules/xmen-004', $id['r']);
         $this->assertArrayNotHasKey('_cts', $doc);
         $this->assertArrayNotHasKey('_impactIndex', $doc);
-        $this->assertArrayNotHasKey('type', $doc['_id']);
+        $this->assertArrayNotHasKey('type', $id);
     }
 
     public function testGetTableRowsNoCount(): void

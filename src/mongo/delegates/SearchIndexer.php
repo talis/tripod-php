@@ -20,7 +20,7 @@ class SearchIndexer extends CompositeBase
 {
     private Driver $tripod;
 
-    private ?ISearchProvider $searchProvider = null;
+    private ISearchProvider $searchProvider;
 
     /**
      * @throws SearchException
@@ -145,6 +145,9 @@ class SearchIndexer extends CompositeBase
         // default the context
         $contextAlias = $this->getContextAlias($context);
         $spec = $this->getConfigInstance()->getSearchDocumentSpecification($this->getStoreName(), $searchDocumentType);
+        if ($spec === null) {
+            throw new SearchException('Could not find a search document specification for ' . $searchDocumentType);
+        }
 
         if ($resourceUri) {
             $this->generateAndIndexSearchDocuments($resourceUri, $contextAlias, $spec['from'], $searchDocumentType);
@@ -159,10 +162,13 @@ class SearchIndexer extends CompositeBase
         if (isset($spec[_ID_TYPE])) {
             if (is_array($spec[_ID_TYPE])) {
                 foreach ($spec[_ID_TYPE] as $type) {
+                    if (!is_string($type)) {
+                        continue;
+                    }
                     $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($type)];
                     $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($type)];
                 }
-            } else {
+            } elseif (is_string($spec[_ID_TYPE])) {
                 $types[] = ['rdf:type.u' => $this->labeller->qname_to_alias($spec[_ID_TYPE])];
                 $types[] = ['rdf:type.u' => $this->labeller->uri_to_alias($spec[_ID_TYPE])];
             }
@@ -234,9 +240,6 @@ class SearchIndexer extends CompositeBase
         return $stat;
     }
 
-    /**
-     * @return mixed[]
-     */
     public function findImpactedComposites(array $resourcesAndPredicates, string $contextAlias): array
     {
         return $this->getSearchProvider()->findImpactedDocuments($resourcesAndPredicates, $contextAlias);
@@ -247,7 +250,7 @@ class SearchIndexer extends CompositeBase
         return $this->getSearchProvider()->deleteSearchDocumentsByTypeId($typeId);
     }
 
-    protected function getSearchProvider(): ?ISearchProvider
+    protected function getSearchProvider(): ISearchProvider
     {
         return $this->searchProvider;
     }
@@ -284,7 +287,7 @@ class SearchIndexer extends CompositeBase
         }
 
         $provider = $config->getSearchProviderClassName($tripod->getStoreName());
-        if (class_exists($provider)) {
+        if ($provider !== null && is_a($provider, ISearchProvider::class, true)) {
             $this->searchProvider = new $provider($tripod);
         } else {
             throw new SearchException(

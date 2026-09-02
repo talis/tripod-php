@@ -123,12 +123,11 @@ abstract class CompositeBase extends DriverBase implements IComposite
 
     /**
      * Returns an array of the rdf types that will trigger the specification.
+     *
+     * @return string[]
      */
     abstract public function getTypesInSpecifications(): array;
 
-    /**
-     * @return mixed[]
-     */
     abstract public function findImpactedComposites(array $resourcesAndPredicates, string $contextAlias): array;
 
     /**
@@ -139,6 +138,8 @@ abstract class CompositeBase extends DriverBase implements IComposite
     /**
      * Test if the a particular type appears in the array of types associated with a particular spec and that the changeset
      * includes rdf:type (or is empty, meaning addition or deletion vs. update).
+     *
+     * @param string[] $validTypes
      */
     protected function checkIfTypeShouldTriggerOperation(string $rdfType, array $validTypes, array $subjectPredicates): bool
     {

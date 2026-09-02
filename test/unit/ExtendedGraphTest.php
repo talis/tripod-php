@@ -14,7 +14,7 @@ class ExtendedGraphTest extends TestCase
     /**
      * @dataProvider addValidValueToLiteralResultsInTriple_Provider
      *
-     * @param mixed $value
+     * @param bool|float|int|string $value
      */
     public function testAddValidValueToLiteralResultsInTriple($value): void
     {
@@ -68,6 +68,7 @@ class ExtendedGraphTest extends TestCase
         $this->expectExceptionMessageMatches('/^The subject is invalid$|Argument #?1.+must be of (the )?type string.+/');
 
         $graph = new ExtendedGraph();
+        // @phpstan-ignore argument.type (deliberately invalid input; a TypeError or Tripod exception is expected)
         $graph->add_resource_triple($value, 'http://some/predicate', 'http://someplace.com');
     }
 
@@ -94,6 +95,7 @@ class ExtendedGraphTest extends TestCase
         $this->expectExceptionMessageMatches('/^The predicate is invalid$|Argument #?2.+must be of (the )?type string.+/');
 
         $graph = new ExtendedGraph();
+        // @phpstan-ignore argument.type (deliberately invalid input; a TypeError or Tripod exception is expected)
         $graph->add_resource_triple('http://some/subject/1', $value, 'http://someplace.com');
     }
 
@@ -131,6 +133,7 @@ class ExtendedGraphTest extends TestCase
         $graph = new ExtendedGraph();
 
         try {
+            // @phpstan-ignore argument.type (deliberately invalid input; a TypeError is expected and handled)
             $addResult = $graph->add_resource_triple('http://some/subject/1', 'http://some/predicate', $value);
         } catch (TypeError $typeError) {
             $addResult = false;
@@ -165,6 +168,7 @@ class ExtendedGraphTest extends TestCase
         $this->expectExceptionMessageMatches('/^The subject is invalid$|Argument #?1.+must be of (the )?type string.+/');
 
         $graph = new ExtendedGraph();
+        // @phpstan-ignore argument.type (deliberately invalid input; a TypeError or Tripod exception is expected)
         $graph->add_resource_triple($value, 'http://some/predicate', 'http://someplace.com');
     }
 
@@ -191,6 +195,7 @@ class ExtendedGraphTest extends TestCase
         $this->expectExceptionMessageMatches('/^The predicate is invalid$|Argument #?2.+must be of (the )?type string.+/');
 
         $graph = new ExtendedGraph();
+        // @phpstan-ignore argument.type (deliberately invalid input; a TypeError or Tripod exception is expected)
         $graph->add_resource_triple('http://some/subject/1', $value, 'http://someplace.com');
     }
 
@@ -754,6 +759,35 @@ class ExtendedGraphTest extends TestCase
         $this->assertSame([$sub1, $sub3], $sequenceValues, 'There should be two sequence values, in the correct order');
         $this->assertTrue($graph->has_resource_triple($s, ExtendedGraph::rdf . '_1', $sub1));
         $this->assertTrue($graph->has_resource_triple($s, ExtendedGraph::rdf . '_2', $sub3));
+    }
+
+    public function testRemoveResourceFromMixedContentSequence(): void
+    {
+        $graph = new ExtendedGraph();
+
+        $s = 'http://sequence';
+        $sub1 = 'http://sub1';
+        $sub2 = 'http://sub2';
+        $sub3 = 'http://sub3';
+
+        $graph->add_resource_to_sequence($s, $sub1);
+        $graph->add_literal_to_sequence($s, 42);
+        $graph->add_literal_to_sequence($s, 3.14);
+        $graph->add_literal_to_sequence($s, false);
+        $graph->add_literal_to_sequence($s, 'foo');
+        $graph->add_resource_to_sequence($s, $sub2);
+        $graph->add_resource_to_sequence($s, $sub3);
+
+        $graph->remove_resource_from_sequence($s, $sub2);
+
+        $sequenceValues = $graph->get_sequence_values($s);
+        $this->assertSame([$sub1, 42, 3.14, false, 'foo', $sub3], $sequenceValues, 'There should be six sequence values, in the correct order');
+        $this->assertTrue($graph->has_resource_triple($s, ExtendedGraph::rdf . '_1', $sub1));
+        $this->assertTrue($graph->has_literal_triple($s, ExtendedGraph::rdf . '_2', 42));
+        $this->assertTrue($graph->has_literal_triple($s, ExtendedGraph::rdf . '_3', 3.14));
+        $this->assertTrue($graph->has_literal_triple($s, ExtendedGraph::rdf . '_4', false));
+        $this->assertTrue($graph->has_literal_triple($s, ExtendedGraph::rdf . '_5', 'foo'));
+        $this->assertTrue($graph->has_resource_triple($s, ExtendedGraph::rdf . '_6', $sub3));
     }
 
     public function testFromGraph(): void

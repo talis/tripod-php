@@ -35,7 +35,7 @@ class TriplesUtil
         foreach ($triples as $triple) {
             $triple = rtrim($triple);
 
-            $parts = preg_split('/\s/', $triple);
+            $parts = $this->splitTriple($triple);
             $subject = trim($parts[0], '><');
             $predicate = trim($parts[1], '><');
             $object = $this->extract_object($parts);
@@ -75,7 +75,7 @@ class TriplesUtil
         foreach ($triples as $triple) {
             $triple = rtrim($triple);
 
-            $parts = preg_split('/\s/', $triple);
+            $parts = $this->splitTriple($triple);
             $subject = trim($parts[0], '><');
             $predicate = trim($parts[1], '><');
             $object = $this->extract_object($parts);
@@ -97,7 +97,7 @@ class TriplesUtil
         foreach ($triples as $triple) {
             $triple = rtrim($triple);
 
-            $parts = preg_split('/\s/', $triple);
+            $parts = $this->splitTriple($triple);
             $predicate = trim($parts[1], '><');
 
             try {
@@ -117,7 +117,7 @@ class TriplesUtil
         foreach ($triples as $triple) {
             $triple = rtrim($triple);
 
-            $parts = preg_split('/\s/', $triple);
+            $parts = $this->splitTriple($triple);
             $object = $this->extract_object($parts);
 
             if ($this->isUri($object)) {
@@ -134,7 +134,7 @@ class TriplesUtil
 
     public function suggestPrefix(string $ns): string
     {
-        $parts = preg_split('/[\/#]/', $ns);
+        $parts = preg_split('/[\/#]/', $ns) ?: [];
         for ($i = count($parts) - 1; $i >= 0; $i--) {
             if (preg_match('~^[a-zA-Z][a-zA-Z0-9\-]+$~', $parts[$i]) && $parts[$i] != 'schema' && $parts[$i] != 'ontology' && $parts[$i] != 'vocab' && $parts[$i] != 'terms' && $parts[$i] != 'ns' && $parts[$i] != 'core' && strlen($parts[$i]) > 3) {
                 return strtolower($parts[$i]);
@@ -150,7 +150,7 @@ class TriplesUtil
         foreach ($triples as $triple) {
             $triple = rtrim($triple);
 
-            $parts = preg_split('/\s/', $triple);
+            $parts = $this->splitTriple($triple);
             $subject = trim($parts[0], '><');
             $predicate = trim($parts[1], '><');
             $object = $this->extract_object($parts);
@@ -175,8 +175,13 @@ class TriplesUtil
             throw new \Exception(sprintf('graph for %s was null', $cbdSubject));
         }
 
+        $cbdDoc = $cbdGraph->to_tripod_array($cbdSubject, $context);
+        if ($cbdDoc === null) {
+            throw new \Exception(sprintf('graph for %s does not contain the subject', $cbdSubject));
+        }
+
         try {
-            $collection->insertOne($cbdGraph->to_tripod_array($cbdSubject, $context), ['w' => 1]);
+            $collection->insertOne($cbdDoc, ['w' => 1]);
             echo '.';
         } catch (\Exception $e) {
             if (preg_match('/E11000/', $e->getMessage())) {
@@ -184,7 +189,7 @@ class TriplesUtil
                 // key already exists, merge it
                 $criteria = [_ID_KEY => [_ID_RESOURCE => $cbdSubject, _ID_CONTEXT => $context]];
                 $existingGraph = new MongoGraph();
-                $existingGraph->add_tripod_array($collection->findOne($criteria));
+                $existingGraph->add_tripod_array($collection->findOne($criteria) ?? []);
                 $existingGraph->add_graph($cbdGraph);
 
                 $collection->updateOne($criteria, ['$set' => $existingGraph->to_tripod_array($cbdSubject, $context)], ['w' => 1]);
@@ -192,7 +197,7 @@ class TriplesUtil
                 // retry
                 echo 'CursorException on update: ' . $e->getMessage() . ", retrying\n";
 
-                $collection->insertOne($cbdGraph->to_tripod_array($cbdSubject, $context), ['w' => 1]);
+                $collection->insertOne($cbdDoc, ['w' => 1]);
             }
         }
     }
@@ -200,6 +205,18 @@ class TriplesUtil
     private function isUri(string $object): bool
     {
         return filter_var($object, FILTER_VALIDATE_URL) !== false;
+    }
+
+    /**
+     * Split an N-Triples line into its whitespace-separated parts.
+     *
+     * @return list<string>
+     */
+    private function splitTriple(string $triple): array
+    {
+        $parts = preg_split('/\s/', $triple);
+
+        return $parts === false ? [] : $parts;
     }
 
     /**
@@ -214,13 +231,13 @@ class TriplesUtil
         $sliced = array_slice($parts, 2);
 
         $str = implode(' ', $sliced);
-        $str = preg_replace('@"[^"]*$@', '', $str); // get rid of xsd typing
+        $str = preg_replace('@"[^"]*$@', '', $str) ?? ''; // get rid of xsd typing
 
         $str = substr($str, 1, strlen($str) - 1); // trim($str, "\"");
 
         $json_string = '{"string":"' . str_replace('\u', '\u', $str) . '"}';
         $json = json_decode($json_string, true);
-        if (!empty($json)) {
+        if (is_array($json) && isset($json['string']) && is_string($json['string'])) {
             return $json['string'];
         }
 

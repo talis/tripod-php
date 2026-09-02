@@ -762,9 +762,9 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
 
         /** @var Tripod\Mongo\Config */
         $mtc = Config::getInstance();
-        $this->assertEquals('myreplicaset', $mtc->getReplicaSetName($mtc->getDefaultDataSourceForStore('tripod_php_testing')));
+        $this->assertEquals('myreplicaset', $mtc->getReplicaSetName((string) $mtc->getDefaultDataSourceForStore('tripod_php_testing')));
 
-        $this->assertNull($mtc->getReplicaSetName($mtc->getDefaultDataSourceForStore('testing_2')));
+        $this->assertNull($mtc->getReplicaSetName((string) $mtc->getDefaultDataSourceForStore('testing_2')));
     }
 
     public function testGetReplicaSetNameNonExistingDatasource(): void
@@ -1006,7 +1006,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getDatabase'])
             ->getMock();
-        $mockConfig->loadConfig(json_decode(file_get_contents(__DIR__ . '/data/config.json'), true));
+        $mockConfig->loadConfig($this->decodeJsonFile(__DIR__ . '/data/config.json'));
         $mockConfig->expects($this->exactly(2))
             ->method('getDatabase')
             ->withConsecutive(
@@ -1132,8 +1132,8 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
 
         foreach (['views', 'search', 'table_rows'] as $type) {
             foreach ($specs[$type] as $spec) {
-                if (!isset($specsForDataSource[$spec['to_data_source']][$type])) {
-                    $specsForDataSource[$spec['to_data_source']][$type] = [];
+                if (!isset($specsForDataSource[$spec['to_data_source']])) {
+                    $specsForDataSource[$spec['to_data_source']] = ['views' => [], 'search' => [], 'table_rows' => []];
                 }
 
                 $specsForDataSource[$spec['to_data_source']][$type][] = $spec['_id'];
@@ -1279,8 +1279,10 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $transactionColletion = $transactionMongo->selectCollection($newConfig['transaction_log']['database'], $newConfig['transaction_log']['collection']);
         $transactionCount = $transactionColletion->count();
         $transactionExampleDocument = $transactionColletion->findOne();
+        $this->assertNotNull($transactionExampleDocument);
         $this->assertEquals(26, $transactionCount);
-        $this->assertStringContainsString('transaction_', (string) $transactionExampleDocument['_id']);
+        $this->assertIsString($transactionExampleDocument['_id']);
+        $this->assertStringContainsString('transaction_', $transactionExampleDocument['_id']);
     }
 
     public function testComputedFieldSpecValidationInvalidFunction(): void
@@ -1684,7 +1686,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getMongoClient'])
             ->getMock();
-        $mockConfig->loadConfig(json_decode(file_get_contents(__DIR__ . '/data/config.json'), true));
+        $mockConfig->loadConfig($this->decodeJsonFile(__DIR__ . '/data/config.json'));
         $mockConfig->expects($this->exactly(1))
             ->method('getMongoClient')
             ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])
@@ -1701,7 +1703,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getMongoClient'])
             ->getMock();
-        $mockConfig->loadConfig(json_decode(file_get_contents(__DIR__ . '/data/config.json'), true));
+        $mockConfig->loadConfig($this->decodeJsonFile(__DIR__ . '/data/config.json'));
         $mockConfig->expects($this->exactly(30))
             ->method('getMongoClient')
             ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])
@@ -1715,7 +1717,7 @@ class MongoTripodConfigUnitTest extends MongoTripodTestBase
         $mockConfig = $this->getMockBuilder(TripodTestConfig::class)
             ->onlyMethods(['getMongoClient'])
             ->getMock();
-        $mockConfig->loadConfig(json_decode(file_get_contents(__DIR__ . '/data/config.json'), true));
+        $mockConfig->loadConfig($this->decodeJsonFile(__DIR__ . '/data/config.json'));
         $mockConfig->expects($this->exactly(5))
             ->method('getMongoClient')
             ->with('mongodb://mongodb:27017/', ['connectTimeoutMS' => 20000])->willReturnOnConsecutiveCalls(

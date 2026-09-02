@@ -12,6 +12,7 @@ use Tripod\ExtendedGraph;
 use Tripod\IDriver;
 use Tripod\IEventHook;
 use Tripod\ISearchProvider;
+use Tripod\ITripodStat;
 use Tripod\Mongo\Composites\SearchIndexer;
 use Tripod\Mongo\Composites\Tables;
 use Tripod\Mongo\Composites\Views;
@@ -26,7 +27,9 @@ class Driver extends DriverBase implements IDriver
     private ?SearchIndexer $searchIndexer = null;
 
     /**
-     * @var array{OP_VIEWS: bool, OP_TABLES: bool, OP_SEARCH: bool}
+     * @var array<string, bool|string> keyed by OP_VIEWS/OP_TABLES/OP_SEARCH (OP_SEARCH is absent when no
+     *                                 search provider is configured); may also carry an OP_QUEUE name, which
+     *                                 the Updates delegate extracts
      */
     private array $async;
 
@@ -37,12 +40,12 @@ class Driver extends DriverBase implements IDriver
     /**
      * Constructor for Driver.
      *
-     * @param array<string, mixed> $opts an Array of options: <ul>
-     *                                   <li>defaultContext: (string) to use where a specific default context is not defined. Default is Null</li>
-     *                                   <li>async: (array) determines the async behaviour of views, tables and search. For each of these array keys, if set to true, generation of these elements will be done asyncronously on save. Default is array(OP_VIEWS=>false,OP_TABLES=>true,OP_SEARCH=>true)</li>
-     *                                   <li>stat: this sets the stats object to use to record statistics around operations performed by Driver. Default is null</li>
-     *                                   <li>readPreference: The Read preference to set for Mongo: Default is ReadPreference::PRIMARY_PREFERRED</li>
-     *                                   <li>retriesToGetLock: Retries to do when unable to get lock on a document, default is 20</li></ul>
+     * @param array $opts an Array of options: <ul>
+     *                    <li>defaultContext: (string) to use where a specific default context is not defined. Default is Null</li>
+     *                    <li>async: (array) determines the async behaviour of views, tables and search. For each of these array keys, if set to true, generation of these elements will be done asyncronously on save. Default is array(OP_VIEWS=>false,OP_TABLES=>true,OP_SEARCH=>true)</li>
+     *                    <li>stat: this sets the stats object to use to record statistics around operations performed by Driver. Default is null</li>
+     *                    <li>readPreference: The Read preference to set for Mongo: Default is ReadPreference::PRIMARY_PREFERRED</li>
+     *                    <li>retriesToGetLock: Retries to do when unable to get lock on a document, default is 20</li></ul>
      */
     public function __construct(string $podName, string $storeName, array $opts = [])
     {
@@ -61,15 +64,28 @@ class Driver extends DriverBase implements IDriver
         $this->labeller = $this->getLabeller();
 
         // default context
-        $this->defaultContext = $opts['defaultContext'];
+        $this->defaultContext = is_string($opts['defaultContext']) ? $opts['defaultContext'] : null;
 
         // max retries to get lock
-        $this->retriesToGetLock = $opts['retriesToGetLock'];
+        $this->retriesToGetLock = is_int($opts['retriesToGetLock']) ? $opts['retriesToGetLock'] : 20;
 
-        $this->collection = $this->config->getCollectionForCBD($storeName, $podName, $opts['readPreference']);
+        $readPreference = is_string($opts['readPreference']) && $opts['readPreference'] !== ''
+            ? $opts['readPreference']
+            : ReadPreference::PRIMARY_PREFERRED;
+
+        $this->collection = $this->config->getCollectionForCBD($storeName, $podName, $readPreference);
 
         // fill in and default any missing keys for $async array. Default is views are sync, tables and search async
-        $async = $opts[OP_ASYNC];
+        $async = [];
+        if (is_array($opts[OP_ASYNC])) {
+            foreach ($opts[OP_ASYNC] as $op => $isAsync) {
+                if (is_string($op)) {
+                    // OP_QUEUE carries a queue name (extracted by the Updates delegate); the rest are flags
+                    $async[$op] = is_string($isAsync) ? $isAsync : (bool) $isAsync;
+                }
+            }
+        }
+
         if (!array_key_exists(OP_VIEWS, $async)) {
             $async[OP_VIEWS] = false;
         }
@@ -89,17 +105,15 @@ class Driver extends DriverBase implements IDriver
 
         $this->async = $async;
 
-        if (isset($opts['stat'])) {
+        if (isset($opts['stat']) && $opts['stat'] instanceof ITripodStat) {
             $this->statsConfig = $opts['stat']->getConfig();
             $this->setStat($opts['stat']);
-        } else {
+        } elseif (is_array($opts['statsConfig'])) {
             $this->statsConfig = $opts['statsConfig'];
         }
 
         // Set the read preference if passed in
-        if ($opts['readPreference']) {
-            $this->readPreference = $opts['readPreference'];
-        }
+        $this->readPreference = $readPreference;
     }
 
     /**
@@ -259,7 +273,7 @@ class Driver extends DriverBase implements IDriver
 
         $provider = $this->config->getSearchProviderClassName($this->storeName);
 
-        if (class_exists($provider)) {
+        if ($provider !== null && class_exists($provider)) {
             $timer = new Timer();
             $timer->start();
 
@@ -283,7 +297,7 @@ class Driver extends DriverBase implements IDriver
      * @param array    $query Mongo query object
      * @param int|null $ttl   acceptable time to live if you're willing to accept a cached version of this request
      *
-     * @return array|int
+     * @return ($groupBy is null ? int : array) counts grouped by the $groupBy field, or a total count
      */
     public function getCount(array $query, ?string $groupBy = null, ?int $ttl = null)
     {
@@ -297,14 +311,15 @@ class Driver extends DriverBase implements IDriver
             $id['groupBy'] = $groupBy;
             $this->debugLog('Looking in cache', ['id' => $id]);
             $candidate = $this->config->getCollectionForTTLCache($this->storeName)->findOne([_ID_KEY => $id]);
-            if (!empty($candidate)) {
+            if (!empty($candidate) && $candidate['created'] instanceof UTCDateTime) {
                 $this->debugLog('Found candidate', ['candidate' => $candidate]);
 
                 $ttlTo = DateUtil::getMongoDate((((int) $candidate['created']->__toString() / 1000) + $ttl) * 1000);
-                if ($ttlTo > DateUtil::getMongoDate()) {
+                $cached = $candidate['results'];
+                if ($ttlTo > DateUtil::getMongoDate() && (is_int($cached) || is_array($cached))) {
                     // cache hit!
                     $this->debugLog('Cache hit', ['id' => $id]);
-                    $results = $candidate['results'];
+                    $results = $cached;
                 } else {
                     // cache miss
                     $this->debugLog('Cache miss', ['id' => $id]);
@@ -318,16 +333,17 @@ class Driver extends DriverBase implements IDriver
                     ['$match' => $query],
                     ['$group' => [_ID_KEY => '$' . $groupBy, 'total' => ['$sum' => 1]]],
                 ];
-                $cursor = $this->collection->aggregate($ops);
+                $cursor = $this->getCollection()->aggregate($ops);
+                $results = [];
                 foreach ($cursor as $doc) {
                     if (!is_array($doc[_ID_KEY])) {
                         $results[$doc[_ID_KEY] ?? ''] = $doc['total'];
                     } else {
-                        $results[implode(';', $doc[_ID_KEY])] = $doc['total'];
+                        $results[implode(';', array_map('strval', array_filter($doc[_ID_KEY], 'is_scalar')))] = $doc['total'];
                     }
                 }
             } else {
-                $results = $this->collection->count($query);
+                $results = $this->getCollection()->count($query);
             }
 
             if (!empty($ttl)) {
@@ -356,9 +372,7 @@ class Driver extends DriverBase implements IDriver
      * Selects $fields from the result set determined by $query.
      * Returns an array of all results, each array element is a CBD graph, keyed by r.
      *
-     * @param array<string, mixed> $fields array of fields, in the same format as prescribed by MongoPHP
-     *
-     * @return array<string, array<int|string, int|mixed[]|null>>
+     * @param array $fields array of fields, in the same format as prescribed by MongoPHP
      */
     public function select(array $query, array $fields, ?array $sortBy = null, ?int $limit = null, ?int $offset = 0, ?string $context = null): array
     {
@@ -402,14 +416,14 @@ class Driver extends DriverBase implements IDriver
             $findOptions['sort'] = $sortBy;
         }
 
-        $results = $this->collection->find($query, $findOptions);
+        $results = $this->getCollection()->find($query, $findOptions);
 
         $t->stop();
         $this->timingLog(MONGO_SELECT, ['duration' => $t->result(), 'query' => $query]);
         $this->getStat()->timer(MONGO_SELECT . ('.' . $this->podName), $t->result());
 
         $rows = [];
-        $count = $this->collection->count($query);
+        $count = $this->getCollection()->count($query);
 
         foreach ($results as $doc) {
             $row = [];
@@ -425,6 +439,9 @@ class Driver extends DriverBase implements IDriver
                         $row[$key] = [];
                         // possible array of values
                         foreach ($value as $v) {
+                            if (!is_array($v)) {
+                                continue;
+                            }
                             if (isset($v[VALUE_LITERAL])) {
                                 $row[$key][] = $v[VALUE_LITERAL];
                             } elseif (isset($v[VALUE_URI])) {
@@ -489,7 +506,7 @@ class Driver extends DriverBase implements IDriver
                 _ID_CONTEXT => $this->getContextAlias($context),
             ],
         ];
-        $doc = $this->collection->findOne($query, ['projection' => [_UPDATED_TS => true]]);
+        $doc = $this->getCollection()->findOne($query, ['projection' => [_UPDATED_TS => true]]);
 
         /** @var UTCDateTime|null $lastUpdatedDate */
         $lastUpdatedDate = $doc[_UPDATED_TS] ?? null;
@@ -509,7 +526,7 @@ class Driver extends DriverBase implements IDriver
         if ($this->tripod_views == null) {
             $this->tripod_views = new Views(
                 $this->storeName,
-                $this->collection,
+                $this->getCollection(),
                 $this->defaultContext,
                 $this->stat,
                 $this->readPreference
@@ -524,7 +541,7 @@ class Driver extends DriverBase implements IDriver
         if ($this->tripod_tables == null) {
             $this->tripod_tables = new Tables(
                 $this->storeName,
-                $this->collection,
+                $this->getCollection(),
                 $this->defaultContext,
                 $this->stat,
                 $this->readPreference
@@ -618,7 +635,7 @@ class Driver extends DriverBase implements IDriver
     protected function getDataUpdater(): Updates
     {
         if ($this->updates === null) {
-            $readPreference = $this->collection->getReadPreference()->getModeString();
+            $readPreference = $this->getCollection()->getReadPreference()->getModeString();
 
             $opts = [
                 'defaultContext' => $this->defaultContext,
