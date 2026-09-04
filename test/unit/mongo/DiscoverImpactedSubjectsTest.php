@@ -17,75 +17,60 @@ class DiscoverImpactedSubjectsTest extends ResqueJobTestBase
 {
     private array $args = [];
 
-    public function testMandatoryArgTripodConfig(): void
+    /**
+     * Test exception is thrown if mandatory arguments are not set.
+     *
+     * @dataProvider mandatoryArgDataProvider
+     */
+    public function testMandatoryArgs(string $argument, ?string $argumentName = null): void
     {
         $this->setArgs();
-        unset($this->args['tripodConfig']);
+
+        if (!$argumentName) {
+            $argumentName = $argument;
+        }
+
         $job = new DiscoverImpactedSubjects();
         $job->args = $this->args;
         $job->job = new JobHandler('queue', ['id' => uniqid()]);
+        unset($job->args[$argument]);
+
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Argument tripodConfig or tripodConfigGenerator was not present in supplied job args for job Tripod\Mongo\Jobs\DiscoverImpactedSubjects');
+        $this->expectExceptionMessage(sprintf('Argument %s was not present in supplied job args for job %s', $argumentName, DiscoverImpactedSubjects::class));
         $this->performJob($job);
     }
 
-    public function testMandatoryArgStoreName(): void
+    /**
+     * Data provider for testMandatoryArgs.
+     */
+    public function mandatoryArgDataProvider(): iterable
     {
-        $this->setArgs();
-        unset($this->args['storeName']);
-        $job = new DiscoverImpactedSubjects();
-        $job->args = $this->args;
-        $job->job = new JobHandler('queue', ['id' => uniqid()]);
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Argument storeName was not present in supplied job args for job Tripod\Mongo\Jobs\DiscoverImpactedSubjects');
-        $this->performJob($job);
+        yield ['tripodConfig', 'tripodConfig or tripodConfigGenerator'];
+        yield ['storeName'];
+        yield ['podName'];
+        yield ['changes'];
+        yield ['operations'];
+        yield ['contextAlias'];
     }
 
-    public function testMandatoryArgPodName(): void
+    /**
+     * Test beforePerform hook accepts legacy Resque job objects.
+     */
+    public function testMandatoryArgsLegacy(): void
     {
-        $this->setArgs();
-        unset($this->args['podName']);
-        $job = new DiscoverImpactedSubjects();
-        $job->args = $this->args;
-        $job->job = new JobHandler('queue', ['id' => uniqid()]);
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Argument podName was not present in supplied job args for job Tripod\Mongo\Jobs\DiscoverImpactedSubjects');
-        $this->performJob($job);
-    }
+        if (!class_exists(Resque_Job::class)) {
+            $this->markTestSkipped('This test only applies to resque/php-resque pre-namespaces');
+        }
 
-    public function testMandatoryArgChanges(): void
-    {
         $this->setArgs();
-        unset($this->args['changes']);
-        $job = new DiscoverImpactedSubjects();
-        $job->args = $this->args;
-        $job->job = new JobHandler('queue', ['id' => uniqid()]);
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Argument changes was not present in supplied job args for job Tripod\Mongo\Jobs\DiscoverImpactedSubjects');
-        $this->performJob($job);
-    }
 
-    public function testMandatoryArgOperations(): void
-    {
-        $this->setArgs();
-        unset($this->args['operations']);
         $job = new DiscoverImpactedSubjects();
         $job->args = $this->args;
-        $job->job = new JobHandler('queue', ['id' => uniqid()]);
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Argument operations was not present in supplied job args for job Tripod\Mongo\Jobs\DiscoverImpactedSubjects');
-        $this->performJob($job);
-    }
+        $job->job = new Resque_Job('queue', ['id' => uniqid()]);
+        unset($job->args['storeName']);
 
-    public function testMandatoryArgContextAlias(): void
-    {
-        $this->setArgs();
-        unset($this->args['contextAlias']);
-        $job = new DiscoverImpactedSubjects();
-        $job->args = $this->args;
-        $job->job = new JobHandler('queue', ['id' => uniqid()]);
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Argument contextAlias was not present in supplied job args for job Tripod\Mongo\Jobs\DiscoverImpactedSubjects');
+        $this->expectExceptionMessage(sprintf('Argument %s was not present in supplied job args for job %s', 'storeName', DiscoverImpactedSubjects::class));
         $this->performJob($job);
     }
 

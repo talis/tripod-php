@@ -86,8 +86,10 @@ abstract class JobBase extends Job
 
     /**
      * Called in every job prior to perform().
+     *
+     * @param JobHandler|\Resque_Job $job The job instance
      */
-    public static function beforePerform(JobHandler $job): void
+    public static function beforePerform($job): void
     {
         $instance = $job->getInstance();
         if (!$instance instanceof self) {
@@ -100,10 +102,10 @@ abstract class JobBase extends Job
     /**
      * Resque event when a job failures.
      *
-     * @param \Exception|\Throwable $e   Exception or Error
-     * @param JobHandler            $job The failed job
+     * @param \Exception|\Throwable  $e   Exception or Error
+     * @param JobHandler|\Resque_Job $job The failed job
      */
-    public static function onFailure($e, JobHandler $job): void
+    public static function onFailure($e, $job): void
     {
         $failedJob = $job->getInstance();
         if (!$failedJob instanceof self) {
@@ -200,7 +202,7 @@ abstract class JobBase extends Job
     /**
      * Validate the arguments for this job.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     protected function validateArgs(): void
     {
@@ -210,7 +212,7 @@ abstract class JobBase extends Job
                 $message = sprintf('Argument %s was not present in supplied job args for job ', $arg) . get_class($this);
                 $this->errorLog($message);
 
-                throw new \Exception($message);
+                throw new Exception($message);
             }
         }
 
@@ -226,7 +228,7 @@ abstract class JobBase extends Job
                 . ' was not present in supplied job args for job ' . get_class($this);
             $this->errorLog($message);
 
-            throw new \Exception($message);
+            throw new Exception($message);
         }
     }
 
@@ -252,7 +254,7 @@ abstract class JobBase extends Job
             if (!$token || !$this->hasJobStatus($token)) {
                 $this->errorLog(sprintf('Could not retrieve status for queued %s job - job %s failed to %s', $class, $token, $queueName));
 
-                throw new \Exception(sprintf('Could not retrieve status for queued job - job %s failed to %s', $token, $queueName));
+                throw new Exception(sprintf('Could not retrieve status for queued job - job %s failed to %s', $token, $queueName));
             }
 
             $this->debugLog(sprintf('Queued %s job with %s to %s', $class, $token, $queueName));
