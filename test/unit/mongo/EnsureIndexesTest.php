@@ -5,6 +5,7 @@ declare(strict_types=1);
 use PHPUnit\Framework\MockObject\MockObject;
 use Resque\JobHandler;
 use Tripod\Config;
+use Tripod\Exceptions\Exception;
 use Tripod\Exceptions\JobException;
 use Tripod\Mongo\IndexUtils;
 use Tripod\Mongo\Jobs\EnsureIndexes;
@@ -45,7 +46,7 @@ class EnsureIndexesTest extends ResqueJobTestBase
         unset($job->args[$argument]);
 
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage(sprintf('Argument %s was not present in supplied job args for job Tripod\Mongo\Jobs\EnsureIndexes', $argumentName));
+        $this->expectExceptionMessage(sprintf('Argument %s was not present in supplied job args for job %s', $argumentName, EnsureIndexes::class));
         $this->performJob($job);
     }
 
@@ -58,6 +59,29 @@ class EnsureIndexesTest extends ResqueJobTestBase
         yield ['storeName'];
         yield ['reindex'];
         yield ['background'];
+    }
+
+    /**
+     * Test beforePerform hook accepts legacy Resque job objects.
+     *
+     * @group ensure-indexes
+     *
+     * @throws Exception
+     */
+    public function testMandatoryArgsLegacy(): void
+    {
+        if (!class_exists(Resque_Job::class)) {
+            $this->markTestSkipped('This test only applies to resque/php-resque pre-namespaces');
+        }
+
+        $job = new EnsureIndexes();
+        $job->args = $this->args;
+        $job->job = new Resque_Job('queue', ['id' => uniqid()]);
+        unset($job->args['storeName']);
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage(sprintf('Argument %s was not present in supplied job args for job %s', 'storeName', EnsureIndexes::class));
+        $this->performJob($job);
     }
 
     /**

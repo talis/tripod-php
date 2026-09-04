@@ -40,7 +40,7 @@ namespace Resque\Job {
             /**
              * Associated JobHandler instance.
              *
-             * @var JobHandler
+             * @var JobHandler|\Resque_Job
              */
             public $job;
 

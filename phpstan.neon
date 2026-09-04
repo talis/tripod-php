@@ -6,6 +6,12 @@ parameters:
   tips:
     treatPhpDocTypesAsCertain: false
   ignoreErrors:
+    - identifier: assign.propertyType
+      message: '# Resque_Job\.$#'
+      reportUnmatched: false
+    - identifier: class.notFound
+      message: '# Resque_Job\.$#'
+      reportUnmatched: false
     - identifier: missingType.iterableValue
       reportUnmatched: false
   paths:

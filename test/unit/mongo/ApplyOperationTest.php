@@ -6,6 +6,7 @@ use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
 use Resque\JobHandler;
 use Tripod\Config;
+use Tripod\Exceptions\Exception;
 use Tripod\Exceptions\JobException;
 use Tripod\Mongo\Composites\SearchIndexer;
 use Tripod\Mongo\Composites\Tables;
@@ -20,27 +21,56 @@ class ApplyOperationTest extends ResqueJobTestBase
 {
     private array $args = [];
 
-    public function testMandatoryArgTripodConfig(): void
+    /**
+     * Test exception is thrown if mandatory arguments are not set.
+     *
+     * @dataProvider mandatoryArgDataProvider
+     */
+    public function testMandatoryArgs(string $argument, ?string $argumentName = null): void
     {
         $this->setArgs();
-        unset($this->args['tripodConfig']);
+
+        if (!$argumentName) {
+            $argumentName = $argument;
+        }
+
         $job = new ApplyOperation();
         $job->args = $this->args;
         $job->job = new JobHandler('queue', ['id' => uniqid()]);
+        unset($job->args[$argument]);
+
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Argument tripodConfig or tripodConfigGenerator was not present in supplied job args for job Tripod\Mongo\Jobs\ApplyOperation');
+        $this->expectExceptionMessage(sprintf('Argument %s was not present in supplied job args for job %s', $argumentName, ApplyOperation::class));
         $this->performJob($job);
     }
 
-    public function testMandatoryArgSubject(): void
+    /**
+     * Data provider for testMandatoryArgs.
+     */
+    public function mandatoryArgDataProvider(): iterable
     {
+        yield ['tripodConfig', 'tripodConfig or tripodConfigGenerator'];
+        yield ['subjects'];
+    }
+
+    /**
+     * Test beforePerform hook accepts legacy Resque job objects.
+     */
+    public function testMandatoryArgsLegacy(): void
+    {
+        if (!class_exists(Resque_Job::class)) {
+            $this->markTestSkipped('This test only applies to resque/php-resque pre-namespaces');
+        }
+
         $this->setArgs();
-        unset($this->args['subjects']);
+
         $job = new ApplyOperation();
         $job->args = $this->args;
-        $job->job = new JobHandler('queue', ['id' => uniqid()]);
+        $job->job = new Resque_Job('queue', ['id' => uniqid()]);
+        unset($job->args['subjects']);
+
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Argument subjects was not present in supplied job args for job Tripod\Mongo\Jobs\ApplyOperation');
+        $this->expectExceptionMessage(sprintf('Argument %s was not present in supplied job args for job %s', 'subjects', ApplyOperation::class));
         $this->performJob($job);
     }
 
