@@ -148,6 +148,9 @@ jobs:
       - check_mongodb_lib_version
       - run_test
 
+  pass:
+    type: no-op
+
 workflows:
   build_and_test:
     jobs:
@@ -169,3 +172,10 @@ workflows:
                 - "5.0"
                 - "6.0"
                 - "7.0"
+      - pass:
+          requires:
+            - lint
+            - test
+            - test-multiple-stores
+            - test-replica-set-mmap
+            - test-replica-set-mongo
