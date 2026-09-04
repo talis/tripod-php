@@ -125,8 +125,11 @@ class ExtendedGraph
      * @param string $prefix the namespace prefix to associate with the URI
      * @param string $uri    the URI to associate with the prefix
      */
-    public function set_namespace_mapping(string $prefix, string $uri): void
+    public function set_namespace_mapping($prefix, $uri): void
     {
+        $prefix = TypeUtil::ensureArgIsString(1, $prefix);
+        $uri = TypeUtil::ensureArgIsString(2, $uri);
+
         $this->_labeller->set_namespace_mapping($prefix, $uri);
     }
 
@@ -137,8 +140,10 @@ class ExtendedGraph
      *
      * @return string|null the URI corresponding to the QName if a suitable prefix exists, null otherwise
      */
-    public function qname_to_uri(?string $qName): ?string
+    public function qname_to_uri($qName): ?string
     {
+        $qName = TypeUtil::ensureArgIsStringIsOrNull(1, $qName);
+
         return $this->_labeller->qname_to_uri($qName);
     }
 
@@ -149,18 +154,30 @@ class ExtendedGraph
      *
      * @return string|null the QName corresponding to the URI if a suitable prefix exists, null otherwise
      */
-    public function uri_to_qname(?string $uri): ?string
+    public function uri_to_qname($uri): ?string
     {
+        $uri = TypeUtil::ensureArgIsStringIsOrNull(1, $uri);
+
         return $this->_labeller->uri_to_qname($uri);
     }
 
-    public function get_prefix(string $ns): string
+    /**
+     * @param string $ns
+     */
+    public function get_prefix($ns): string
     {
+        $ns = TypeUtil::ensureArgIsString(1, $ns);
+
         return $this->_labeller->get_prefix($ns);
     }
 
-    public function add_labelling_property(string $p): void
+    /**
+     * @param string $p
+     */
+    public function add_labelling_property($p): void
     {
+        $p = TypeUtil::ensureArgIsString(1, $p);
+
         $this->_labeller->add_labelling_property($p);
     }
 
@@ -171,8 +188,10 @@ class ExtendedGraph
      *
      * @return array<string, string> an associative array with two keys: 'type' and 'value'. Type is either bnode or uri
      */
-    public function make_resource_array(string $resource): array
+    public function make_resource_array($resource): array
     {
+        $resource = TypeUtil::ensureArgIsString(1, $resource);
+
         $resource_type = strpos($resource, '_:') === 0 ? 'bnode' : 'uri';
 
         return ['type' => $resource_type, 'value' => $resource];
@@ -207,8 +226,13 @@ class ExtendedGraph
      *
      * @return bool true if the triple was new, false if it already existed in the graph
      */
-    public function add_literal_triple(string $s, string $p, $o, ?string $lang = null, ?string $dt = null): bool
+    public function add_literal_triple($s, $p, $o, $lang = null, $dt = null): bool
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $p = TypeUtil::ensureArgIsString(2, $p);
+        $lang = TypeUtil::ensureArgIsStringIsOrNull(4, $lang);
+        $dt = TypeUtil::ensureArgIsStringIsOrNull(5, $dt);
+
         if ($this->isValidLiteral($o)) {
             $o_info = ['type' => 'literal', 'value' => $o];
             if ($lang != null) {
@@ -420,14 +444,18 @@ class ExtendedGraph
     /**
      * Fetch the first literal value for a given subject and predicate. If there are multiple possible values then one is selected at random.
      *
-     * @param TripleSubject                     $s       the subject to search for
-     * @param TriplePredicate|TriplePredicate[] $p       the predicate to search for, or an array of predicates
-     * @param ObjectLiteral|null                $default a default value to use if no literal values are found
+     * @param TripleSubject                     $s                  the subject to search for
+     * @param TriplePredicate|TriplePredicate[] $p                  the predicate to search for, or an array of predicates
+     * @param ObjectLiteral|null                $default            a default value to use if no literal values are found
+     * @param mixed|null                        $preferred_language
      *
      * @return ObjectLiteral|null the first literal value found or the supplied default if no values were found
      */
-    public function get_first_literal(string $s, $p, $default = null, ?string $preferred_language = null)
+    public function get_first_literal($s, $p, $default = null, $preferred_language = null)
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $preferred_language = TypeUtil::ensureArgIsStringIsOrNull(4, $preferred_language);
+
         $best_literal = $default;
         if (isset($this->_index[$s])) {
             if (is_array($p)) {
@@ -477,8 +505,12 @@ class ExtendedGraph
      *
      * @return ObjectResource|null the first resource value found or the supplied default if no values were found
      */
-    public function get_first_resource(string $s, string $p, ?string $default = null): ?string
+    public function get_first_resource($s, $p, $default = null): ?string
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $p = TypeUtil::ensureArgIsString(2, $p);
+        $default = TypeUtil::ensureArgIsStringIsOrNull(3, $default);
+
         if (isset($this->_index[$s][$p])) {
             foreach ($this->_index[$s][$p] as $value) {
                 if ($value['type'] == 'uri' || $value['type'] == 'bnode') {
@@ -497,8 +529,11 @@ class ExtendedGraph
      * @param TriplePredicate $p the predicate URI of the triple
      * @param ObjectResource  $o the object of the triple, either a URI or a blank node in the format _:name
      */
-    public function remove_resource_triple(string $s, string $p, $o): void
+    public function remove_resource_triple($s, $p, $o): void
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $p = TypeUtil::ensureArgIsString(2, $p);
+
         // Already removed
         if (!isset($this->_index[$s]) || !isset($this->_index[$s][$p])) {
             return;
@@ -520,10 +555,15 @@ class ExtendedGraph
     }
 
     /**
+     * @param string        $s
+     * @param string        $p
      * @param ObjectLiteral $o
      */
-    public function remove_literal_triple(string $s, string $p, $o): void
+    public function remove_literal_triple($s, $p, $o): void
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $p = TypeUtil::ensureArgIsString(2, $p);
+
         // Already removed
         if (!isset($this->_index[$s]) || !isset($this->_index[$s][$p])) {
             return;
@@ -549,8 +589,10 @@ class ExtendedGraph
      *
      * @param TripleSubject $s the subject of the triple, either a URI or a blank node in the format _:name
      */
-    public function remove_triples_about(string $s): void
+    public function remove_triples_about($s): void
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+
         unset($this->_index[$s]);
     }
 
@@ -560,8 +602,11 @@ class ExtendedGraph
      * @param string $rdfxml the RDF/XML to parse
      * @param string $base   the base URI against which relative URIs in the RDF/XML document will be resolved
      */
-    public function from_rdfxml(string $rdfxml, string $base = ''): void
+    public function from_rdfxml($rdfxml, $base = ''): void
     {
+        $rdfxml = TypeUtil::ensureArgIsString(1, $rdfxml);
+        $base = TypeUtil::ensureArgIsString(2, $base);
+
         if ($rdfxml !== '' && $rdfxml !== '0') {
             $this->remove_all_triples();
             $this->add_rdfxml($rdfxml, $base);
@@ -575,8 +620,10 @@ class ExtendedGraph
      *
      * @param string $json the JSON to parse
      */
-    public function from_json(string $json): void
+    public function from_json($json): void
     {
+        $json = TypeUtil::ensureArgIsString(1, $json);
+
         if ($json !== '' && $json !== '0') {
             $this->remove_all_triples();
             $index = json_decode($json, true);
@@ -593,8 +640,10 @@ class ExtendedGraph
      *
      * @param string $json the JSON to parse
      */
-    public function add_json(string $json): void
+    public function add_json($json): void
     {
+        $json = TypeUtil::ensureArgIsString(1, $json);
+
         if ($json !== '' && $json !== '0') {
             $json_index = json_decode($json, true);
             if (is_array($json_index)) {
@@ -619,8 +668,11 @@ class ExtendedGraph
      *
      * @author Keith Alexander
      */
-    public function add_rdf(string $rdf, string $base = ''): void
+    public function add_rdf($rdf, $base = ''): void
     {
+        $rdf = TypeUtil::ensureArgIsString(1, $rdf);
+        $base = TypeUtil::ensureArgIsString(2, $base);
+
         $trimRdf = trim($rdf);
         if ($trimRdf[0] == '{') { // lazy is-this-json assessment  - might be better to try json_decode - but more costly
             $this->add_json($trimRdf);
@@ -646,8 +698,11 @@ class ExtendedGraph
      * @param string $rdfxml the RDF/XML to parse
      * @param string $base   the base URI against which relative URIs in the RDF/XML document will be resolved
      */
-    public function add_rdfxml(string $rdfxml, string $base = ''): void
+    public function add_rdfxml($rdfxml, $base = ''): void
     {
+        $rdfxml = TypeUtil::ensureArgIsString(1, $rdfxml);
+        $base = TypeUtil::ensureArgIsString(2, $base);
+
         if ($rdfxml !== '' && $rdfxml !== '0') {
             /** @var \ARC2_RDFXMLParser $parser */
             $parser = \ARC2::getRDFXMLParser();
@@ -666,8 +721,11 @@ class ExtendedGraph
      * @param string $turtle the Turtle to parse
      * @param string $base   the base URI against which relative URIs in the Turtle document will be resolved
      */
-    public function from_turtle(string $turtle, string $base = ''): void
+    public function from_turtle($turtle, $base = ''): void
     {
+        $turtle = TypeUtil::ensureArgIsString(1, $turtle);
+        $base = TypeUtil::ensureArgIsString(2, $base);
+
         if ($turtle !== '' && $turtle !== '0') {
             $this->remove_all_triples();
             $this->add_turtle($turtle, $base);
@@ -682,8 +740,11 @@ class ExtendedGraph
      * @param string $turtle the Turtle to parse
      * @param string $base   the base URI against which relative URIs in the Turtle document will be resolved
      */
-    public function add_turtle(string $turtle, string $base = ''): void
+    public function add_turtle($turtle, $base = ''): void
     {
+        $turtle = TypeUtil::ensureArgIsString(1, $turtle);
+        $base = TypeUtil::ensureArgIsString(2, $base);
+
         if ($turtle !== '' && $turtle !== '0') {
             /** @var \ARC2_TurtleParser $parser */
             $parser = \ARC2::getTurtleParser();
@@ -700,8 +761,11 @@ class ExtendedGraph
      * @param string $html the HTML containing RDFa to parse
      * @param string $base the base URI against which relative URIs in the RDFa document will be resolved
      */
-    public function from_rdfa(string $html, string $base = ''): void
+    public function from_rdfa($html, $base = ''): void
     {
+        $html = TypeUtil::ensureArgIsString(1, $html);
+        $base = TypeUtil::ensureArgIsString(2, $base);
+
         if ($html !== '' && $html !== '0') {
             $this->remove_all_triples();
             $this->add_rdfa($html, $base);
@@ -714,8 +778,11 @@ class ExtendedGraph
      * @param string $html the HTML containing RDFa to parse
      * @param string $base the base URI against which relative URIs in the RDFa document will be resolved
      */
-    public function add_rdfa(string $html, string $base = ''): void
+    public function add_rdfa($html, $base = ''): void
     {
+        $html = TypeUtil::ensureArgIsString(1, $html);
+        $base = TypeUtil::ensureArgIsString(2, $base);
+
         if ($html !== '' && $html !== '0') {
             /** @var \ARC2_SemHTMLParser $parser */
             $parser = \ARC2::getSemHTMLParser();
@@ -758,8 +825,11 @@ class ExtendedGraph
      *
      * @return bool true if the triple exists in the graph, false otherwise
      */
-    public function has_resource_triple(string $s, string $p, $o): bool
+    public function has_resource_triple($s, $p, $o): bool
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $p = TypeUtil::ensureArgIsString(2, $p);
+
         if (isset($this->_index[$s][$p])) {
             foreach ($this->_index[$s][$p] as $value) {
                 if (($value['type'] == 'uri' || $value['type'] == 'bnode') && $value['value'] === $o) {
@@ -782,8 +852,13 @@ class ExtendedGraph
      *
      * @return bool true if the triple exists in the graph, false otherwise
      */
-    public function has_literal_triple(string $s, string $p, $o, ?string $lang = null, ?string $dt = null): bool
+    public function has_literal_triple($s, $p, $o, $lang = null, $dt = null): bool
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $p = TypeUtil::ensureArgIsString(2, $p);
+        $lang = TypeUtil::ensureArgIsStringIsOrNull(4, $lang);
+        $dt = TypeUtil::ensureArgIsStringIsOrNull(5, $dt);
+
         if (isset($this->_index[$s][$p])) {
             foreach ($this->_index[$s][$p] as $value) {
                 if (($value['type'] == 'literal') && $value['value'] === $o) {
@@ -811,8 +886,11 @@ class ExtendedGraph
      *
      * @return ObjectResource[] list of URIs and blank nodes that are the objects of triples with the supplied subject and predicate
      */
-    public function get_resource_triple_values(string $s, string $p): array
+    public function get_resource_triple_values($s, $p): array
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $p = TypeUtil::ensureArgIsString(2, $p);
+
         $values = [];
         if (isset($this->_index[$s][$p])) {
             foreach ($this->_index[$s][$p] as $value) {
@@ -833,8 +911,10 @@ class ExtendedGraph
      *
      * @return ObjectLiteral[] list of literals that are the objects of triples with the supplied subject and predicate
      */
-    public function get_literal_triple_values(string $s, $p): array
+    public function get_literal_triple_values($s, $p): array
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+
         $values = [];
         if (isset($this->_index[$s])) {
             if (is_array($p)) {
@@ -867,8 +947,10 @@ class ExtendedGraph
      *
      * @return TripleObject[] list of values of triples with the supplied subject and predicate
      */
-    public function get_subject_property_values(string $s, $p): array
+    public function get_subject_property_values($s, $p): array
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+
         $values = [];
         if (!is_array($p)) {
             $p = [$p];
@@ -894,8 +976,10 @@ class ExtendedGraph
      *
      * @return ExtendedGraph triples with the supplied subject
      */
-    public function get_subject_subgraph(string $s): ExtendedGraph
+    public function get_subject_subgraph($s): ExtendedGraph
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+
         $sub = new ExtendedGraph();
         if (isset($this->_index[$s])) {
             $sub->_index[$s] = $this->_index[$s];
@@ -921,8 +1005,10 @@ class ExtendedGraph
      *
      * @return TripleSubject[] list of all the subjects in the graph that have the given type
      */
-    public function get_subjects_of_type(string $o): array
+    public function get_subjects_of_type($o): array
     {
+        $o = TypeUtil::ensureArgIsString(1, $o);
+
         return $this->get_subjects_where_resource(self::rdf_type, $o);
     }
 
@@ -934,8 +1020,11 @@ class ExtendedGraph
      *
      * @return TripleSubject[] list of all the subjects in the graph that have a triple with the given predicate and resource object
      */
-    public function get_subjects_where_resource(string $p, string $o): array
+    public function get_subjects_where_resource($p, $o): array
     {
+        $p = TypeUtil::ensureArgIsString(1, $p);
+        $o = TypeUtil::ensureArgIsString(2, $o);
+
         return array_merge($this->get_subjects_where($p, $o, 'uri'), $this->get_subjects_where($p, $o, 'bnode'));
     }
 
@@ -947,8 +1036,10 @@ class ExtendedGraph
      *
      * @return TripleSubject[] list of all the subjects in the graph that have a triple with the given predicate and literal object
      */
-    public function get_subjects_where_literal(string $p, $o): array
+    public function get_subjects_where_literal($p, $o): array
     {
+        $p = TypeUtil::ensureArgIsString(1, $p);
+
         return $this->get_subjects_where($p, $o, 'literal');
     }
 
@@ -960,8 +1051,10 @@ class ExtendedGraph
      *
      * @return TriplePredicate[] list of property URIs
      */
-    public function get_subject_properties(string $s, bool $distinct = true): array
+    public function get_subject_properties($s, bool $distinct = true): array
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+
         $values = [];
         if (isset($this->_index[$s])) {
             foreach ($this->_index[$s] as $prop => $prop_values) {
@@ -987,8 +1080,11 @@ class ExtendedGraph
      *
      * @return bool true if a matching triple exists in the graph, false otherwise
      */
-    public function subject_has_property(string $s, string $p): bool
+    public function subject_has_property($s, $p): bool
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $p = TypeUtil::ensureArgIsString(2, $p);
+
         return isset($this->_index[$s][$p]);
     }
 
@@ -999,8 +1095,10 @@ class ExtendedGraph
      *
      * @return bool true if the graph contains any triples with the specified subject, false otherwise
      */
-    public function has_triples_about(string $s): bool
+    public function has_triples_about($s): bool
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+
         return isset($this->_index[$s]);
     }
 
@@ -1010,8 +1108,11 @@ class ExtendedGraph
      * @param TripleSubject   $s the subject of the triple, either a URI or a blank node in the format _:name
      * @param TriplePredicate $p the predicate URI of the triple
      */
-    public function remove_property_values(string $s, string $p): void
+    public function remove_property_values($s, $p): void
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $p = TypeUtil::ensureArgIsString(2, $p);
+
         unset($this->_index[$s][$p]);
     }
 
@@ -1033,21 +1134,34 @@ class ExtendedGraph
         return count($this->_index) === 0;
     }
 
-    public function get_label(string $resource_uri, bool $capitalize = false, bool $use_qnames = false): string
+    /**
+     * @param string $resource_uri
+     */
+    public function get_label($resource_uri, bool $capitalize = false, bool $use_qnames = false): string
     {
+        $resource_uri = TypeUtil::ensureArgIsString(1, $resource_uri);
+
         return $this->_labeller->get_label($resource_uri, $this, $capitalize, $use_qnames);
     }
 
-    public function get_inverse_label(string $resource_uri, bool $capitalize = false, bool $use_qnames = false): string
+    /**
+     * @param string $resource_uri
+     */
+    public function get_inverse_label($resource_uri, bool $capitalize = false, bool $use_qnames = false): string
     {
+        $resource_uri = TypeUtil::ensureArgIsString(1, $resource_uri);
+
         return $this->_labeller->get_inverse_label($resource_uri, $this, $capitalize, $use_qnames);
     }
 
     /**
      * @param TripleGraph $resources
+     * @param string      $nodeID_prefix
      */
-    public function reify(array $resources, string $nodeID_prefix = 'Statement'): array
+    public function reify(array $resources, $nodeID_prefix = 'Statement'): array
     {
+        $nodeID_prefix = TypeUtil::ensureArgIsString(2, $nodeID_prefix);
+
         $RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
         $reified = [];
         $statement_no = 1;
@@ -1199,8 +1313,15 @@ class ExtendedGraph
         return $current;
     }
 
-    public function replace_resource(string $look_for, string $replace_with): void
+    /**
+     * @param string $look_for
+     * @param string $replace_with
+     */
+    public function replace_resource($look_for, $replace_with): void
     {
+        $look_for = TypeUtil::ensureArgIsString(1, $look_for);
+        $replace_with = TypeUtil::ensureArgIsString(2, $replace_with);
+
         $remove_list_resources = [];
         $remove_list_literals = [];
         $add_list_resources = [];
@@ -1286,8 +1407,13 @@ class ExtendedGraph
         }
     }
 
-    public function get_list_values(string $listUri): array
+    /**
+     * @param string $listUri
+     */
+    public function get_list_values($listUri): array
     {
+        $listUri = TypeUtil::ensureArgIsString(1, $listUri);
+
         $array = [];
         while (!empty($listUri) && $listUri !== RDF_NIL) {
             $array[] = $this->get_first_resource($listUri, RDF_FIRST);
@@ -1309,9 +1435,15 @@ class ExtendedGraph
 
     /**
      * Replaces $uri1 with $uri2 in subject, predicate and object position.
+     *
+     * @param string $uri1
+     * @param string $uri2
      */
-    public function replace_uris(string $uri1, string $uri2): void
+    public function replace_uris($uri1, $uri2): void
     {
+        $uri1 = TypeUtil::ensureArgIsString(1, $uri1);
+        $uri2 = TypeUtil::ensureArgIsString(2, $uri2);
+
         $index = $this->get_index();
         if (isset($index[$uri1])) {
             $index[$uri2] = $index[$uri1];
@@ -1342,8 +1474,11 @@ class ExtendedGraph
      * @param TriplePredicate|null $p
      * @param ObjectValue|null     $o
      */
-    public function get_triple_count(?string $s = null, ?string $p = null, $o = null): int
+    public function get_triple_count($s = null, $p = null, $o = null): int
     {
+        $s = TypeUtil::ensureArgIsStringIsOrNull(1, $s);
+        $p = TypeUtil::ensureArgIsStringIsOrNull(2, $p);
+
         $index = $this->get_index();
 
         if ($index === []) {
@@ -1393,8 +1528,10 @@ class ExtendedGraph
      *
      * @return ObjectResource[] the resource values found
      */
-    public function get_resources_for_subject(string $s): array
+    public function get_resources_for_subject($s): array
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+
         $resources = [];
         if (isset($this->_index[$s])) {
             foreach ($this->_index[$s] as $values) {
@@ -1412,8 +1549,10 @@ class ExtendedGraph
     /**
      * @param TriplePredicate $p
      */
-    public function remove_properties(string $p): void
+    public function remove_properties($p): void
     {
+        $p = TypeUtil::ensureArgIsString(1, $p);
+
         foreach ($this->get_subjects() as $s) {
             $this->remove_property_values($s, $p);
         }
@@ -1424,8 +1563,10 @@ class ExtendedGraph
      *
      * @return ObjectResource[] the resource values found
      */
-    public function get_resource_properties(string $p): array
+    public function get_resource_properties($p): array
     {
+        $p = TypeUtil::ensureArgIsString(1, $p);
+
         $resources = [];
         foreach ($this->get_subjects() as $s) {
             $properties = $this->get_resource_triple_values($s, $p);
@@ -1441,8 +1582,10 @@ class ExtendedGraph
      *
      * @return TripleSubject[]
      */
-    public function get_subjects_with_property_value(string $p, $o): array
+    public function get_subjects_with_property_value($p, $o): array
     {
+        $p = TypeUtil::ensureArgIsString(1, $p);
+
         $subjects = [];
         foreach ($this->get_subjects() as $s) {
             if ($this->has_resource_triple($s, $p, $o) || $this->has_literal_triple($s, $p, $o)) {
@@ -1458,8 +1601,10 @@ class ExtendedGraph
      *
      * @return ObjectValue[]
      */
-    public function get_sequence_values(string $sequenceUri): array
+    public function get_sequence_values($sequenceUri): array
     {
+        $sequenceUri = TypeUtil::ensureArgIsString(1, $sequenceUri);
+
         $triples = $this->get_index();
         $properties = [];
 
@@ -1486,8 +1631,10 @@ class ExtendedGraph
     /**
      * @param TripleSubject $sequenceUri
      */
-    public function get_next_sequence(string $sequenceUri): int
+    public function get_next_sequence($sequenceUri): int
     {
+        $sequenceUri = TypeUtil::ensureArgIsString(1, $sequenceUri);
+
         $values = $this->get_sequence_values($sequenceUri);
 
         return count($values) + 1;
@@ -1497,8 +1644,10 @@ class ExtendedGraph
      * @param TripleSubject $s
      * @param ObjectLiteral $o
      */
-    public function add_literal_to_sequence(string $s, $o): void
+    public function add_literal_to_sequence($s, $o): void
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+
         $this->add_to_sequence($s, $o, 'literal');
     }
 
@@ -1508,8 +1657,11 @@ class ExtendedGraph
      * @param TripleSubject  $sequenceUri
      * @param ObjectResource $resourceValue
      */
-    public function remove_resource_from_sequence(string $sequenceUri, string $resourceValue): void
+    public function remove_resource_from_sequence($sequenceUri, $resourceValue): void
     {
+        $sequenceUri = TypeUtil::ensureArgIsString(1, $sequenceUri);
+        $resourceValue = TypeUtil::ensureArgIsString(2, $resourceValue);
+
         $sequenceProperties = $this->get_subject_properties($sequenceUri);
         $sequenceValues = $this->get_sequence_values($sequenceUri);
 
@@ -1533,8 +1685,11 @@ class ExtendedGraph
      * @param TripleSubject  $s
      * @param ObjectResource $o
      */
-    public function add_resource_to_sequence(string $s, string $o): void
+    public function add_resource_to_sequence($s, $o): void
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $o = TypeUtil::ensureArgIsString(2, $o);
+
         $this->add_to_sequence($s, $o, 'resource');
     }
 
@@ -1542,8 +1697,11 @@ class ExtendedGraph
      * @param TripleSubject  $s
      * @param ObjectResource $o
      */
-    public function add_resource_to_sequence_in_position(string $s, string $o, int $position): void
+    public function add_resource_to_sequence_in_position($s, $o, int $position): void
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $o = TypeUtil::ensureArgIsString(2, $o);
+
         $sequenceValues = $this->get_sequence_values($s);
 
         if ($sequenceValues === [] || $position > count($sequenceValues)) {
@@ -1565,11 +1723,16 @@ class ExtendedGraph
     }
 
     /**
-     * @param ObjectLiteral $oOldValue
-     * @param ObjectLiteral $oNewValue
+     * @param TripleSubject   $s
+     * @param TriplePredicate $p
+     * @param ObjectLiteral   $oOldValue
+     * @param ObjectLiteral   $oNewValue
      */
-    public function replace_literal_triple(string $s, string $p, $oOldValue, $oNewValue): bool
+    public function replace_literal_triple($s, $p, $oOldValue, $oNewValue): bool
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $p = TypeUtil::ensureArgIsString(2, $p);
+
         if ($this->has_literal_triple($s, $p, $oOldValue)) {
             $this->remove_literal_triple($s, $p, $oOldValue);
             $this->add_literal_triple($s, $p, $oNewValue);
@@ -1585,8 +1748,12 @@ class ExtendedGraph
      * @param TriplePredicate     $p
      * @param ObjectResource|null $o
      */
-    public function replace_resource_triples(string $s, string $p, ?string $o): void
+    public function replace_resource_triples($s, $p, $o): void
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $p = TypeUtil::ensureArgIsString(2, $p);
+        $o = TypeUtil::ensureArgIsStringIsOrNull(3, $o);
+
         if ($this->subject_has_property($s, $p)) {
             $this->remove_property_values($s, $p);
         }
@@ -1601,8 +1768,11 @@ class ExtendedGraph
      * @param TriplePredicate    $p
      * @param ObjectLiteral|null $o
      */
-    public function replace_literal_triples(string $s, string $p, $o): void
+    public function replace_literal_triples($s, $p, $o): void
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $p = TypeUtil::ensureArgIsString(2, $p);
+
         if ($this->subject_has_property($s, $p)) {
             $this->remove_property_values($s, $p);
         }
@@ -1617,8 +1787,10 @@ class ExtendedGraph
      *
      * @throws Exception
      */
-    public function get_label_for_uri(string $uri): string
+    public function get_label_for_uri($uri): string
     {
+        $uri = TypeUtil::ensureArgIsString(1, $uri);
+
         if (empty($this->_index[$uri])) {
             return '';
         }
@@ -1647,8 +1819,10 @@ class ExtendedGraph
     /**
      * @param ObjectResource $type
      */
-    public function remove_subjects_of_type(string $type): void
+    public function remove_subjects_of_type($type): void
     {
+        $type = TypeUtil::ensureArgIsString(1, $type);
+
         $subjects = $this->get_subjects_of_type($type);
         foreach ($subjects as $s) {
             $this->remove_triples_about($s);
@@ -1692,8 +1866,11 @@ class ExtendedGraph
      *
      * @throws Exception
      */
-    private function _add_triple(string $s, string $p, array $o_info): bool
+    private function _add_triple($s, $p, $o_info): bool
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $p = TypeUtil::ensureArgIsString(2, $p);
+
         // The value $o should already have been validated by this point
         // It's validation differs depending on whether it is a literal or resource
         // So just check the subject and predicate here...
@@ -1824,8 +2001,11 @@ class ExtendedGraph
      *
      * @return TripleSubject[] list of all the subjects in the graph that have a triple with the given predicate, object and object type
      */
-    private function get_subjects_where(string $p, $o, string $type): array
+    private function get_subjects_where($p, $o, $type): array
     {
+        $p = TypeUtil::ensureArgIsString(1, $p);
+        $type = TypeUtil::ensureArgIsString(3, $type);
+
         $subjects = [];
         foreach ($this->_index as $subject => $properties) {
             if (isset($properties[$p])) {
@@ -1847,8 +2027,11 @@ class ExtendedGraph
      * @param ObjectValue          $o
      * @param 'literal'|'resource' $type
      */
-    private function add_to_sequence(string $s, $o, string $type = 'resource'): void
+    private function add_to_sequence($s, $o, $type = 'resource'): void
     {
+        $s = TypeUtil::ensureArgIsString(1, $s);
+        $type = TypeUtil::ensureArgIsString(3, $type);
+
         $sequenceValue = $this->get_next_sequence($s);
         $this->add_resource_triple($s, self::rdf_type, self::rdf_seq);
 
