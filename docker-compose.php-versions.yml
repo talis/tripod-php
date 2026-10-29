@@ -23,4 +23,4 @@ services:
       - ./docker/php85/composer.lock:/var/tripod-php/composer.lock
 
   mongodb2:
-    image: mongo:4.4
+    image: mongo:4.2.24
