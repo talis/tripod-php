@@ -13,4 +13,6 @@ services:
         {"type":"mongo", "connection":"mongodb://mongodb2:27017/", "replicaSet":""}
 
   mongodb2:
-    image: mongo:4.4.29
+    image: mongo:8.0.34
+    environment:
+      GLIBC_TUNABLES: glibc.pthread.rseq=1

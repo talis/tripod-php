@@ -23,4 +23,6 @@ services:
       - ./docker/php85/composer.lock:/var/tripod-php/composer.lock
 
   mongodb2:
-    image: mongo:4.4
+    image: mongo:8.0.34
+    environment:
+      GLIBC_TUNABLES: glibc.pthread.rseq=1

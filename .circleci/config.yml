@@ -49,6 +49,13 @@ commands:
           command: |
             php -r 'echo phpversion("mongodb"), PHP_EOL;'
             grep '"name": "mongodb/mongodb",' composer.lock -A1
+      - run:
+          name: Print mongod server versions (PLT-2824 spike)
+          command: |
+            for h in mongodb mongo1 mongo2; do
+              getent hosts "$h" >/dev/null || continue
+              echo -n "$h: "; mongosh --quiet --host "$h" --eval 'const b = db.adminCommand({buildInfo: 1}); b.version + " " + db.serverStatus().storageEngine.name'
+            done
 
   run_test:
     parameters:
@@ -80,7 +87,7 @@ jobs:
       mongo_version: { type: string }
     docker:
       - image: talis/tripod-php:<< parameters.php_version >>-latest
-      - { name: mongodb, image: mongo:<< parameters.mongo_version >> }
+      - { name: mongodb, image: mongo:<< parameters.mongo_version >>, environment: { GLIBC_TUNABLES: glibc.pthread.rseq=1 } }
       - { name: redis, image: valkey/valkey:8-alpine }
     environment:
       RESQUE_SERVER: redis
@@ -93,8 +100,8 @@ jobs:
   test-multiple-stores:
     docker:
       - image: talis/tripod-php:php74-latest
-      - { name: mongo1, image: mongo:4.4.29 }
-      - { name: mongo2, image: mongo:5.0.28 }
+      - { name: mongo1, image: mongo:8.0.34, environment: { GLIBC_TUNABLES: glibc.pthread.rseq=1 } }
+      - { name: mongo2, image: mongo:8.0.34, environment: { GLIBC_TUNABLES: glibc.pthread.rseq=1 } }
       - { name: redis, image: valkey/valkey:8-alpine }
     environment:
       RESQUE_SERVER: redis
@@ -114,8 +121,8 @@ jobs:
   test-replica-set-mmap:
     docker:
       - image: talis/tripod-php:php74-latest
-      - { name: mongo1, image: mongo:3.6.23, command: mongod --storageEngine mmapv1 --smallfiles --replSet=tripod-rs }
-      - { name: mongo2, image: mongo:3.6.23, command: mongod --storageEngine mmapv1 --smallfiles --replSet=tripod-rs }
+      - { name: mongo1, image: mongo:8.0.34, command: mongod --replSet=tripod-rs, environment: { GLIBC_TUNABLES: glibc.pthread.rseq=1 } }
+      - { name: mongo2, image: mongo:8.0.34, command: mongod --replSet=tripod-rs, environment: { GLIBC_TUNABLES: glibc.pthread.rseq=1 } }
       - { name: redis, image: valkey/valkey:8-alpine }
     environment:
       RESQUE_SERVER: redis
@@ -137,8 +144,8 @@ jobs:
       mongo_version: { type: string }
     docker:
       - image: talis/tripod-php:php74-latest
-      - { name: mongo1, image: mongo:<< parameters.mongo_version >>, command: mongod --replSet=tripod-rs }
-      - { name: mongo2, image: mongo:<< parameters.mongo_version >>, command: mongod --replSet=tripod-rs }
+      - { name: mongo1, image: mongo:<< parameters.mongo_version >>, command: mongod --replSet=tripod-rs, environment: { GLIBC_TUNABLES: glibc.pthread.rseq=1 } }
+      - { name: mongo2, image: mongo:<< parameters.mongo_version >>, command: mongod --replSet=tripod-rs, environment: { GLIBC_TUNABLES: glibc.pthread.rseq=1 } }
       - { name: redis, image: valkey/valkey:8-alpine }
     environment:
       RESQUE_SERVER: redis
@@ -163,7 +170,7 @@ workflows:
     jobs:
       - lint
       - test:
-          mongo_version: "4.2"
+          mongo_version: "8.0.34"
           matrix:
             parameters:
               php_version:
@@ -176,9 +183,7 @@ workflows:
           matrix:
             parameters:
               mongo_version:
-                - "5.0"
-                - "6.0"
-                - "7.0"
+                - "8.0.34"
       - pass:
           requires:
             - lint
