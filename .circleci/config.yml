@@ -49,6 +49,15 @@ commands:
           command: |
             php -r 'echo phpversion("mongodb"), PHP_EOL;'
             grep '"name": "mongodb/mongodb",' composer.lock -A1
+            php --ri mongodb | grep -iE 'version|libmongoc' || true
+      - run:
+          name: Print mongod server versions (PLT-2848 spike)
+          command: |
+            for h in mongodb mongo1 mongo2; do
+              getent hosts "$h" >/dev/null || continue
+              # via the PHP driver: mongosh in the php84/85 images refuses 4.0 (wire version 7)
+              echo -n "$h: "; H="$h" php -r '$m = new MongoDB\Driver\Manager("mongodb://" . getenv("H") . "/?directConnection=true"); $b = $m->executeCommand("admin", new MongoDB\Driver\Command(["buildInfo" => 1]))->toArray()[0]; echo $b->version, PHP_EOL;'
+            done
 
   run_test:
     parameters:
@@ -80,7 +89,7 @@ jobs:
       mongo_version: { type: string }
     docker:
       - image: talis/tripod-php:<< parameters.php_version >>-latest
-      - { name: mongodb, image: mongo:<< parameters.mongo_version >> }
+      - { name: mongodb, image: mongo:<< parameters.mongo_version >>, environment: { GLIBC_TUNABLES: glibc.pthread.rseq=1 } }
       - { name: redis, image: valkey/valkey:8-alpine }
     environment:
       RESQUE_SERVER: redis
@@ -91,10 +100,12 @@ jobs:
       - run_test
 
   test-multiple-stores:
+    parameters:
+      mongo_version: { type: string }
     docker:
       - image: talis/tripod-php:php74-latest
-      - { name: mongo1, image: mongo:4.4.29 }
-      - { name: mongo2, image: mongo:5.0.28 }
+      - { name: mongo1, image: mongo:<< parameters.mongo_version >>, environment: { GLIBC_TUNABLES: glibc.pthread.rseq=1 } }
+      - { name: mongo2, image: mongo:<< parameters.mongo_version >>, environment: { GLIBC_TUNABLES: glibc.pthread.rseq=1 } }
       - { name: redis, image: valkey/valkey:8-alpine }
     environment:
       RESQUE_SERVER: redis
@@ -111,34 +122,13 @@ jobs:
       - store_artifacts:
           path: coverage
 
-  test-replica-set-mmap:
-    docker:
-      - image: talis/tripod-php:php74-latest
-      - { name: mongo1, image: mongo:3.6.23, command: mongod --storageEngine mmapv1 --smallfiles --replSet=tripod-rs }
-      - { name: mongo2, image: mongo:3.6.23, command: mongod --storageEngine mmapv1 --smallfiles --replSet=tripod-rs }
-      - { name: redis, image: valkey/valkey:8-alpine }
-    environment:
-      RESQUE_SERVER: redis
-      TRIPOD_DATASOURCE_RS1_CONFIG: |
-        {"type":"mongo", "connection":"mongodb://mongo1,mongo2/?retryWrites=false", "replicaSet":"tripod-rs"}
-      TRIPOD_DATASOURCE_RS2_CONFIG: |
-        {"type":"mongo", "connection":"mongodb://mongo1,mongo2/?retryWrites=false", "replicaSet":"tripod-rs"}
-    steps:
-      - checkout
-      - setup_replica_set:
-          set_name: tripod-rs
-          member_hosts: mongo1,mongo2
-      - run: composer install
-      - check_mongodb_lib_version
-      - run_test
-
   test-replica-set-mongo:
     parameters:
       mongo_version: { type: string }
     docker:
       - image: talis/tripod-php:php74-latest
-      - { name: mongo1, image: mongo:<< parameters.mongo_version >>, command: mongod --replSet=tripod-rs }
-      - { name: mongo2, image: mongo:<< parameters.mongo_version >>, command: mongod --replSet=tripod-rs }
+      - { name: mongo1, image: mongo:<< parameters.mongo_version >>, command: mongod --replSet=tripod-rs, environment: { GLIBC_TUNABLES: glibc.pthread.rseq=1 } }
+      - { name: mongo2, image: mongo:<< parameters.mongo_version >>, command: mongod --replSet=tripod-rs, environment: { GLIBC_TUNABLES: glibc.pthread.rseq=1 } }
       - { name: redis, image: valkey/valkey:8-alpine }
     environment:
       RESQUE_SERVER: redis
@@ -163,26 +153,24 @@ workflows:
     jobs:
       - lint
       - test:
-          mongo_version: "4.2"
+          name: test-<< matrix.php_version >>-mongo<< matrix.mongo_version >>
           matrix:
             parameters:
-              php_version:
-                - php74
-                - php84
-                - php85
-      - test-multiple-stores
-      - test-replica-set-mmap
+              php_version: [php74, php84, php85]
+              mongo_version: ["4.0.28", "4.2.24", "4.4.30", "5.0.33", "6.0.28", "7.0.45", "8.0.34", "9.0.4"]
+      - test-multiple-stores:
+          name: test-multiple-stores-mongo<< matrix.mongo_version >>
+          matrix:
+            parameters:
+              mongo_version: ["4.0.28", "4.2.24", "4.4.30", "5.0.33", "6.0.28", "7.0.45", "8.0.34", "9.0.4"]
       - test-replica-set-mongo:
+          name: test-replica-set-mongo<< matrix.mongo_version >>
           matrix:
             parameters:
-              mongo_version:
-                - "5.0"
-                - "6.0"
-                - "7.0"
+              mongo_version: ["4.0.28", "4.2.24", "4.4.30", "5.0.33", "6.0.28", "7.0.45", "8.0.34", "9.0.4"]
       - pass:
           requires:
             - lint
             - test
             - test-multiple-stores
-            - test-replica-set-mmap
             - test-replica-set-mongo
