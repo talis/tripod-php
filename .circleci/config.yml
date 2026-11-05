@@ -55,7 +55,8 @@ commands:
           command: |
             for h in mongodb mongo1 mongo2; do
               getent hosts "$h" >/dev/null || continue
-              echo -n "$h: "; mongosh --quiet --host "$h" --eval 'const b = db.adminCommand({buildInfo: 1}); b.version + " " + db.serverStatus().storageEngine.name'
+              # via the PHP driver: mongosh in the php84/85 images refuses 4.0 (wire version 7)
+              echo -n "$h: "; H="$h" php -r '$m = new MongoDB\Driver\Manager("mongodb://" . getenv("H") . "/?directConnection=true"); $b = $m->executeCommand("admin", new MongoDB\Driver\Command(["buildInfo" => 1]))->toArray()[0]; echo $b->version, PHP_EOL;'
             done
 
   run_test:
