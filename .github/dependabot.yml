@@ -1,0 +1,52 @@
+# Managed centrally: replaces Renovate. Security updates are enabled org-wide via GitHub code security configuration.
+version: 2
+updates:
+  - package-ecosystem: "composer"
+    directories:
+      - "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/London"
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    open-pull-requests-limit: 5
+    groups:
+      composer-minor-patch:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      composer-major:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["major"]
+      composer-security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: "docker-compose"
+    directories:
+      - "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/London"
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    open-pull-requests-limit: 5
+    groups:
+      docker_compose-minor-patch:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      docker_compose-major:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["major"]
+      docker_compose-security:
+        applies-to: security-updates
+        patterns: ["*"]
