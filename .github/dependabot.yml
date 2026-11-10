@@ -36,7 +36,6 @@ updates:
       timezone: "Europe/London"
     cooldown:
       default-days: 7
-      semver-major-days: 30
     open-pull-requests-limit: 5
     groups:
       docker_compose-minor-patch:
