@@ -20,7 +20,8 @@
     "config": {
         "audit": {
             "ignore": {
-                "CVE-2026-81525": "User-provided input is never used for database or collection names"
+                "CVE-2026-81525": "User-provided input is never used for database or collection names",
+                "CVE-2026-88023": "GridFS is not used"
             }
         }
     },
