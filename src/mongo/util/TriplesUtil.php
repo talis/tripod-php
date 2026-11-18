@@ -171,7 +171,7 @@ class TriplesUtil
     protected function saveCBD(string $cbdSubject, MongoGraph $cbdGraph, Collection $collection, ?string $context): void
     {
         $cbdSubject = $this->labeller->uri_to_alias($cbdSubject);
-        if ($cbdGraph == null || $cbdGraph->is_empty()) {
+        if ($cbdGraph->is_empty()) {
             throw new \Exception(sprintf('graph for %s was null', $cbdSubject));
         }
 
