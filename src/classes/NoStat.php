@@ -7,7 +7,7 @@ namespace Tripod;
 final class NoStat implements ITripodStat
 {
     /**
-     * @var self
+     * @var ?self
      */
     public static $instance;
 
