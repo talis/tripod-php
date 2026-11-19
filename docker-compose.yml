@@ -30,7 +30,7 @@ services:
     <<: *base-config
 
   mongodb:
-    image: mongo:4.0
+    image: mongo:8.2
 
   redis:
     image: valkey/valkey:8-alpine
